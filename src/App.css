@@ -1,0 +1,68 @@
+:root {
+  --grid-line: #9e9e9e;
+  --grid-off: #ffffff;
+  --grid-on: #111111;
+  --drawdown-line: #616161;
+}
+:root.dark {
+  --grid-line: #1e1e1e;
+  --grid-off: #3a3a3a;
+  --grid-on: #f0f0f0;
+  --drawdown-line: #1e1e1e;
+}
+
+.draft {
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  gap: 10px;
+  align-items: start;
+  width: max-content;
+  user-select: none;
+}
+
+.grid {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+  background: var(--grid-line);
+  width: max-content;
+  touch-action: none;
+}
+
+.grid .cell {
+  width: var(--cell);
+  height: var(--cell);
+  background: var(--grid-off);
+  cursor: pointer;
+}
+
+.grid .cell.on { background: var(--grid-on); }
+
+.drawdown { background: var(--drawdown-line); }
+.drawdown .cell { cursor: default; }
+
+.strip { background: var(--drawdown-line); }
+
+.swatch,
+.picker {
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+}
+.swatch { width: var(--cell); height: var(--cell); }
+.picker {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--mui-palette-divider);
+}
+.swatch::-webkit-color-swatch-wrapper,
+.picker::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch::-webkit-color-swatch,
+.picker::-webkit-color-swatch { border: none; }
+.swatch::-moz-color-swatch,
+.picker::-moz-color-swatch { border: none; }

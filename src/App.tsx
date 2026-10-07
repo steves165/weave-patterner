@@ -1,0 +1,293 @@
+import { useEffect, useMemo, useState } from 'react'
+import {
+  AppBar,
+  Box,
+  Button,
+  Divider,
+  Paper,
+  Slider,
+  Snackbar,
+  Stack,
+  TextField,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from '@mui/material'
+import ClearAllIcon from '@mui/icons-material/ClearAll'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import FileUploadIcon from '@mui/icons-material/FileUpload'
+import FolderOpenIcon from '@mui/icons-material/FolderOpen'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import SaveIcon from '@mui/icons-material/Save'
+import { ColorStrip, Grid } from './Grid'
+import { ThemeToggle } from './ThemeToggle'
+import { ImportDialog } from './dialogs/ImportDialog'
+import { LoadDialog } from './dialogs/LoadDialog'
+import { SaveDialog } from './dialogs/SaveDialog'
+import { computeDrawdown, defaultDraft, exportFile, resizeDraft, type Draft } from './weave'
+
+const LIMITS = { shafts: [2, 16], treadles: [2, 16], ends: [4, 120], picks: [4, 120] } as const
+type Dim = keyof typeof LIMITS
+const DIM_LABEL: Record<Dim, string> = { shafts: 'Shafts', treadles: 'Treadles', ends: 'Ends', picks: 'Picks' }
+
+const CELL_MIN = 6
+const CELL_MAX = 24
+const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
+
+/** Number input that only commits (clamped) on blur or Enter, so typing "16" doesn't clamp at "1". */
+function DimField({ dim, value, onCommit }: { dim: Dim; value: number; onCommit: (n: number) => void }) {
+  const [text, setText] = useState(String(value))
+  useEffect(() => setText(String(value)), [value])
+  const [min, max] = LIMITS[dim]
+  const commit = () => {
+    const n = Math.max(min, Math.min(max, Math.round(Number(text)) || min))
+    setText(String(n))
+    if (n !== value) onCommit(n)
+  }
+  return (
+    <TextField
+      label={DIM_LABEL[dim]}
+      type="number"
+      size="small"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && commit()}
+      slotProps={{ htmlInput: { min, max } }}
+      sx={{ width: 96 }}
+    />
+  )
+}
+
+export default function App() {
+  const [draft, setDraft] = useState<Draft>(defaultDraft)
+  // The pattern as it was when last started, loaded, saved or imported; Reset returns to it.
+  const [baseline, setBaseline] = useState<Draft>(draft)
+  const [name, setName] = useState<string | null>(null)
+  const [cellSize, setCellSize] = useState(CELL_DEFAULT)
+  const [fillWarp, setFillWarp] = useState('#8b0a0a')
+  const [fillWeft, setFillWeft] = useState('#ffffff')
+  const [dialog, setDialog] = useState<'save' | 'load' | 'import' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const drawdown = useMemo(() => computeDrawdown(draft), [draft])
+  const { shafts, treadles, ends, picks } = draft
+
+  const update = (fn: (d: Draft) => Draft) => setDraft((d) => fn(d))
+
+  // Shaft 1 is drawn at the bottom of the threading and tie-up, as is conventional.
+  const shaftAt = (row: number) => shafts - 1 - row
+
+  const setThreading = (row: number, end: number, value: boolean) =>
+    update((d) => {
+      const threading = [...d.threading]
+      threading[end] = value ? shaftAt(row) : threading[end] === shaftAt(row) ? -1 : threading[end]
+      return { ...d, threading }
+    })
+
+  const setTieup = (row: number, t: number, value: boolean) =>
+    update((d) => ({
+      ...d,
+      tieup: d.tieup.map((r, s) => (s === shaftAt(row) ? r.map((v, i) => (i === t ? value : v)) : r)),
+    }))
+
+  const setTreadling = (pick: number, t: number, value: boolean) =>
+    update((d) => ({
+      ...d,
+      treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
+    }))
+
+  const clearAll = () =>
+    update((d) => ({
+      ...d,
+      threading: d.threading.map(() => -1),
+      tieup: d.tieup.map((r) => r.map(() => false)),
+      treadling: d.treadling.map((r) => r.map(() => false)),
+    }))
+
+  const start = (d: Draft, n: string | null) => {
+    setDraft(d)
+    setBaseline(d)
+    setName(n)
+  }
+
+  const exportCurrent = () => {
+    const fileName = `${(name ?? 'pattern').replace(/[\\/:*?"<>|]+/g, '_')}.weave.json`
+    const url = URL.createObjectURL(new Blob([exportFile(name ?? 'pattern', draft)], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+    setToast(`Exported ${fileName}`)
+  }
+
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="sticky">
+        <Toolbar sx={{ gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="h6" sx={{ mr: 2 }}>
+            Weave Patterner
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1 }} noWrap>
+            {name ?? 'Unsaved pattern'}
+          </Typography>
+          <Button color="inherit" startIcon={<SaveIcon />} onClick={() => setDialog('save')}>
+            Save
+          </Button>
+          <Button color="inherit" startIcon={<FolderOpenIcon />} onClick={() => setDialog('load')}>
+            Load
+          </Button>
+          <Button color="inherit" startIcon={<FileDownloadIcon />} onClick={exportCurrent}>
+            Export
+          </Button>
+          <Button color="inherit" startIcon={<FileUploadIcon />} onClick={() => setDialog('import')}>
+            Import
+          </Button>
+          <ThemeToggle />
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+            {(Object.keys(LIMITS) as Dim[]).map((dim) => (
+              <DimField key={dim} dim={dim} value={draft[dim]} onCommit={(n) => update((d) => resizeDraft(d, { [dim]: n }))} />
+            ))}
+            <Box sx={{ width: 180, px: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Cell size
+              </Typography>
+              <Slider
+                size="small"
+                min={CELL_MIN}
+                max={CELL_MAX}
+                value={cellSize}
+                valueLabelDisplay="auto"
+                onChange={(_, v) => setCellSize(v as number)}
+              />
+            </Box>
+            <Divider orientation="vertical" flexItem />
+            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+              <input type="color" className="picker" value={fillWarp} onChange={(e) => setFillWarp(e.target.value)} />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => update((d) => ({ ...d, warpColors: d.warpColors.map(() => fillWarp) }))}
+              >
+                Set all warp
+              </Button>
+            </Stack>
+            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+              <input type="color" className="picker" value={fillWeft} onChange={(e) => setFillWeft(e.target.value)} />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => update((d) => ({ ...d, weftColors: d.weftColors.map(() => fillWeft) }))}
+              >
+                Set all weft
+              </Button>
+            </Stack>
+            <Divider orientation="vertical" flexItem />
+            <Tooltip title="Empty the threading, tie-up and treadling">
+              <Button size="small" startIcon={<ClearAllIcon />} onClick={clearAll}>
+                Clear grids
+              </Button>
+            </Tooltip>
+            <Tooltip title={name ? `Undo all changes since "${name}" was last saved or loaded` : 'Undo all changes since starting this pattern'}>
+              <span>
+                <Button size="small" startIcon={<RestartAltIcon />} disabled={draft === baseline} onClick={() => setDraft(baseline)}>
+                  Reset
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title="Start a new pattern from the default twill">
+              <Button size="small" startIcon={<NoteAddIcon />} onClick={() => start(defaultDraft(), null)}>
+                New
+              </Button>
+            </Tooltip>
+          </Stack>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+            Click or drag on the threading (top), tie-up (top right) and treadling (right). Click a colour swatch to
+            change that warp end or weft pick.
+          </Typography>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2, overflow: 'auto' }}>
+          <div className="draft" style={{ ['--cell' as string]: `${cellSize}px` }}>
+            {/* row 1: warp colours */}
+            <ColorStrip
+              colors={draft.warpColors}
+              onChange={(i, c) => update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }))}
+            />
+            <div />
+            <div />
+
+            {/* row 2: threading + tie-up */}
+            <Grid rows={shafts} cols={ends} isOn={(r, c) => draft.threading[c] === shaftAt(r)} onPaint={setThreading} />
+            <Grid rows={shafts} cols={treadles} isOn={(r, t) => draft.tieup[shaftAt(r)][t]} onPaint={setTieup} />
+            <div />
+
+            {/* row 3: drawdown + treadling + weft colours */}
+            <div className="grid drawdown" style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}>
+              {drawdown.flatMap((row, p) =>
+                row.map((warpUp, e) => (
+                  <div
+                    key={`${p}-${e}`}
+                    className="cell"
+                    style={{ background: warpUp ? draft.warpColors[e] : draft.weftColors[p] }}
+                  />
+                )),
+              )}
+            </div>
+            <Grid rows={picks} cols={treadles} isOn={(p, t) => draft.treadling[p][t]} onPaint={setTreadling} />
+            <ColorStrip
+              vertical
+              colors={draft.weftColors}
+              onChange={(i, c) => update((d) => ({ ...d, weftColors: d.weftColors.map((v, j) => (j === i ? c : v)) }))}
+            />
+          </div>
+        </Paper>
+      </Box>
+
+      <SaveDialog
+        open={dialog === 'save'}
+        draft={draft}
+        currentName={name}
+        onClose={() => setDialog(null)}
+        onSaved={(n) => {
+          start(draft, n)
+          setDialog(null)
+          setToast(`Saved "${n}"`)
+        }}
+      />
+      <LoadDialog
+        open={dialog === 'load'}
+        onClose={() => setDialog(null)}
+        onLoad={(p) => {
+          start(p.draft, p.name)
+          setDialog(null)
+          setToast(`Loaded "${p.name}"`)
+        }}
+        onRenamed={(from, to) => setName((cur) => (cur === from ? to : cur))}
+      />
+      <ImportDialog
+        open={dialog === 'import'}
+        onClose={() => setDialog(null)}
+        onImport={(n, d) => {
+          start(d, n)
+          setDialog(null)
+          setToast(`Imported "${n}" — use Save to keep it`)
+        }}
+      />
+      <Snackbar
+        open={toast !== null}
+        autoHideDuration={3000}
+        onClose={() => setToast(null)}
+        message={toast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+    </Box>
+  )
+}
