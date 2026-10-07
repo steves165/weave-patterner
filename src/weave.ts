@@ -13,7 +13,7 @@ export interface Draft {
   weftColors: string[]
 }
 
-export const resize = <T,>(arr: T[], len: number, fill: (i: number) => T): T[] =>
+export const resize = <T>(arr: T[], len: number, fill: (i: number) => T): T[] =>
   Array.from({ length: len }, (_, i) => (i < arr.length ? arr[i] : fill(i)))
 
 /** Straight-draw threading, twill tie-up (half the shafts lifted per treadle) and straight treadling. */
@@ -24,9 +24,7 @@ export function twillGrids(shafts: number, treadles: number, ends: number, picks
     tieup: Array.from({ length: shafts }, (_, s) =>
       Array.from({ length: treadles }, (_, t) => (s - (t % shafts) + shafts) % shafts < lifted),
     ),
-    treadling: Array.from({ length: picks }, (_, p) =>
-      Array.from({ length: treadles }, (_, t) => t === p % treadles),
-    ),
+    treadling: Array.from({ length: picks }, (_, p) => Array.from({ length: treadles }, (_, t) => t === p % treadles)),
   }
 }
 
@@ -59,7 +57,14 @@ export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'trea
   }
   // A new shaft or treadle count regenerates the grids so the pattern uses all of them.
   if (shafts !== d.shafts || treadles !== d.treadles) {
-    return { shafts, treadles, ends, picks, ...twillGrids(shafts, treadles, ends, picks), ...colors }
+    return {
+      shafts,
+      treadles,
+      ends,
+      picks,
+      ...twillGrids(shafts, treadles, ends, picks),
+      ...colors,
+    }
   }
   return {
     shafts,
@@ -96,7 +101,7 @@ export function parseDraft(data: unknown): Draft {
   const { shafts, treadles, ends, picks } = d
   if (!isInt(shafts, 1, 64) || !isInt(treadles, 1, 64) || !isInt(ends, 1, 1000) || !isInt(picks, 1, 1000))
     throw new Error('Pattern has missing or invalid dimensions')
-  const boolGrid = (g: unknown, rows: number, cols: number) =>
+  const boolGrid = (g: unknown, rows: number, cols: number): g is boolean[][] =>
     Array.isArray(g) &&
     g.length === rows &&
     g.every((r) => Array.isArray(r) && r.length === cols && r.every((v) => typeof v === 'boolean'))
@@ -114,8 +119,8 @@ export function parseDraft(data: unknown): Draft {
     ends,
     picks,
     threading: d.threading,
-    tieup: d.tieup!,
-    treadling: d.treadling!,
+    tieup: d.tieup,
+    treadling: d.treadling,
     warpColors: d.warpColors,
     weftColors: d.weftColors,
   }
@@ -137,7 +142,10 @@ export function importFile(text: string): { name?: string; draft: Draft } {
   }
   const wrapped = data as { format?: unknown; name?: unknown; draft?: unknown }
   if (wrapped && wrapped.format === FILE_FORMAT) {
-    return { name: typeof wrapped.name === 'string' ? wrapped.name : undefined, draft: parseDraft(wrapped.draft) }
+    return {
+      name: typeof wrapped.name === 'string' ? wrapped.name : undefined,
+      draft: parseDraft(wrapped.draft),
+    }
   }
   return { draft: parseDraft(data) }
 }

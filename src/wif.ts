@@ -1,4 +1,4 @@
-import { parseDraft, type Draft } from './weave'
+import { type Draft, parseDraft } from './weave'
 
 /**
  * WIF (Weaving Information File) 1.1 export — the standard format read by weaving software and
@@ -26,7 +26,7 @@ export function toWif(name: string, draft: Draft, { liftplan = false } = {}): st
   const section = (title: string, entries: [string | number, string | number][]) =>
     [`[${title}]`, ...entries.map(([k, v]) => `${k}=${v}`), ''].join('\r\n')
   const list = (ns: number[]) => ns.map((n) => n + 1).join(',')
-  const nonEmpty = <T,>(rows: [number, T[]][]) => rows.filter(([, v]) => v.length > 0)
+  const nonEmpty = <T>(rows: [number, T[]][]) => rows.filter(([, v]) => v.length > 0)
 
   const threading = nonEmpty(draft.threading.map((s, e) => [e + 1, s >= 0 ? [s] : []]))
   const tieup = nonEmpty(
@@ -89,10 +89,21 @@ export function toWif(name: string, draft: Draft, { liftplan = false } = {}): st
       threading.map(([e, ss]) => [e, list(ss)]),
     ),
     ...(liftplan
-      ? [section('LIFTPLAN', liftRows.map(([p, ss]) => [p, list(ss)]))]
+      ? [
+          section(
+            'LIFTPLAN',
+            liftRows.map(([p, ss]) => [p, list(ss)]),
+          ),
+        ]
       : [
-          section('TIEUP', tieup.map(([t, ss]) => [t, list(ss)])),
-          section('TREADLING', treadling.map(([p, ts]) => [p, list(ts)])),
+          section(
+            'TIEUP',
+            tieup.map(([t, ss]) => [t, list(ss)]),
+          ),
+          section(
+            'TREADLING',
+            treadling.map(([p, ts]) => [p, list(ts)]),
+          ),
         ]),
     section(
       'WARP COLORS',
@@ -145,7 +156,10 @@ export function fromWif(text: string): WifImport {
       .filter((n): n is number => n !== undefined && n > 0)
   /** Entries of a numbered section (e.g. THREADING: thread -> shafts), 1-based keys. */
   const entries = (name: string) =>
-    [...sec(name)].flatMap(([k, v]) => (int(k) ? [[int(k)!, v] as [number, string]] : []))
+    [...sec(name)].flatMap(([k, v]): [number, string][] => {
+      const n = int(k)
+      return n ? [[n, v]] : []
+    })
   const maxKey = (name: string) => Math.max(0, ...entries(name).map(([k]) => k))
 
   const weaving = sec('WEAVING')
@@ -175,7 +189,8 @@ export function fromWif(text: string): WifImport {
     if (ss.length > 1) multiThreaded++
     threading[e - 1] = ss[0] - 1
   }
-  if (multiThreaded) warnings.push(
+  if (multiThreaded)
+    warnings.push(
       `${multiThreaded} ${multiThreaded === 1 ? 'end was' : 'ends were'} threaded on several shafts; kept the first shaft`,
     )
 
@@ -234,7 +249,12 @@ export function fromWif(text: string): WifImport {
         .join('')
     )
   }
-  const table = new Map(entries('COLOR TABLE').flatMap(([i, v]) => (toHex(v) ? [[i, toHex(v)!] as const] : [])))
+  const table = new Map(
+    entries('COLOR TABLE').flatMap(([i, v]): [number, string][] => {
+      const hex = toHex(v)
+      return hex ? [[i, hex]] : []
+    }),
+  )
   // Colour references are palette indexes; take the first number in case a writer adds extra fields.
   const colorRef = (v: string | undefined) => (v ? table.get(numList(v)[0]) : undefined)
   const warpDefault = colorRef(sec('WARP').get('COLOR')) ?? '#8b0a0a'
@@ -245,6 +265,16 @@ export function fromWif(text: string): WifImport {
   for (const [p, v] of entries('WEFT COLORS')) if (p <= picks) weftColors[p - 1] = colorRef(v) ?? weftDefault
 
   const name = sec('TEXT').get('TITLE') || undefined
-  const draft = parseDraft({ shafts, treadles, ends, picks, threading, tieup, treadling, warpColors, weftColors })
+  const draft = parseDraft({
+    shafts,
+    treadles,
+    ends,
+    picks,
+    threading,
+    tieup,
+    treadling,
+    warpColors,
+    weftColors,
+  })
   return { name, draft, warnings }
 }

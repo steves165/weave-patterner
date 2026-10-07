@@ -1,6 +1,6 @@
+import { CssBaseline, createTheme, ThemeProvider } from '@mui/material'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
 import App from './App.tsx'
 import './App.css'
 
@@ -12,7 +12,10 @@ const theme = createTheme({
   },
 })
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root')
+if (!root) throw new Error('Missing #root element')
+
+createRoot(root).render(
   <StrictMode>
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline />

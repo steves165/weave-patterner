@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
+import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
 import {
   Alert,
   Box,
@@ -16,10 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import CheckIcon from '@mui/icons-material/Check'
-import CloseIcon from '@mui/icons-material/Close'
-import DeleteIcon from '@mui/icons-material/Delete'
-import EditIcon from '@mui/icons-material/Edit'
+import { useCallback, useEffect, useState } from 'react'
 import { PatternThumb } from '../PatternThumb'
 import { deletePattern, listPatterns, MAX_PATTERNS, renamePattern, type SavedPattern } from '../storage'
 

@@ -36,12 +36,20 @@
   cursor: pointer;
 }
 
-.grid .cell.on { background: var(--grid-on); }
+.grid .cell.on {
+  background: var(--grid-on);
+}
 
-.drawdown { background: var(--drawdown-line); }
-.drawdown .cell { cursor: default; }
+.drawdown {
+  background: var(--drawdown-line);
+}
+.drawdown .cell {
+  cursor: default;
+}
 
-.strip { background: var(--drawdown-line); }
+.strip {
+  background: var(--drawdown-line);
+}
 
 .swatch,
 .picker {
@@ -52,7 +60,10 @@
   -webkit-appearance: none;
   background: none;
 }
-.swatch { width: var(--cell); height: var(--cell); }
+.swatch {
+  width: var(--cell);
+  height: var(--cell);
+}
 .picker {
   width: 36px;
   height: 36px;
@@ -61,8 +72,78 @@
   border: 1px solid var(--mui-palette-divider);
 }
 .swatch::-webkit-color-swatch-wrapper,
-.picker::-webkit-color-swatch-wrapper { padding: 0; }
+.picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
 .swatch::-webkit-color-swatch,
-.picker::-webkit-color-swatch { border: none; }
+.picker::-webkit-color-swatch {
+  border: none;
+}
 .swatch::-moz-color-swatch,
-.picker::-moz-color-swatch { border: none; }
+.picker::-moz-color-swatch {
+  border: none;
+}
+
+/* Print: hide the editor and show only the framed draft. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  .screen-only {
+    display: none;
+  }
+  /* `html body` outranks the theme's body background without !important. */
+  html body {
+    background: #fff;
+  }
+  .print-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+    color: #111;
+    font-family: system-ui, sans-serif;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-header h1 {
+    margin: 0;
+    font-size: 16pt;
+  }
+  .print-header p {
+    margin: 1mm 0;
+    font-size: 9pt;
+    color: #444;
+  }
+  .print-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3mm;
+    font-size: 8pt;
+    color: #444;
+  }
+  .print-palette span {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+  }
+  .print-palette i {
+    width: 4mm;
+    height: 4mm;
+    border: 0.2mm solid #333;
+    display: inline-block;
+  }
+  .print-draft {
+    width: 100%;
+    height: auto;
+    max-height: 235mm;
+  }
+  .print-footer {
+    font-size: 7pt;
+    color: #777;
+    text-align: right;
+  }
+}

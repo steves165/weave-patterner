@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
-import { importFile, type Draft } from '../weave'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
+import { type Draft, importFile } from '../weave'
 import { fromWif } from '../wif'
 
 interface Props {

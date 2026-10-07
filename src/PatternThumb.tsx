@@ -11,18 +11,24 @@ export function PatternThumb({ draft, size = 56 }: { draft: Draft; size?: number
     const dd = computeDrawdown(draft)
     ctx.canvas.width = draft.ends
     ctx.canvas.height = draft.picks
-    dd.forEach((row, p) =>
-      row.forEach((warpUp, e) => {
-        ctx.fillStyle = warpUp ? draft.warpColors[e] : draft.weftColors[p]
+    for (let p = 0; p < draft.picks; p++) {
+      for (let e = 0; e < draft.ends; e++) {
+        ctx.fillStyle = dd[p][e] ? draft.warpColors[e] : draft.weftColors[p]
         ctx.fillRect(e, p, 1, 1)
-      }),
-    )
+      }
+    }
   }, [draft])
 
   return (
     <canvas
       ref={ref}
-      style={{ width: size, height: size, imageRendering: 'pixelated', borderRadius: 4, flexShrink: 0 }}
+      style={{
+        width: size,
+        height: size,
+        imageRendering: 'pixelated',
+        borderRadius: 4,
+        flexShrink: 0,
+      }}
     />
   )
 }

@@ -58,7 +58,11 @@ export function ColorStrip({ colors, vertical, onChange }: ColorStripProps) {
   return (
     <div
       className="grid strip"
-      style={vertical ? { gridTemplateColumns: 'var(--cell)' } : { gridTemplateColumns: `repeat(${colors.length}, var(--cell))` }}
+      style={
+        vertical
+          ? { gridTemplateColumns: 'var(--cell)' }
+          : { gridTemplateColumns: `repeat(${colors.length}, var(--cell))` }
+      }
     >
       {colors.map((color, i) => (
         <input

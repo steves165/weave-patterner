@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { useEffect, useState } from 'react'
 import { listPatterns, MAX_PATTERNS, nextPatternName, savePattern } from '../storage'
 import type { Draft } from '../weave'
 

@@ -26,7 +26,7 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise
 }
 
-const promisify = <T,>(req: IDBRequest<T>) =>
+const promisify = <T>(req: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -77,6 +77,9 @@ export function renamePattern(from: string, to: string): Promise<void> {
 
 /** The next unused "Pattern N" name. */
 export function nextPatternName(existing: string[]): string {
-  const nums = existing.map((n) => /^Pattern (\d+)$/.exec(n)?.[1]).filter(Boolean).map(Number)
+  const nums = existing
+    .map((n) => /^Pattern (\d+)$/.exec(n)?.[1])
+    .filter(Boolean)
+    .map(Number)
   return `Pattern ${Math.max(0, ...nums) + 1}`
 }
