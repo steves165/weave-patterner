@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { importFile, type Draft } from '../weave'
+import { fromWif } from '../wif'
 
 interface Props {
   open: boolean
   onClose: () => void
-  onImport: (name: string, draft: Draft) => void
+  onImport: (name: string, draft: Draft, warnings: string[]) => void
 }
 
 export function ImportDialog({ open, onClose, onImport }: Props) {
@@ -22,8 +23,12 @@ export function ImportDialog({ open, onClose, onImport }: Props) {
     if (!file) return
     setError(null)
     try {
-      const { name, draft } = importFile(await file.text())
-      onImport(name ?? file.name.replace(/(\.weave)?\.json$/i, ''), draft)
+      const text = await file.text()
+      // JSON pattern files start with '{'; anything else is treated as WIF.
+      const { name, draft, warnings } = text.trimStart().startsWith('{')
+        ? { ...importFile(text), warnings: [] }
+        : fromWif(text)
+      onImport(name ?? file.name.replace(/(\.weave)?\.(json|wif)$/i, ''), draft, warnings)
     } catch (e) {
       setError(`${file.name}: ${e instanceof Error ? e.message : String(e)}`)
     }
@@ -60,13 +65,13 @@ export function ImportDialog({ open, onClose, onImport }: Props) {
           <UploadFileIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
           <Typography>Drop a pattern file here, or click to choose one</Typography>
           <Typography variant="body2" color="text.secondary">
-            .json files exported from Weave Patterner
+            .weave.json from Weave Patterner, or .wif from other weaving software
           </Typography>
         </Box>
         <input
           ref={input}
           type="file"
-          accept=".json,application/json"
+          accept=".json,.wif,application/json"
           hidden
           onChange={(e) => {
             handleFile(e.target.files?.[0])

@@ -4,6 +4,9 @@ import {
   Box,
   Button,
   Divider,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
   Slider,
   Snackbar,
@@ -26,6 +29,7 @@ import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { computeDrawdown, defaultDraft, exportFile, resizeDraft, type Draft } from './weave'
+import { toWif } from './wif'
 
 const LIMITS = { shafts: [2, 16], treadles: [2, 16], ends: [4, 120], picks: [4, 120] } as const
 type Dim = keyof typeof LIMITS
@@ -70,6 +74,7 @@ export default function App() {
   const [fillWeft, setFillWeft] = useState('#ffffff')
   const [dialog, setDialog] = useState<'save' | 'load' | 'import' | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   const { shafts, treadles, ends, picks } = draft
@@ -112,15 +117,27 @@ export default function App() {
     setName(n)
   }
 
-  const exportCurrent = () => {
-    const fileName = `${(name ?? 'pattern').replace(/[\\/:*?"<>|]+/g, '_')}.weave.json`
-    const url = URL.createObjectURL(new Blob([exportFile(name ?? 'pattern', draft)], { type: 'application/json' }))
+  const download = (fileName: string, content: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }))
     const a = document.createElement('a')
     a.href = url
     a.download = fileName
     a.click()
     URL.revokeObjectURL(url)
     setToast(`Exported ${fileName}`)
+  }
+
+  const exportAs = (format: 'json' | 'wif' | 'liftplan') => {
+    setExportAnchor(null)
+    const title = name ?? 'pattern'
+    const base = title.replace(/[\\/:*?"<>|]+/g, '_')
+    if (format === 'json') download(`${base}.weave.json`, exportFile(title, draft), 'application/json')
+    else
+      download(
+        `${base}${format === 'liftplan' ? ' (liftplan)' : ''}.wif`,
+        toWif(title, draft, { liftplan: format === 'liftplan' }),
+        'text/plain',
+      )
   }
 
   return (
@@ -139,9 +156,20 @@ export default function App() {
           <Button color="inherit" startIcon={<FolderOpenIcon />} onClick={() => setDialog('load')}>
             Load
           </Button>
-          <Button color="inherit" startIcon={<FileDownloadIcon />} onClick={exportCurrent}>
+          <Button color="inherit" startIcon={<FileDownloadIcon />} onClick={(e) => setExportAnchor(e.currentTarget)}>
             Export
           </Button>
+          <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
+            <MenuItem onClick={() => exportAs('json')}>
+              <ListItemText primary="Pattern file (.weave.json)" secondary="Re-import into Weave Patterner" />
+            </MenuItem>
+            <MenuItem onClick={() => exportAs('wif')}>
+              <ListItemText primary="WIF (.wif)" secondary="Threading, tie-up and treadling for weaving software and treadle looms" />
+            </MenuItem>
+            <MenuItem onClick={() => exportAs('liftplan')}>
+              <ListItemText primary="WIF lift plan (.wif)" secondary="Shafts lifted per pick, for computer-dobby looms" />
+            </MenuItem>
+          </Menu>
           <Button color="inherit" startIcon={<FileUploadIcon />} onClick={() => setDialog('import')}>
             Import
           </Button>
@@ -275,15 +303,15 @@ export default function App() {
       <ImportDialog
         open={dialog === 'import'}
         onClose={() => setDialog(null)}
-        onImport={(n, d) => {
+        onImport={(n, d, warnings) => {
           start(d, n)
           setDialog(null)
-          setToast(`Imported "${n}" — use Save to keep it`)
+          setToast([`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))
         }}
       />
       <Snackbar
         open={toast !== null}
-        autoHideDuration={3000}
+        autoHideDuration={toast && toast.length > 60 ? 8000 : 3000}
         onClose={() => setToast(null)}
         message={toast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
