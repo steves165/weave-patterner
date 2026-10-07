@@ -26,6 +26,13 @@
   padding: 1px;
   background: var(--grid-line);
   width: max-content;
+}
+
+/* Editable grids: swipes scroll and taps are instant, unless drag-painting is on. */
+.paintable {
+  touch-action: manipulation;
+}
+.paintable.touch-paint {
   touch-action: none;
 }
 

@@ -1,4 +1,6 @@
+import BrushIcon from '@mui/icons-material/Brush'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
@@ -8,10 +10,14 @@ import PrintIcon from '@mui/icons-material/Print'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import SaveIcon from '@mui/icons-material/Save'
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   AppBar,
   Box,
   Button,
   Divider,
+  IconButton,
   ListItemText,
   Menu,
   MenuItem,
@@ -24,11 +30,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { type MouseEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ColorStrip, Grid } from './Grid'
+import { useCompact, usePhone, useTouch } from './layout'
 import { PrintSheet } from './PrintSheet'
 import { decodePattern, patternFromHash } from './share'
 import { ThemeToggle } from './ThemeToggle'
@@ -78,7 +85,33 @@ function DimField({ dim, value, onCommit }: { dim: Dim; value: number; onCommit:
   )
 }
 
+/** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
+function ToolbarAction(props: {
+  compact: boolean
+  icon: ReactNode
+  label: string
+  onClick: (e: MouseEvent<HTMLElement>) => void
+}) {
+  const { compact, icon, label, onClick } = props
+  return compact ? (
+    <Tooltip title={label}>
+      <IconButton color="inherit" aria-label={label} onClick={onClick}>
+        {icon}
+      </IconButton>
+    </Tooltip>
+  ) : (
+    <Button color="inherit" startIcon={icon} onClick={onClick}>
+      {label}
+    </Button>
+  )
+}
+
 export default function App() {
+  const phone = usePhone()
+  const compact = useCompact()
+  const touch = useTouch()
+  // Touch only: when on, a finger drag-paints the grids instead of scrolling.
+  const [touchPaint, setTouchPaint] = useState(false)
   const [draft, setDraft] = useState<Draft>(defaultDraft)
   // The pattern as it was when last started, loaded, saved or imported; Reset returns to it.
   const [baseline, setBaseline] = useState<Draft>(draft)
@@ -178,22 +211,47 @@ export default function App() {
     <>
       <Box className="screen-only" sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 6 }}>
         <AppBar position="sticky">
-          <Toolbar sx={{ gap: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h6" sx={{ mr: 2 }}>
-              Weave Patterner
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1 }} noWrap>
+          <Toolbar sx={{ gap: compact ? 0.25 : 1, flexWrap: compact ? 'nowrap' : 'wrap' }}>
+            {!phone && (
+              <Typography variant="h6" sx={{ mr: 2 }} noWrap>
+                Weave Patterner
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1, minWidth: 0 }} noWrap>
               {name ?? 'Unsaved pattern'}
             </Typography>
-            <Button color="inherit" startIcon={<SaveIcon />} onClick={() => setDialog('save')}>
-              Save
-            </Button>
-            <Button color="inherit" startIcon={<FolderOpenIcon />} onClick={() => setDialog('load')}>
-              Load
-            </Button>
-            <Button color="inherit" startIcon={<FileDownloadIcon />} onClick={(e) => setExportAnchor(e.currentTarget)}>
-              Export
-            </Button>
+            {touch && (
+              <Tooltip title={touchPaint ? 'Drag-painting on: tap to scroll instead' : 'Drag to paint'}>
+                <IconButton
+                  color="inherit"
+                  aria-label="Drag to paint"
+                  aria-pressed={touchPaint}
+                  onClick={() => {
+                    setTouchPaint(!touchPaint)
+                    setToast(
+                      touchPaint
+                        ? 'Swipe to move around the pattern; tap a box to toggle it'
+                        : 'Drag-painting on: drag across the grids to paint. Tap the brush again to scroll.',
+                    )
+                  }}
+                  sx={
+                    touchPaint
+                      ? { bgcolor: 'rgba(255,255,255,0.25)', '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' } }
+                      : undefined
+                  }
+                >
+                  <BrushIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            <ToolbarAction compact={compact} icon={<SaveIcon />} label="Save" onClick={() => setDialog('save')} />
+            <ToolbarAction compact={compact} icon={<FolderOpenIcon />} label="Load" onClick={() => setDialog('load')} />
+            <ToolbarAction
+              compact={compact}
+              icon={<FileDownloadIcon />}
+              label="Export"
+              onClick={(e) => setExportAnchor(e.currentTarget)}
+            />
             <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
               <MenuItem onClick={() => exportAs('json')}>
                 <ListItemText primary="Pattern file (.weave.json)" secondary="Re-import into Weave Patterner" />
@@ -211,108 +269,141 @@ export default function App() {
                 />
               </MenuItem>
             </Menu>
-            <Button color="inherit" startIcon={<FileUploadIcon />} onClick={() => setDialog('import')}>
-              Import
-            </Button>
-            <Button color="inherit" startIcon={<PrintIcon />} onClick={() => window.print()}>
-              Print
-            </Button>
+            <ToolbarAction
+              compact={compact}
+              icon={<FileUploadIcon />}
+              label="Import"
+              onClick={() => setDialog('import')}
+            />
+            <ToolbarAction compact={compact} icon={<PrintIcon />} label="Print" onClick={() => window.print()} />
             <ThemeToggle />
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-            <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-              {(Object.keys(LIMITS) as Dim[]).map((dim) => (
-                <DimField
-                  key={dim}
-                  dim={dim}
-                  value={draft[dim]}
-                  onCommit={(n) => update((d) => resizeDraft(d, { [dim]: n }))}
-                />
-              ))}
-              <Box sx={{ width: 180, px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Cell size
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+          <Accordion variant="outlined" disableGutters defaultExpanded={!compact} sx={{ mb: { xs: 1, sm: 2 } }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2">
+                Pattern settings
+                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  {draft.shafts} shafts · {draft.treadles} treadles · {draft.ends} × {draft.picks}
                 </Typography>
-                <Slider
-                  size="small"
-                  min={CELL_MIN}
-                  max={CELL_MAX}
-                  value={cellSize}
-                  valueLabelDisplay="auto"
-                  onChange={(_, v) => setCellSize(v as number)}
-                />
-              </Box>
-              <Divider orientation="vertical" flexItem />
-              <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input type="color" className="picker" value={fillWarp} onChange={(e) => setFillWarp(e.target.value)} />
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() =>
-                    update((d) => ({
-                      ...d,
-                      warpColors: d.warpColors.map(() => fillWarp),
-                    }))
-                  }
-                >
-                  Set all warp
-                </Button>
-              </Stack>
-              <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input type="color" className="picker" value={fillWeft} onChange={(e) => setFillWeft(e.target.value)} />
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() =>
-                    update((d) => ({
-                      ...d,
-                      weftColors: d.weftColors.map(() => fillWeft),
-                    }))
-                  }
-                >
-                  Set all weft
-                </Button>
-              </Stack>
-              <Divider orientation="vertical" flexItem />
-              <Tooltip title="Empty the threading, tie-up and treadling">
-                <Button size="small" startIcon={<ClearAllIcon />} onClick={clearAll}>
-                  Clear grids
-                </Button>
-              </Tooltip>
-              <Tooltip
-                title={
-                  name
-                    ? `Undo all changes since "${name}" was last saved or loaded`
-                    : 'Undo all changes since starting this pattern'
-                }
-              >
-                <span>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                {(Object.keys(LIMITS) as Dim[]).map((dim) => (
+                  <DimField
+                    key={dim}
+                    dim={dim}
+                    value={draft[dim]}
+                    onCommit={(n) => update((d) => resizeDraft(d, { [dim]: n }))}
+                  />
+                ))}
+                <Box sx={{ width: 180, px: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Cell size
+                  </Typography>
+                  <Slider
+                    size="small"
+                    min={CELL_MIN}
+                    max={CELL_MAX}
+                    value={cellSize}
+                    valueLabelDisplay="auto"
+                    onChange={(_, v) => setCellSize(v as number)}
+                  />
+                </Box>
+                <Divider orientation="vertical" flexItem />
+                <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    className="picker"
+                    value={fillWarp}
+                    onChange={(e) => setFillWarp(e.target.value)}
+                  />
                   <Button
                     size="small"
-                    startIcon={<RestartAltIcon />}
-                    disabled={draft === baseline}
-                    onClick={() => setDraft(baseline)}
+                    variant="outlined"
+                    onClick={() =>
+                      update((d) => ({
+                        ...d,
+                        warpColors: d.warpColors.map(() => fillWarp),
+                      }))
+                    }
                   >
-                    Reset
+                    Set all warp
                   </Button>
-                </span>
-              </Tooltip>
-              <Tooltip title="Start a new pattern from the default twill">
-                <Button size="small" startIcon={<NoteAddIcon />} onClick={() => start(defaultDraft(), null)}>
-                  New
-                </Button>
-              </Tooltip>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-              Click or drag on the threading (top), tie-up (top right) and treadling (right). Click a colour swatch to
-              change that warp end or weft pick.
-            </Typography>
-          </Paper>
+                </Stack>
+                <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    className="picker"
+                    value={fillWeft}
+                    onChange={(e) => setFillWeft(e.target.value)}
+                  />
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() =>
+                      update((d) => ({
+                        ...d,
+                        weftColors: d.weftColors.map(() => fillWeft),
+                      }))
+                    }
+                  >
+                    Set all weft
+                  </Button>
+                </Stack>
+                <Divider orientation="vertical" flexItem />
+                <Tooltip title="Empty the threading, tie-up and treadling">
+                  <Button size="small" startIcon={<ClearAllIcon />} onClick={clearAll}>
+                    Clear grids
+                  </Button>
+                </Tooltip>
+                <Tooltip
+                  title={
+                    name
+                      ? `Undo all changes since "${name}" was last saved or loaded`
+                      : 'Undo all changes since starting this pattern'
+                  }
+                >
+                  <span>
+                    <Button
+                      size="small"
+                      startIcon={<RestartAltIcon />}
+                      disabled={draft === baseline}
+                      onClick={() => setDraft(baseline)}
+                    >
+                      Reset
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Start a new pattern from the default twill">
+                  <Button size="small" startIcon={<NoteAddIcon />} onClick={() => start(defaultDraft(), null)}>
+                    New
+                  </Button>
+                </Tooltip>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                {touch
+                  ? 'Tap boxes on the threading (top), tie-up (top right) and treadling (right) to toggle them, and swipe to move around the pattern. Turn on the brush in the toolbar to paint by dragging. Tap a colour swatch to change that warp end or weft pick.'
+                  : 'Click or drag on the threading (top), tie-up (top right) and treadling (right). Click a colour swatch to change that warp end or weft pick.'}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
 
-          <Paper variant="outlined" sx={{ p: 2, overflow: 'auto' }}>
+          <Paper
+            variant="outlined"
+            className="draft-scroll"
+            sx={{
+              p: { xs: 1, sm: 2 },
+              overflow: 'auto',
+              // Fill the screen below the toolbar so the pattern pans in both directions in one place.
+              maxHeight: { xs: 'calc(100dvh - 72px)', sm: 'calc(100dvh - 96px)' },
+              // Stop horizontal pans at the edge from triggering browser back/forward swipes.
+              overscrollBehaviorX: 'contain',
+            }}
+          >
             <div className="draft" style={{ ['--cell' as string]: `${cellSize}px` }}>
               {/* row 1: warp colours */}
               <ColorStrip
@@ -333,8 +424,15 @@ export default function App() {
                 cols={ends}
                 isOn={(r, c) => draft.threading[c] === shaftAt(r)}
                 onPaint={setThreading}
+                touchPaint={touchPaint}
               />
-              <Grid rows={shafts} cols={treadles} isOn={(r, t) => draft.tieup[shaftAt(r)][t]} onPaint={setTieup} />
+              <Grid
+                rows={shafts}
+                cols={treadles}
+                isOn={(r, t) => draft.tieup[shaftAt(r)][t]}
+                onPaint={setTieup}
+                touchPaint={touchPaint}
+              />
               <div />
 
               {/* row 3: drawdown + treadling + weft colours */}
@@ -351,7 +449,13 @@ export default function App() {
                   )),
                 )}
               </div>
-              <Grid rows={picks} cols={treadles} isOn={(p, t) => draft.treadling[p][t]} onPaint={setTreadling} />
+              <Grid
+                rows={picks}
+                cols={treadles}
+                isOn={(p, t) => draft.treadling[p][t]}
+                onPaint={setTreadling}
+                touchPaint={touchPaint}
+              />
               <ColorStrip
                 vertical
                 colors={draft.weftColors}
@@ -411,17 +515,17 @@ export default function App() {
           elevation={3}
           sx={{
             position: 'fixed',
-            right: 16,
-            bottom: 16,
-            px: 1.5,
-            py: 0.75,
+            right: { xs: 8, sm: 16 },
+            bottom: { xs: 8, sm: 16 },
+            px: { xs: 1, sm: 1.5 },
+            py: { xs: 0.5, sm: 0.75 },
             display: 'flex',
             alignItems: 'center',
             gap: 1,
             borderRadius: 5,
             textDecoration: 'none',
             color: 'text.secondary',
-            fontSize: '0.8rem',
+            fontSize: { xs: '0.7rem', sm: '0.8rem' },
             zIndex: 10,
             '&:hover': { color: 'text.primary' },
           }}

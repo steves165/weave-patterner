@@ -1,5 +1,6 @@
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { usePhone } from '../layout'
 import { listPatterns, MAX_PATTERNS, nextPatternName, savePattern } from '../storage'
 import type { Draft } from '../weave'
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function SaveDialog({ open, draft, currentName, onClose, onSaved }: Props) {
+  const phone = usePhone()
   const [name, setName] = useState('')
   const [existing, setExisting] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export function SaveDialog({ open, draft, currentName, onClose, onSaved }: Props
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="xs">
       <form
         onSubmit={(e) => {
           e.preventDefault()

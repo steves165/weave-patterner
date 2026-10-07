@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
+import { usePhone } from '../layout'
 import { PatternThumb } from '../PatternThumb'
 import { deletePattern, listPatterns, MAX_PATTERNS, renamePattern, type SavedPattern } from '../storage'
 
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
+  const phone = usePhone()
   const [patterns, setPatterns] = useState<SavedPattern[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ from: string; to: string } | null>(null)
@@ -82,7 +84,7 @@ export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
     })
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
       <DialogTitle>
         Load pattern
         <Typography variant="body2" color="text.secondary">

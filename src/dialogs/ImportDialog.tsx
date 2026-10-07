@@ -1,6 +1,7 @@
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
+import { usePhone } from '../layout'
 import { type Draft, importFile } from '../weave'
 import { fromWif } from '../wif'
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ImportDialog({ open, onClose, onImport }: Props) {
+  const phone = usePhone()
   const input = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ export function ImportDialog({ open, onClose, onImport }: Props) {
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
       <DialogTitle>Import pattern</DialogTitle>
       <DialogContent>
         <Box
