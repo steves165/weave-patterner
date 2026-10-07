@@ -424,6 +424,8 @@ export default function App() {
                 cols={ends}
                 isOn={(r, c) => draft.threading[c] === shaftAt(r)}
                 onPaint={setThreading}
+                label="Threading"
+                cellLabel={(r, c) => `End ${c + 1}, shaft ${shaftAt(r) + 1}`}
                 touchPaint={touchPaint}
               />
               <Grid
@@ -431,6 +433,8 @@ export default function App() {
                 cols={treadles}
                 isOn={(r, t) => draft.tieup[shaftAt(r)][t]}
                 onPaint={setTieup}
+                label="Tie-up"
+                cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}`}
                 touchPaint={touchPaint}
               />
               <div />
@@ -454,6 +458,8 @@ export default function App() {
                 cols={treadles}
                 isOn={(p, t) => draft.treadling[p][t]}
                 onPaint={setTreadling}
+                label="Treadling"
+                cellLabel={(p, t) => `Pick ${p + 1}, treadle ${t + 1}`}
                 touchPaint={touchPaint}
               />
               <ColorStrip
