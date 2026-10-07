@@ -4,8 +4,11 @@ interface GridProps {
   rows: number
   cols: number
   isOn: (r: number, c: number) => boolean
-  /** called when a cell is clicked or dragged over; `value` is the state being painted */
-  onPaint: (r: number, c: number, value: boolean) => void
+  /**
+   * Called when a cell is clicked or dragged over; `value` is the state being painted. `continuing` is true for
+   * cells after the first in one drag stroke, so the whole stroke can be undone as one step.
+   */
+  onPaint: (r: number, c: number, value: boolean, continuing: boolean) => void
   /** Accessible name of the whole grid, e.g. "Threading". */
   label: string
   /** Accessible name of one cell, e.g. "End 5, shaft 2". */
@@ -45,7 +48,7 @@ export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint =
   const onKeyDown = (e: KeyboardEvent, r: number, c: number, on: boolean) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
-      onPaint(r, c, !on)
+      onPaint(r, c, !on, false)
       return
     }
     const move = ARROWS[e.key]
@@ -82,14 +85,14 @@ export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint =
               return // Release the implicit capture so pointerenter fires on the other cells being dragged over.
             ;(e.target as Element).releasePointerCapture(e.pointerId)
             paintValue.current = !on
-            onPaint(r, c, !on)
+            onPaint(r, c, !on, false)
           }}
           onPointerEnter={() => {
-            if (paintValue.current !== null) onPaint(r, c, paintValue.current)
+            if (paintValue.current !== null) onPaint(r, c, paintValue.current, true)
           }}
           onClick={() => {
             // Browsers only send a click for a tap that didn't turn into a scroll.
-            if (lastPointer.current === 'touch' && !touchPaint) onPaint(r, c, !on)
+            if (lastPointer.current === 'touch' && !touchPaint) onPaint(r, c, !on, false)
           }}
         />,
       )

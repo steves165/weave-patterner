@@ -3,35 +3,14 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import * as z from 'zod'
+import { longestFloats } from '../src/floats'
 import { APP_URL, patternUrl } from '../src/share'
-import { computeDrawdown, type Draft, exportFile, importFile } from '../src/weave'
+import { type Draft, exportFile, importFile } from '../src/weave'
 import { fromWif, toWif } from '../src/wif'
 import { renderDraftPng } from './png'
 import { draftToSpec, type PatternSpec, patternShape, specToDraft } from './spec'
 
 const appUrl = process.env.WEAVE_APP_URL ?? APP_URL
-
-/** Longest run of one thread on top: warp floats run down a column, weft floats along a row. */
-export function longestFloats(d: Draft) {
-  const dd = computeDrawdown(d)
-  let warp = 0
-  let weft = 0
-  for (let p = 0; p < d.picks; p++) {
-    let run = 0
-    for (let e = 0; e < d.ends; e++) {
-      run = dd[p][e] ? 0 : run + 1
-      weft = Math.max(weft, run)
-    }
-  }
-  for (let e = 0; e < d.ends; e++) {
-    let run = 0
-    for (let p = 0; p < d.picks; p++) {
-      run = dd[p][e] ? run + 1 : 0
-      warp = Math.max(warp, run)
-    }
-  }
-  return { warp, weft }
-}
 
 async function describe(name: string, d: Draft, extra: string[] = []) {
   const floats = longestFloats(d)

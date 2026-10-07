@@ -159,3 +159,10 @@
   outline: 2px solid var(--mui-palette-primary-main);
   outline-offset: -1px;
 }
+
+/* Long-float highlighting: an inset orange ring that reads on any thread colour. */
+.drawdown .cell.float {
+  box-shadow:
+    inset 0 0 0 1px #fff,
+    inset 0 0 0 3px #ff6d00;
+}

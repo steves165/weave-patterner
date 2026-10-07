@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { computeDrawdown, type Draft } from './weave'
+import { computeDrawdown, type Draft } from '../weave'
 
 /** A small canvas rendering of a draft's drawdown. */
 export function PatternThumb({ draft, size = 56 }: { draft: Draft; size?: number }) {

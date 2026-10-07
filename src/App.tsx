@@ -1,479 +1,175 @@
-import BrushIcon from '@mui/icons-material/Brush'
-import ClearAllIcon from '@mui/icons-material/ClearAll'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import FileUploadIcon from '@mui/icons-material/FileUpload'
-import FolderOpenIcon from '@mui/icons-material/FolderOpen'
-import GitHubIcon from '@mui/icons-material/GitHub'
-import NoteAddIcon from '@mui/icons-material/NoteAdd'
-import PrintIcon from '@mui/icons-material/Print'
-import RestartAltIcon from '@mui/icons-material/RestartAlt'
-import SaveIcon from '@mui/icons-material/Save'
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  AppBar,
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Paper,
-  Slider,
-  Snackbar,
-  Stack,
-  TextField,
-  Toolbar,
-  Tooltip,
-  Typography,
-} from '@mui/material'
-import { type MouseEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
+import { Box, Snackbar } from '@mui/material'
+import { useMemo, useState } from 'react'
+import { AppToolbar } from './components/AppToolbar'
+import { DraftView } from './components/DraftView'
+import { Footer } from './components/Footer'
+import { PrintSheet } from './components/PrintSheet'
+import { CELL_DEFAULT, SettingsPanel } from './components/SettingsPanel'
+import { CalculatorDialog } from './dialogs/CalculatorDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
-import { ColorStrip, Grid } from './Grid'
+import { ToolsDialog } from './dialogs/ToolsDialog'
+import { WeavingMode } from './dialogs/WeavingMode'
+import { download, exportDraft } from './exportDraft'
+import { longestFloats, longFloatMask } from './floats'
+import { useDraftHistory } from './hooks/useDraftHistory'
+import { useSharedPatternLink } from './hooks/useSharedPatternLink'
 import { useCompact, usePhone, useTouch } from './layout'
-import { PrintSheet } from './PrintSheet'
-import { decodePattern, patternFromHash } from './share'
-import { ThemeToggle } from './ThemeToggle'
-import { computeDrawdown, type Draft, defaultDraft, exportFile, resizeDraft } from './weave'
-import { toWif } from './wif'
+import { trompAsWrit } from './tools'
+import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
 
-const LIMITS = {
-  shafts: [2, 16],
-  treadles: [2, 16],
-  ends: [4, 120],
-  picks: [4, 120],
-} as const
-type Dim = keyof typeof LIMITS
-const DIM_LABEL: Record<Dim, string> = {
-  shafts: 'Shafts',
-  treadles: 'Treadles',
-  ends: 'Ends',
-  picks: 'Picks',
-}
-
-const CELL_MIN = 6
-const CELL_MAX = 24
-const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
-
-/** Number input that only commits (clamped) on blur or Enter, so typing "16" doesn't clamp at "1". */
-function DimField({ dim, value, onCommit }: { dim: Dim; value: number; onCommit: (n: number) => void }) {
-  const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
-  const [min, max] = LIMITS[dim]
-  const commit = () => {
-    const n = Math.max(min, Math.min(max, Math.round(Number(text)) || min))
-    setText(String(n))
-    if (n !== value) onCommit(n)
-  }
-  return (
-    <TextField
-      label={DIM_LABEL[dim]}
-      type="number"
-      size="small"
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => e.key === 'Enter' && commit()}
-      slotProps={{ htmlInput: { min, max } }}
-      sx={{ width: 96 }}
-    />
-  )
-}
-
-/** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
-function ToolbarAction(props: {
-  compact: boolean
-  icon: ReactNode
-  label: string
-  onClick: (e: MouseEvent<HTMLElement>) => void
-}) {
-  const { compact, icon, label, onClick } = props
-  return compact ? (
-    <Tooltip title={label}>
-      <IconButton color="inherit" aria-label={label} onClick={onClick}>
-        {icon}
-      </IconButton>
-    </Tooltip>
-  ) : (
-    <Button color="inherit" startIcon={icon} onClick={onClick}>
-      {label}
-    </Button>
-  )
-}
+type DialogName = 'save' | 'load' | 'import' | 'tools' | 'calculator' | 'weave'
 
 export default function App() {
   const phone = usePhone()
   const compact = useCompact()
   const touch = useTouch()
-  // Touch only: when on, a finger drag-paints the grids instead of scrolling.
-  const [touchPaint, setTouchPaint] = useState(false)
-  const [draft, setDraft] = useState<Draft>(defaultDraft)
-  // The pattern as it was when last started, loaded, saved or imported; Reset returns to it.
-  const [baseline, setBaseline] = useState<Draft>(draft)
+  const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(defaultDraft)
   const [name, setName] = useState<string | null>(null)
   const [cellSize, setCellSize] = useState(CELL_DEFAULT)
-  const [fillWarp, setFillWarp] = useState('#8b0a0a')
-  const [fillWeft, setFillWeft] = useState('#ffffff')
-  const [dialog, setDialog] = useState<'save' | 'load' | 'import' | null>(null)
+  // Touch only: when on, a finger drag-paints the grids instead of scrolling.
+  const [touchPaint, setTouchPaint] = useState(false)
+  const [highlightFloats, setHighlightFloats] = useState(false)
+  const [floatLimit, setFloatLimit] = useState(7)
+  const [dialog, setDialog] = useState<DialogName | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-
-  // Open a pattern passed in the link (e.g. one generated by the MCP server), then tidy the URL.
-  useEffect(() => {
-    const load = () => {
-      const data = patternFromHash(window.location.hash)
-      if (!data) return
-      decodePattern(data)
-        .then(({ name: n, draft: d }) => {
-          setDraft(d)
-          setBaseline(d)
-          setName(n)
-          setToast(`Opened "${n}" from link — use Save to keep it`)
-        })
-        .catch((e: Error) => setToast(e.message))
-        .finally(() => history.replaceState(null, '', window.location.pathname + window.location.search))
-    }
-    load()
-    window.addEventListener('hashchange', load)
-    return () => window.removeEventListener('hashchange', load)
-  }, [])
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
-  const { shafts, treadles, ends, picks } = draft
+  const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
+  const floatMask = useMemo(
+    () => (highlightFloats ? longFloatMask(draft, floatLimit, drawdown) : null),
+    [highlightFloats, draft, floatLimit, drawdown],
+  )
 
-  const update = (fn: (d: Draft) => Draft) => setDraft((d) => fn(d))
-
-  // Shaft 1 is drawn at the bottom of the threading and tie-up, as is conventional.
-  const shaftAt = (row: number) => shafts - 1 - row
-
-  const setThreading = (row: number, end: number, value: boolean) =>
-    update((d) => {
-      const threading = [...d.threading]
-      threading[end] = value ? shaftAt(row) : threading[end] === shaftAt(row) ? -1 : threading[end]
-      return { ...d, threading }
-    })
-
-  const setTieup = (row: number, t: number, value: boolean) =>
-    update((d) => ({
-      ...d,
-      tieup: d.tieup.map((r, s) => (s === shaftAt(row) ? r.map((v, i) => (i === t ? value : v)) : r)),
-    }))
-
-  const setTreadling = (pick: number, t: number, value: boolean) =>
-    update((d) => ({
-      ...d,
-      treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
-    }))
-
-  const clearAll = () =>
-    update((d) => ({
-      ...d,
-      threading: d.threading.map(() => -1),
-      tieup: d.tieup.map((r) => r.map(() => false)),
-      treadling: d.treadling.map((r) => r.map(() => false)),
-    }))
-
-  const start = (d: Draft, n: string | null) => {
-    setDraft(d)
-    setBaseline(d)
+  /** Opens a different pattern as a new document. */
+  const open = (d: Draft, n: string | null, message?: string) => {
+    reset(d)
     setName(n)
+    setDialog(null)
+    if (message) setToast(message)
   }
+  useSharedPatternLink((n, d) => open(d, n, `Opened "${n}" from link — use Save to keep it`), setToast)
 
-  const download = (fileName: string, content: string, type: string) => {
-    const url = URL.createObjectURL(new Blob([content], { type }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName
-    a.click()
-    URL.revokeObjectURL(url)
-    setToast(`Exported ${fileName}`)
-  }
-
-  const exportAs = (format: 'json' | 'wif' | 'liftplan') => {
-    setExportAnchor(null)
-    const title = name ?? 'pattern'
-    const base = title.replace(/[\\/:*?"<>|]+/g, '_')
-    if (format === 'json') download(`${base}.weave.json`, exportFile(title, draft), 'application/json')
-    else
-      download(
-        `${base}${format === 'liftplan' ? ' (liftplan)' : ''}.wif`,
-        toWif(title, draft, { liftplan: format === 'liftplan' }),
-        'text/plain',
-      )
-  }
+  // Shaft 1 is drawn at the bottom of the threading and tie-up.
+  const shaftAt = (row: number) => draft.shafts - 1 - row
 
   return (
     <>
       <Box className="screen-only" sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 6 }}>
-        <AppBar position="sticky">
-          <Toolbar sx={{ gap: compact ? 0.25 : 1, flexWrap: compact ? 'nowrap' : 'wrap' }}>
-            {!phone && (
-              <Typography variant="h6" sx={{ mr: 2 }} noWrap>
-                Weave Patterner
-              </Typography>
-            )}
-            <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1, minWidth: 0 }} noWrap>
-              {name ?? 'Unsaved pattern'}
-            </Typography>
-            {touch && (
-              <Tooltip title={touchPaint ? 'Drag-painting on: tap to scroll instead' : 'Drag to paint'}>
-                <IconButton
-                  color="inherit"
-                  aria-label="Drag to paint"
-                  aria-pressed={touchPaint}
-                  onClick={() => {
-                    setTouchPaint(!touchPaint)
-                    setToast(
-                      touchPaint
-                        ? 'Swipe to move around the pattern; tap a box to toggle it'
-                        : 'Drag-painting on: drag across the grids to paint. Tap the brush again to scroll.',
-                    )
-                  }}
-                  sx={
-                    touchPaint
-                      ? { bgcolor: 'rgba(255,255,255,0.25)', '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' } }
-                      : undefined
-                  }
-                >
-                  <BrushIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-            <ToolbarAction compact={compact} icon={<SaveIcon />} label="Save" onClick={() => setDialog('save')} />
-            <ToolbarAction compact={compact} icon={<FolderOpenIcon />} label="Load" onClick={() => setDialog('load')} />
-            <ToolbarAction
-              compact={compact}
-              icon={<FileDownloadIcon />}
-              label="Export"
-              onClick={(e) => setExportAnchor(e.currentTarget)}
-            />
-            <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
-              <MenuItem onClick={() => exportAs('json')}>
-                <ListItemText primary="Pattern file (.weave.json)" secondary="Re-import into Weave Patterner" />
-              </MenuItem>
-              <MenuItem onClick={() => exportAs('wif')}>
-                <ListItemText
-                  primary="WIF (.wif)"
-                  secondary="Threading, tie-up and treadling for weaving software and treadle looms"
-                />
-              </MenuItem>
-              <MenuItem onClick={() => exportAs('liftplan')}>
-                <ListItemText
-                  primary="WIF lift plan (.wif)"
-                  secondary="Shafts lifted per pick, for computer-dobby looms"
-                />
-              </MenuItem>
-            </Menu>
-            <ToolbarAction
-              compact={compact}
-              icon={<FileUploadIcon />}
-              label="Import"
-              onClick={() => setDialog('import')}
-            />
-            <ToolbarAction compact={compact} icon={<PrintIcon />} label="Print" onClick={() => window.print()} />
-            <ThemeToggle />
-          </Toolbar>
-        </AppBar>
+        <AppToolbar
+          name={name}
+          phone={phone}
+          compact={compact}
+          touch={touch}
+          touchPaint={touchPaint}
+          onToggleTouchPaint={() => {
+            setTouchPaint(!touchPaint)
+            setToast(
+              touchPaint
+                ? 'Swipe to move around the pattern; tap a box to toggle it'
+                : 'Drag-painting on: drag across the grids to paint. Tap the brush again to scroll.',
+            )
+          }}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+          onSave={() => setDialog('save')}
+          onLoad={() => setDialog('load')}
+          onExport={(format) => {
+            const { fileName, content, type } = exportDraft(name, draft, format)
+            download(fileName, content, type)
+            setToast(`Exported ${fileName}`)
+          }}
+          onImport={() => setDialog('import')}
+          onPrint={() => window.print()}
+          onWeave={() => setDialog('weave')}
+          onSequenceTools={() => setDialog('tools')}
+          onTrompAsWrit={() => {
+            const { draft: next, skipped } = trompAsWrit(draft)
+            update(() => next)
+            setToast(
+              `Treadling now follows the threading (${next.picks} picks)` +
+                (skipped
+                  ? `. ${skipped} picks have no treadle: their end is unthreaded or its shaft has no treadle.`
+                  : ''),
+            )
+          }}
+          onCalculator={() => setDialog('calculator')}
+        />
 
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-          <Accordion variant="outlined" disableGutters defaultExpanded={!compact} sx={{ mb: { xs: 1, sm: 2 } }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle2">
-                Pattern settings
-                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                  {draft.shafts} shafts · {draft.treadles} treadles · {draft.ends} × {draft.picks}
-                </Typography>
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                {(Object.keys(LIMITS) as Dim[]).map((dim) => (
-                  <DimField
-                    key={dim}
-                    dim={dim}
-                    value={draft[dim]}
-                    onCommit={(n) => update((d) => resizeDraft(d, { [dim]: n }))}
-                  />
-                ))}
-                <Box sx={{ width: 180, px: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Cell size
-                  </Typography>
-                  <Slider
-                    size="small"
-                    min={CELL_MIN}
-                    max={CELL_MAX}
-                    value={cellSize}
-                    valueLabelDisplay="auto"
-                    onChange={(_, v) => setCellSize(v as number)}
-                  />
-                </Box>
-                <Divider orientation="vertical" flexItem />
-                <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    className="picker"
-                    value={fillWarp}
-                    onChange={(e) => setFillWarp(e.target.value)}
-                  />
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() =>
-                      update((d) => ({
-                        ...d,
-                        warpColors: d.warpColors.map(() => fillWarp),
-                      }))
-                    }
-                  >
-                    Set all warp
-                  </Button>
-                </Stack>
-                <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    className="picker"
-                    value={fillWeft}
-                    onChange={(e) => setFillWeft(e.target.value)}
-                  />
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() =>
-                      update((d) => ({
-                        ...d,
-                        weftColors: d.weftColors.map(() => fillWeft),
-                      }))
-                    }
-                  >
-                    Set all weft
-                  </Button>
-                </Stack>
-                <Divider orientation="vertical" flexItem />
-                <Tooltip title="Empty the threading, tie-up and treadling">
-                  <Button size="small" startIcon={<ClearAllIcon />} onClick={clearAll}>
-                    Clear grids
-                  </Button>
-                </Tooltip>
-                <Tooltip
-                  title={
-                    name
-                      ? `Undo all changes since "${name}" was last saved or loaded`
-                      : 'Undo all changes since starting this pattern'
-                  }
-                >
-                  <span>
-                    <Button
-                      size="small"
-                      startIcon={<RestartAltIcon />}
-                      disabled={draft === baseline}
-                      onClick={() => setDraft(baseline)}
-                    >
-                      Reset
-                    </Button>
-                  </span>
-                </Tooltip>
-                <Tooltip title="Start a new pattern from the default twill">
-                  <Button size="small" startIcon={<NoteAddIcon />} onClick={() => start(defaultDraft(), null)}>
-                    New
-                  </Button>
-                </Tooltip>
-              </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                {touch
-                  ? 'Tap boxes on the threading (top), tie-up (top right) and treadling (right) to toggle them, and swipe to move around the pattern. Turn on the brush in the toolbar to paint by dragging. Tap a colour swatch to change that warp end or weft pick.'
-                  : 'Click or drag on the threading (top), tie-up (top right) and treadling (right). Click a colour swatch to change that warp end or weft pick.'}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
+          <SettingsPanel
+            draft={draft}
+            name={name}
+            compact={compact}
+            touch={touch}
+            onResize={(dim, n) => update((d) => resizeDraft(d, { [dim]: n }))}
+            cellSize={cellSize}
+            onCellSize={setCellSize}
+            onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
+            onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
+            floats={floats}
+            highlightFloats={highlightFloats}
+            onHighlightFloats={setHighlightFloats}
+            floatLimit={floatLimit}
+            onFloatLimit={setFloatLimit}
+            onClear={() =>
+              update((d) => ({
+                ...d,
+                threading: d.threading.map(() => -1),
+                tieup: d.tieup.map((r) => r.map(() => false)),
+                treadling: d.treadling.map((r) => r.map(() => false)),
+              }))
+            }
+            canReset={draft !== baseline}
+            onReset={() => update(() => baseline)}
+            onNew={() => open(defaultDraft(), null)}
+          />
 
-          <Paper
-            variant="outlined"
-            className="draft-scroll"
-            sx={{
-              p: { xs: 1, sm: 2 },
-              overflow: 'auto',
-              // Fill the screen below the toolbar so the pattern pans in both directions in one place.
-              maxHeight: { xs: 'calc(100dvh - 72px)', sm: 'calc(100dvh - 96px)' },
-              // Stop horizontal pans at the edge from triggering browser back/forward swipes.
-              overscrollBehaviorX: 'contain',
-            }}
-          >
-            <div className="draft" style={{ ['--cell' as string]: `${cellSize}px` }}>
-              {/* row 1: warp colours */}
-              <ColorStrip
-                colors={draft.warpColors}
-                onChange={(i, c) =>
-                  update((d) => ({
-                    ...d,
-                    warpColors: d.warpColors.map((v, j) => (j === i ? c : v)),
-                  }))
-                }
-              />
-              <div />
-              <div />
-
-              {/* row 2: threading + tie-up */}
-              <Grid
-                rows={shafts}
-                cols={ends}
-                isOn={(r, c) => draft.threading[c] === shaftAt(r)}
-                onPaint={setThreading}
-                label="Threading"
-                cellLabel={(r, c) => `End ${c + 1}, shaft ${shaftAt(r) + 1}`}
-                touchPaint={touchPaint}
-              />
-              <Grid
-                rows={shafts}
-                cols={treadles}
-                isOn={(r, t) => draft.tieup[shaftAt(r)][t]}
-                onPaint={setTieup}
-                label="Tie-up"
-                cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}`}
-                touchPaint={touchPaint}
-              />
-              <div />
-
-              {/* row 3: drawdown + treadling + weft colours */}
-              <div className="grid drawdown" style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}>
-                {drawdown.flatMap((row, p) =>
-                  row.map((warpUp, e) => (
-                    <div
-                      key={`${p}-${e}`}
-                      className="cell"
-                      style={{
-                        background: warpUp ? draft.warpColors[e] : draft.weftColors[p],
-                      }}
-                    />
-                  )),
-                )}
-              </div>
-              <Grid
-                rows={picks}
-                cols={treadles}
-                isOn={(p, t) => draft.treadling[p][t]}
-                onPaint={setTreadling}
-                label="Treadling"
-                cellLabel={(p, t) => `Pick ${p + 1}, treadle ${t + 1}`}
-                touchPaint={touchPaint}
-              />
-              <ColorStrip
-                vertical
-                colors={draft.weftColors}
-                onChange={(i, c) =>
-                  update((d) => ({
-                    ...d,
-                    weftColors: d.weftColors.map((v, j) => (j === i ? c : v)),
-                  }))
-                }
-              />
-            </div>
-          </Paper>
+          <DraftView
+            draft={draft}
+            drawdown={drawdown}
+            floatMask={floatMask}
+            cellSize={cellSize}
+            touchPaint={touchPaint}
+            onThreading={(row, end, value, continuing) =>
+              update(
+                (d) => {
+                  const threading = [...d.threading]
+                  const s = shaftAt(row)
+                  threading[end] = value ? s : threading[end] === s ? -1 : threading[end]
+                  return { ...d, threading }
+                },
+                { merge: continuing },
+              )
+            }
+            onTieup={(row, t, value, continuing) =>
+              update(
+                (d) => ({
+                  ...d,
+                  tieup: d.tieup.map((r, s) => (s === shaftAt(row) ? r.map((v, i) => (i === t ? value : v)) : r)),
+                }),
+                { merge: continuing },
+              )
+            }
+            onTreadling={(pick, t, value, continuing) =>
+              update(
+                (d) => ({
+                  ...d,
+                  treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
+                }),
+                { merge: continuing },
+              )
+            }
+            onWarpColor={(i, c) =>
+              update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), { key: `warp:${i}` })
+            }
+            onWeftColor={(i, c) =>
+              update((d) => ({ ...d, weftColors: d.weftColors.map((v, j) => (j === i ? c : v)) }), { key: `weft:${i}` })
+            }
+          />
         </Box>
 
         <SaveDialog
@@ -482,7 +178,8 @@ export default function App() {
           currentName={name}
           onClose={() => setDialog(null)}
           onSaved={(n) => {
-            start(draft, n)
+            markBaseline()
+            setName(n)
             setDialog(null)
             setToast(`Saved "${n}"`)
           }}
@@ -490,21 +187,30 @@ export default function App() {
         <LoadDialog
           open={dialog === 'load'}
           onClose={() => setDialog(null)}
-          onLoad={(p) => {
-            start(p.draft, p.name)
-            setDialog(null)
-            setToast(`Loaded "${p.name}"`)
-          }}
+          onLoad={(p) => open(p.draft, p.name, `Loaded "${p.name}"`)}
           onRenamed={(from, to) => setName((cur) => (cur === from ? to : cur))}
         />
         <ImportDialog
           open={dialog === 'import'}
           onClose={() => setDialog(null)}
-          onImport={(n, d, warnings) => {
-            start(d, n)
+          onImport={(n, d, warnings) => open(d, n, [`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))}
+        />
+        <ToolsDialog
+          open={dialog === 'tools'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={(d, message) => {
+            update(() => d)
             setDialog(null)
-            setToast([`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))
+            setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
           }}
+        />
+        <CalculatorDialog open={dialog === 'calculator'} draft={draft} onClose={() => setDialog(null)} />
+        <WeavingMode
+          open={dialog === 'weave'}
+          name={name ?? 'Unsaved pattern'}
+          draft={draft}
+          onClose={() => setDialog(null)}
         />
         <Snackbar
           open={toast !== null}
@@ -513,32 +219,7 @@ export default function App() {
           message={toast}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />
-        <Paper
-          component="a"
-          href="https://github.com/steves165/weave-patterner"
-          target="_blank"
-          rel="noopener noreferrer"
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            right: { xs: 8, sm: 16 },
-            bottom: { xs: 8, sm: 16 },
-            px: { xs: 1, sm: 1.5 },
-            py: { xs: 0.5, sm: 0.75 },
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            borderRadius: 5,
-            textDecoration: 'none',
-            color: 'text.secondary',
-            fontSize: { xs: '0.7rem', sm: '0.8rem' },
-            zIndex: 10,
-            '&:hover': { color: 'text.primary' },
-          }}
-        >
-          <GitHubIcon fontSize="small" />
-          Made by steves165
-        </Paper>
+        <Footer />
       </Box>
       <PrintSheet name={name ?? 'Untitled pattern'} draft={draft} />
     </>

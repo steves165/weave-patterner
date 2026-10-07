@@ -4,11 +4,12 @@ import { join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { longestFloats } from '../src/floats'
 import { decodePattern, patternFromHash } from '../src/share'
 import { greenBlocks } from '../src/testUtils'
 import { computeDrawdown } from '../src/weave'
 import { toWif } from '../src/wif'
-import { createServer, longestFloats } from './server'
+import { createServer } from './server'
 import { specToDraft } from './spec'
 
 type Content = { type: string; text?: string; data?: string; mimeType?: string }

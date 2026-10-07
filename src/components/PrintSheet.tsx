@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { computeDrawdown, type Draft } from './weave'
+import { computeDrawdown, type Draft } from '../weave'
 
 /** Cell size in SVG units; the SVG scales to the printed page. */
 const C = 10

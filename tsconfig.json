@@ -13,5 +13,5 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true
   },
-  "include": ["src", "mcp", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "mcp", "e2e", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
 }

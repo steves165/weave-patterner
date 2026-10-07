@@ -8,12 +8,34 @@ For looms and other weaving software, Export also writes [WIF](https://www.mhsof
 npm install
 npm run dev     # local dev server
 npm run build   # production build in dist/
-npm test        # unit tests (Vitest)
-npm run lint    # Biome lint + format check (npm run format to fix)
+npm test          # unit tests (Vitest)
+npm run test:e2e  # browser tests (Playwright; desktop, phone and tablet)
+npm run lint      # Biome lint + format check (npm run format to fix)
 ```
 
-The Print button prints the draft in the classic layout (threading, tie-up, treadling and drawdown with numbered
-ticks every 4 threads).
+## Features
+
+- Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
+- Per-thread warp and weft colours
+- **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner
+  pedal friendly, remembering where you stopped
+- **Sequence tools**: fill ranges with straight, point, advancing-twill or custom draws; repeat, mirror, reverse,
+  insert or delete ends and picks; **tromp as writ**
+- **Long-float highlighting** and float statistics
+- **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost
+- Save up to 200 patterns in the browser; export/import `.weave.json` and WIF (including lift plans for dobby looms)
+- Print the draft in the classic layout, light and dark themes, phone and tablet friendly
+
+## Code layout
+
+| Path | What's there |
+|---|---|
+| `src/*.ts` | Pure logic with unit tests: drafts (`weave`), WIF, floats, sequence tools, calculator, weaving, history |
+| `src/components/` | UI pieces: toolbar, settings panel, draft view, grids, print sheet |
+| `src/dialogs/` | Save, load, import, sequence tools, warp calculator, weaving mode |
+| `src/hooks/` | Undo history and share-link loading |
+| `e2e/` | Playwright tests |
+| `mcp/` | MCP server for AI assistants |
 
 ## MCP server: let AIs design patterns
 

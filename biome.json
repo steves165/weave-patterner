@@ -23,7 +23,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/Grid.tsx", "src/PrintSheet.tsx", "src/App.tsx"],
+      "includes": ["src/components/Grid.tsx", "src/components/PrintSheet.tsx", "src/components/DraftView.tsx"],
       "linter": { "rules": { "suspicious": { "noArrayIndexKey": "off" } } }
     }
   ],

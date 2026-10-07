@@ -20,8 +20,8 @@ import {
   Typography,
 } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
+import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
-import { PatternThumb } from '../PatternThumb'
 import { deletePattern, listPatterns, MAX_PATTERNS, renamePattern, type SavedPattern } from '../storage'
 
 interface Props {
