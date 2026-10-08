@@ -32,9 +32,23 @@ describe('turnedTwill', () => {
     expect(longestFloats(d).warp).toBeLessThanOrEqual(4)
   })
 
+  it('allows up to 6 blocks for 24 shafts and treadles', () => {
+    const six = Array.from({ length: 6 }, (_, b) => Array.from({ length: 6 }, (_, t) => b === t))
+    const d = turnedTwill(
+      { threading: [1, 2, 3, 4, 5, 6], treadling: [6, 5, 4, 3, 2, 1], tieup: six },
+      ['#000000'],
+      ['#ffffff'],
+    )
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([24, 24, 24, 24])
+    const seven = Array.from({ length: 7 }, () => [true])
+    expect(() => turnedTwill({ threading: [1], treadling: [1], tieup: seven }, ['#000000'], ['#ffffff'])).toThrow(
+      /1 to 6 blocks/,
+    )
+  })
+
   it.each([
     [{ ...twoBlocks, threading: [3] }, /Block 3 isn't/],
-    [{ ...twoBlocks, tieup: [] }, /1 to 4 blocks/],
+    [{ ...twoBlocks, tieup: [] }, /1 to 6 blocks/],
     [{ ...twoBlocks, treadling: [] }, /at least one profile unit/],
   ])('rejects bad profiles %#', (profile, message) => {
     expect(() => turnedTwill(profile, ['#000000'], ['#ffffff'])).toThrow(message)

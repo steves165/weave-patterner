@@ -33,10 +33,18 @@ describe('draftFromCloth', () => {
     expect(d.treadling[1]).toEqual([false, false])
   })
 
+  it('finds drafts needing up to 24 shafts and treadles', () => {
+    // 24 different columns and rows: a diagonal.
+    const cloth = Array.from({ length: 24 }, (_, p) => Array.from({ length: 24 }, (_, e) => p === e))
+    const d = draftFromCloth(cloth, defaultDraft())
+    expect([d.shafts, d.treadles]).toEqual([24, 24])
+    expect(computeDrawdown(d)).toEqual(cloth)
+  })
+
   it('refuses cloth needing too many shafts', () => {
-    // 17 different columns: a diagonal.
-    const cloth = Array.from({ length: 17 }, (_, p) => Array.from({ length: 17 }, (_, e) => p === e))
-    expect(() => draftFromCloth(cloth, defaultDraft())).toThrow(/needs 17 shafts/)
+    // 25 different columns: a diagonal.
+    const cloth = Array.from({ length: 25 }, (_, p) => Array.from({ length: 25 }, (_, e) => p === e))
+    expect(() => draftFromCloth(cloth, defaultDraft())).toThrow(/needs 25 shafts/)
     expect(() => draftFromCloth([], defaultDraft())).toThrow(/Draw some cloth/)
   })
 })

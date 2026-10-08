@@ -13,6 +13,10 @@ export interface Draft {
   weftColors: string[]
 }
 
+/** Most shafts and treadles a draft can have (a 24-shaft dobby). */
+export const MAX_SHAFTS = 24
+export const MAX_TREADLES = 24
+
 export const resize = <T>(arr: T[], len: number, fill: (i: number) => T): T[] =>
   Array.from({ length: len }, (_, i) => (i < arr.length ? arr[i] : fill(i)))
 

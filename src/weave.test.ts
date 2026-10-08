@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { ascii, edgeCaseDraft } from './testUtils'
-import { computeDrawdown, defaultDraft, exportFile, importFile, parseDraft, resizeDraft } from './weave'
+import {
+  computeDrawdown,
+  defaultDraft,
+  exportFile,
+  importFile,
+  MAX_SHAFTS,
+  MAX_TREADLES,
+  parseDraft,
+  resizeDraft,
+} from './weave'
 
 describe('computeDrawdown', () => {
   it('weaves the default 2/2 twill', () => {
@@ -43,6 +52,15 @@ describe('resizeDraft', () => {
     expect(new Set(r.threading)).toEqual(new Set([0, 1, 2, 3, 4, 5, 6, 7]))
     expect(r.tieup.map((row) => row.filter(Boolean).length)).toEqual(Array(8).fill(4))
     expect(ascii(r)[0].slice(0, 8)).toBe('####....')
+  })
+
+  it('supports up to 24 shafts and treadles', () => {
+    expect([MAX_SHAFTS, MAX_TREADLES]).toEqual([24, 24])
+    const r = resizeDraft(defaultDraft(), { shafts: 24, treadles: 24, ends: 48 })
+    expect(new Set(r.threading).size).toBe(24)
+    expect(r.tieup).toHaveLength(24)
+    expect(r.tieup.every((row) => row.length === 24 && row.filter(Boolean).length === 12)).toBe(true)
+    expect(parseDraft(r)).toEqual(r)
   })
 })
 

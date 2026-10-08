@@ -28,15 +28,15 @@ test.describe('draw the cloth', () => {
   })
 
   test('warns when the cloth needs more shafts than a loom has', async ({ page }) => {
-    await page.getByLabel('Ends', { exact: true }).fill('20')
+    await page.getByLabel('Ends', { exact: true }).fill('30')
     await page.getByLabel('Ends', { exact: true }).press('Enter')
     await openTool(page, /Draw the cloth/)
     await dialog(page).getByRole('button', { name: 'Clear' }).click()
-    for (let i = 1; i <= 17; i++)
+    for (let i = 1; i <= 25; i++)
       await dialog(page)
         .getByRole('checkbox', { name: `Pick ${i}, end ${i}`, exact: true })
         .click()
-    await expect(dialog(page).getByRole('alert')).toContainText('needs 17 shafts')
+    await expect(dialog(page).getByRole('alert')).toContainText('needs 25 shafts')
     await expect(dialog(page).getByRole('button', { name: 'Create draft' })).toBeDisabled()
   })
 })

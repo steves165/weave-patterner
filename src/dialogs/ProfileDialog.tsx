@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
-import { turnedTwill, UNIT } from '../blocks'
+import { MAX_BLOCKS, turnedTwill, UNIT } from '../blocks'
 import { Grid } from '../components/Grid'
 import { usePhone } from '../layout'
 import { parseSequence } from '../tools'
@@ -53,7 +53,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
   }, [threading, treadling, tieup, draft.warpColors, draft.weftColors])
 
   const setCount = (kind: 'blocks' | 'treadles', value: string) => {
-    const n = Math.max(1, Math.min(4, Math.round(Number(value)) || 1))
+    const n = Math.max(1, Math.min(MAX_BLOCKS, Math.round(Number(value)) || 1))
     const [b, t] = kind === 'blocks' ? [n, blockTreadles] : [blocks, n]
     if (kind === 'blocks') setBlocks(n)
     else setBlockTreadles(n)
@@ -76,7 +76,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
               label="Blocks"
               value={blocks}
               onChange={(e) => setCount('blocks', e.target.value)}
-              slotProps={{ htmlInput: { min: 1, max: 4 } }}
+              slotProps={{ htmlInput: { min: 1, max: MAX_BLOCKS } }}
               sx={{ width: 110 }}
             />
             <TextField
@@ -85,7 +85,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
               label="Block treadles"
               value={blockTreadles}
               onChange={(e) => setCount('treadles', e.target.value)}
-              slotProps={{ htmlInput: { min: 1, max: 4 } }}
+              slotProps={{ htmlInput: { min: 1, max: MAX_BLOCKS } }}
               sx={{ width: 130 }}
             />
           </Stack>

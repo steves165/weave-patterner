@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isDirectTieup, liftsPerPick, toLiftplan, toTreadling } from './liftplan'
 import { edgeCaseDraft, greenBlocks } from './testUtils'
-import { computeDrawdown, defaultDraft } from './weave'
+import { computeDrawdown, defaultDraft, resizeDraft } from './weave'
 
 describe('lift plans', () => {
   it('lists the shafts lifted on each pick', () => {
@@ -29,6 +29,15 @@ describe('lift plans', () => {
     const back = toTreadling(toLiftplan(defaultDraft()))
     expect(back.treadles).toBe(4)
     expect(back.tieup.map((r) => r.map(Number).join(''))).toEqual(['1001', '1100', '0110', '0011'])
+  })
+
+  it('converts lift plans with up to 24 different sheds', () => {
+    const lift = resizeDraft(defaultDraft(), { shafts: 24, treadles: 24, picks: 24 })
+    const asLift = toLiftplan(lift)
+    expect(asLift.shafts).toBe(24)
+    const back = toTreadling(asLift)
+    expect(back.treadles).toBe(24)
+    expect(computeDrawdown(back)).toEqual(computeDrawdown(lift))
   })
 
   it('refuses when there are more sheds than treadles allow', () => {

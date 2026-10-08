@@ -1,6 +1,7 @@
 import { Paper } from '@mui/material'
 import { useRef } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
+import { useCompact, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
 import type { Draft } from '../weave'
 import { Crosshair } from './Crosshair'
@@ -41,6 +42,11 @@ export function DraftView(p: Props) {
   const columns = Array.from({ length: ends }, (_, c) => endAt(c))
   const liftplan = isDirectTieup(draft)
   const ruler = view.ruler > 0
+  // Phones, tablets and touch screens pan the pattern in its own box; desktops and laptops grow it to full size and
+  // scroll the page instead.
+  const compact = useCompact()
+  const touch = useTouch()
+  const ownScroll = compact || touch
 
   const sinking = view.sinkingShed
   const pad = (n: number) => Array.from({ length: n }, (_, i) => <div key={`pad${i}`} />)
@@ -134,14 +140,19 @@ export function DraftView(p: Props) {
     <Paper
       variant="outlined"
       className="draft-scroll"
-      sx={{
-        p: { xs: 1, sm: 2 },
-        overflow: 'auto',
-        // Fill the screen below the toolbar so the pattern pans in both directions in one place.
-        maxHeight: { xs: 'calc(100dvh - 72px)', sm: 'calc(100dvh - 96px)' },
-        // Stop horizontal pans at the edge from triggering browser back/forward swipes.
-        overscrollBehaviorX: 'contain',
-      }}
+      data-scroll={ownScroll ? 'own' : 'page'}
+      sx={
+        ownScroll
+          ? {
+              p: { xs: 1, sm: 2 },
+              overflow: 'auto',
+              // Fill the screen below the toolbar so the pattern pans in both directions in one place.
+              maxHeight: { xs: 'calc(100dvh - 72px)', sm: 'calc(100dvh - 96px)' },
+              // Stop horizontal pans at the edge from triggering browser back/forward swipes.
+              overscrollBehaviorX: 'contain',
+            }
+          : { p: 2, width: 'max-content', minWidth: '100%', boxSizing: 'border-box' }
+      }
     >
       <div
         ref={container}

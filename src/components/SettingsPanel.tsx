@@ -20,11 +20,11 @@ import {
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { MAX_THREADS } from '../tools'
-import type { Draft } from '../weave'
+import { type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
 
 export const LIMITS = {
-  shafts: [2, 16],
-  treadles: [2, 16],
+  shafts: [2, MAX_SHAFTS],
+  treadles: [2, MAX_TREADLES],
   ends: [4, MAX_THREADS],
   picks: [4, MAX_THREADS],
 } as const

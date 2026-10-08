@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { decodePattern, encodePattern } from '../src/share'
 import { importFile as parsePattern } from '../src/weave'
-import { cell, ends, importFile, openApp, sampleText, threading, toast, toolbarButton } from './helpers'
+import { cell, ends, importFile, openApp, sampleText, setField, threading, toast, toolbarButton } from './helpers'
 
 const title = (page: Page) => page.locator('.MuiAppBar-root')
 
@@ -106,4 +106,17 @@ test('the sample file on disk is the one used in tests', () => {
   expect(JSON.parse(readFileSync(new URL('../samples/Green blocks.weave.json', import.meta.url), 'utf8')).name).toBe(
     'Green blocks',
   )
+})
+
+test('supports up to 24 shafts and treadles', async ({ page }) => {
+  const shafts = page.getByLabel('Shafts', { exact: true })
+  const treadles = page.getByLabel('Treadles', { exact: true })
+  await setField(shafts, '24')
+  await setField(treadles, '30')
+  await expect(shafts).toHaveValue('24')
+  await expect(treadles).toHaveValue('24') // clamped to the limit
+  await expect(cell(page, 'End 24, shaft 24')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Treadle 24, shaft 24')).toBeVisible()
+  await expect(cell(page, 'Pick 24, treadle 24')).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByText('24 shafts · 24 treadles').first()).toBeVisible()
 })

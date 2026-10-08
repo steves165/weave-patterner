@@ -1,4 +1,4 @@
-import { type Draft, parseDraft } from './weave'
+import { type Draft, MAX_TREADLES, parseDraft } from './weave'
 
 /** Shafts lifted on each pick (0-based), from the tie-up and treadling. */
 export const liftsPerPick = (d: Draft): number[][] =>
@@ -25,7 +25,7 @@ export function toLiftplan(d: Draft): Draft {
  * Converts a draft (typically a lift plan) to a tie-up and single-treadle treadling: each different combination
  * of lifted shafts becomes one treadle, in order of first use. Fails if that needs more than `maxTreadles`.
  */
-export function toTreadling(d: Draft, maxTreadles = 16): Draft {
+export function toTreadling(d: Draft, maxTreadles = MAX_TREADLES): Draft {
   const lifts = liftsPerPick(d)
   const combos: string[] = []
   for (const ss of lifts) {

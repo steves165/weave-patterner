@@ -1,11 +1,16 @@
-import { type Draft, parseDraft } from './weave'
+import { type Draft, MAX_SHAFTS, MAX_TREADLES, parseDraft } from './weave'
 
 /**
  * Fabric analysis: the smallest draft that weaves a given cloth. Ends with identical columns share a shaft and
  * picks with identical rows share a treadle; the tie-up then says which shaft rises on which treadle.
  * `cloth[pick][end]` is true where warp shows. Colours are kept from `base`.
  */
-export function draftFromCloth(cloth: boolean[][], base: Draft, maxShafts = 16, maxTreadles = 16): Draft {
+export function draftFromCloth(
+  cloth: boolean[][],
+  base: Draft,
+  maxShafts = MAX_SHAFTS,
+  maxTreadles = MAX_TREADLES,
+): Draft {
   const picks = cloth.length
   const ends = cloth[0]?.length ?? 0
   if (picks === 0 || ends === 0) throw new Error('Draw some cloth first')

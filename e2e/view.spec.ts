@@ -101,3 +101,18 @@ test('threading below puts the threading under the drawdown, shaft 1 nearest the
   await cell(page, 'End 2, shaft 4').click()
   await expect(cell(page, 'End 2, shaft 4')).toHaveAttribute('aria-checked', 'true')
 })
+
+test('on desktop the draft grows to full size and the page scrolls instead', async ({ page }) => {
+  await setField(page.getByLabel('Ends', { exact: true }), '120')
+  await setField(page.getByLabel('Picks', { exact: true }), '100')
+  const box = page.locator('.draft-scroll')
+  await expect(box).toHaveAttribute('data-scroll', 'page')
+  const sizes = await box.evaluate((el) => ({
+    inner: el.scrollWidth - el.clientWidth + el.scrollHeight - el.clientHeight,
+    pageWide: document.documentElement.scrollWidth > window.innerWidth,
+    pageTall: document.documentElement.scrollHeight > window.innerHeight,
+  }))
+  expect(sizes).toEqual({ inner: 0, pageWide: true, pageTall: true })
+  await page.mouse.wheel(0, 3000)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+})
