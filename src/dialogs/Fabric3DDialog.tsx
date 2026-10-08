@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { track } from '../analytics'
 import { download, fileBase } from '../exportDraft'
 import { isMockup, tileSize, VIEWS_3D, type View3D } from '../mockups'
 import { type ClothShape, fabricModel } from '../sim3d'
@@ -311,6 +312,7 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
             onChange={(e) => {
               setWoven(null)
               setView(e.target.value as View3D)
+              track('view_3d', { view: e.target.value })
             }}
             sx={{ width: 160 }}
           >

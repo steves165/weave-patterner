@@ -1,7 +1,9 @@
 import { Box, Snackbar } from '@mui/material'
-import { lazy, Suspense, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
 import { AppToolbar } from './components/AppToolbar'
+import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
 import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
@@ -85,6 +87,20 @@ export default function App() {
   const [touchPaint, setTouchPaint] = useState(false)
   const [dialog, setDialog] = useState<DialogName | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  // Google Analytics, only once the visitor has agreed; the choice is remembered.
+  const [consent, setConsentState] = useState<Consent | null>(loadConsent)
+  const setConsent = (c: Consent | null) => {
+    saveConsent(c)
+    setConsentState(c)
+  }
+  useEffect(() => {
+    if (consent === 'granted') startAnalytics()
+    else if (consent === 'denied') stopAnalytics()
+  }, [consent])
+  // Which tools get used (never what's in the pattern).
+  useEffect(() => {
+    if (dialog) track('open_tool', { tool: dialog })
+  }, [dialog])
   // Display settings (including cell size and float highlighting), remembered between visits.
   const [view, setView] = useViewOptions()
   const { cellSize, highlightFloats, floatLimit } = view
@@ -170,6 +186,7 @@ export default function App() {
           onLoad={() => setDialog('load')}
           onExport={(format) => {
             const { fileName, content, type } = exportDraft(name, draft, format)
+            track('export', { format })
             download(fileName, content, type)
             setToast(`Exported ${fileName}`)
           }}
@@ -446,7 +463,15 @@ export default function App() {
           message={toast}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />
-        <Footer />
+        <Footer onAnalytics={GA_ID ? () => setConsent(null) : undefined} />
+        {GA_ID && consent === null && (
+          <ConsentBanner
+            onChoose={(allow) => {
+              setConsent(allow ? 'granted' : 'denied')
+              setToast(allow ? 'Thanks: analytics is on' : 'Analytics is off. Change it any time from the footer.')
+            }}
+          />
+        )}
       </Box>
       <PrintSheet
         name={name ?? 'Untitled pattern'}

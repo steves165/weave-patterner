@@ -21,6 +21,13 @@ npm run test:e2e:live     # against the live site (what CI runs after deploying)
 npm run lint      # Biome lint + format check (npm run format to fix)
 ```
 
+## Privacy
+
+Patterns stay in your browser: nothing you design is sent anywhere. The live site can use Google Analytics (GA4) to
+count visits and which tools are used, but only after you choose **Allow** in the banner; **No thanks** loads nothing,
+and the **Analytics** button in the footer changes your choice. Ad features are off. The measurement ID is set in
+`.env.production`; remove it to build without analytics. Browser tests block Google Analytics, so they never send hits.
+
 ## Issues
 
 Bugs and feature ideas are tracked in [GitHub issues](https://github.com/steves165/weave-patterner/issues), with templates for each. If the live site fails its browser tests after a deploy, CI opens an issue automatically.

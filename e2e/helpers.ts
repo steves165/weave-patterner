@@ -5,7 +5,19 @@ import { expect, type Locator, type Page } from '@playwright/test'
 export const SAMPLE = fileURLToPath(new URL('../samples/Green blocks.weave.json', import.meta.url))
 export const sampleText = () => readFileSync(SAMPLE, 'utf8')
 
-export async function openApp(page: Page) {
+/** Google Analytics' servers: tests must never send hits to the real analytics. */
+export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|analytics\.google\.com/
+
+/**
+ * Opens the app. Requests to Google Analytics are always blocked. Unless `analytics` says otherwise, the visitor
+ * has already said "No thanks", so the consent banner doesn't get in the way.
+ */
+export async function openApp(page: Page, { analytics = 'denied' }: { analytics?: 'denied' | 'unset' } = {}) {
+  await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  if (analytics === 'denied')
+    await page.addInitScript(() => {
+      if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
+    })
   await page.goto('./')
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
 }
