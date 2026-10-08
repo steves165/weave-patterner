@@ -61,7 +61,7 @@ test('cables, decreases and yarn overs, with stitch counts checked', async ({ pa
   await expect(page.locator('.knit-cable')).toHaveCount(1)
 
   // A yarn over in place of a knit works one stitch fewer off the needle than the row below left.
-  await page.getByRole('button', { name: 'Yarn over' }).click()
+  await page.getByRole('button', { name: 'Yarn over', exact: true }).click()
   await knitSquare(page, 3, 10).click()
   await expect(page.getByTestId('knit-problems')).toContainText('Row 3 works 23 stitches, but row 2 left 24.')
   // A decrease beside it balances the count.
@@ -218,7 +218,7 @@ test('select squares to copy, paste, flip and make the pattern repeat', async ({
   await newChart(page)
   await page.getByRole('button', { name: 'Purl', exact: true }).click()
   await knitSquare(page, 1, 1).click()
-  await page.getByRole('button', { name: 'Yarn over' }).click()
+  await page.getByRole('button', { name: 'Yarn over', exact: true }).click()
   await knitSquare(page, 1, 2).click()
   // Select stitches 1–2 of row 1 by dragging, then copy and paste them at stitches 3–4.
   await page.getByRole('button', { name: 'Select' }).click()
