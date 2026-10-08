@@ -307,6 +307,10 @@ export function AppToolbar(p: Props) {
           <MenuItem onClick={then(p.onTablet)}>
             <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />
           </MenuItem>
+          <ListSubheader disableSticky>Other crafts</ListSubheader>
+          <MenuItem component="a" href="./knit/" onClick={close}>
+            <ListItemText primary="Knit Patterner" secondary="Knitting charts, written patterns and colourwork" />
+          </MenuItem>
         </Menu>
 
         {p.phone ? (

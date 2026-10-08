@@ -46,3 +46,29 @@ describe('search and sharing metadata', () => {
     expect(html).toMatch(/overshot, summer and winter/)
   })
 })
+
+describe('Knit Patterner page metadata', () => {
+  const knit = read('knit/index.html')
+  it('has its own title, description, canonical link and share image', () => {
+    expect(knit.match(/<title>(.*)<\/title>/)?.[1]).toMatch(/Knit Patterner.*Knitting Chart/)
+    const description = knit.match(/<meta\s+name="description"\s+content="([^"]*)"/s)?.[1] ?? ''
+    expect(description.length).toBeGreaterThan(120)
+    expect(description.length).toBeLessThanOrEqual(200)
+    expect(knit).toContain('<link rel="canonical" href="https://steves165.github.io/weave-patterner/knit/" />')
+    const png = readFileSync(new URL('../public/knit/og-image.png', import.meta.url))
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
+  })
+
+  it('has structured data, existing icons, a sitemap entry and links between the two apps', () => {
+    const data = JSON.parse(knit.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '')
+    expect(data.name).toBe('Knit Patterner')
+    expect(data.url).toBe('https://steves165.github.io/weave-patterner/knit/')
+    for (const [, href] of knit.matchAll(/href="\.\/([^"]+)"/g))
+      expect(existsSync(`public/knit/${href}`), href).toBe(true)
+    const manifest = JSON.parse(read('public/knit/manifest.webmanifest'))
+    for (const icon of manifest.icons) expect(existsSync(`public/knit/${icon.src}`), icon.src).toBe(true)
+    expect(read('public/sitemap.xml')).toContain('<loc>https://steves165.github.io/weave-patterner/knit/</loc>')
+    expect(knit).toContain('<a href="../">Weave Patterner</a>')
+    expect(html).toContain('<a href="./knit/">Knit Patterner</a>')
+  })
+})

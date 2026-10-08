@@ -79,3 +79,24 @@ export async function openTool(page: Page, item: RegExp) {
 }
 
 export const toast = (page: Page) => page.locator('.MuiSnackbarContent-message')
+
+/** Opens Knit Patterner, with analytics blocked and already declined as for openApp. */
+export async function openKnit(page: Page) {
+  await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
+  })
+  await page.goto('./knit/')
+  await expect(page.getByRole('grid', { name: 'Knitting chart' })).toBeVisible()
+}
+
+/** A square of the knitting chart: row 1 is the bottom row, stitch 1 the rightmost. */
+export function knitSquare(page: Page, row: number, stitch: number) {
+  return page.getByRole('gridcell', { name: new RegExp(`^(Row|Round) ${row}, stitch ${stitch}:`) })
+}
+
+/** The written instruction for a row, without its label. */
+export async function writtenRow(page: Page, row: number) {
+  const text = await page.getByTestId('knit-written').locator(`li[data-row="${row}"]`).innerText()
+  return text.replace(/^[^:]*:\s*/, '')
+}

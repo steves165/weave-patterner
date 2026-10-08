@@ -2,10 +2,12 @@ import { Button, Paper, Stack, Typography } from '@mui/material'
 
 interface Props {
   onChoose: (allow: boolean) => void
+  /** The app asking (the choice is shared by Weave Patterner and Knit Patterner, on the same site). */
+  app?: string
 }
 
-/** Asks once whether Weave Patterner may use Google Analytics. Nothing is loaded until the visitor says yes. */
-export function ConsentBanner({ onChoose }: Props) {
+/** Asks once whether the app may use Google Analytics. Nothing is loaded until the visitor says yes. */
+export function ConsentBanner({ onChoose, app = 'Weave Patterner' }: Props) {
   return (
     <Paper
       role="region"
@@ -21,7 +23,7 @@ export function ConsentBanner({ onChoose }: Props) {
         p: 2,
       }}
     >
-      <Typography variant="subtitle2">Help improve Weave Patterner?</Typography>
+      <Typography variant="subtitle2">Help improve {app}?</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         With your OK, Google Analytics counts visits and which tools get used, using cookies. It never sees your
         patterns, and there are no ads.
