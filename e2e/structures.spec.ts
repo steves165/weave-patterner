@@ -25,7 +25,7 @@ test.describe('more block structures', () => {
     await openTool(page, /Block profile/)
     const result = dialog(page).getByTestId('profile-result')
     await choose(page, 'Shadow weave')
-    await expect(result).toHaveText('Makes 4 shafts, 2 treadles, 28 ends × 28 picks')
+    await expect(result).toHaveText('Makes 4 shafts, 4 treadles, 28 ends × 28 picks')
     await expect(dialog(page).getByLabel('Light')).toBeVisible()
     await choose(page, 'Taqueté')
     await expect(result).toHaveText('Makes 4 shafts, 4 treadles, 28 ends × 28 picks')

@@ -62,7 +62,7 @@ const STRUCTURES: [Structure, string, string][] = [
   [
     'shadow',
     'Shadow weave',
-    "Powell's shadow weave: dark and light ends and picks alternate in plain weave. Weaving a block gives horizontal lines in it and its partner block, vertical lines in the other two.",
+    "Powell's shadow weave: dark and light ends and picks alternate, on his four-treadle tie-up (2-4, 1-3, 2-3, 1-4) treadled as drawn in. Each block treadle gives horizontal lines in two blocks and vertical lines in the other two.",
   ],
   [
     'taquete',

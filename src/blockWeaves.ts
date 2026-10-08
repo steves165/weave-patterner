@@ -12,8 +12,8 @@ import { type Draft, MAX_SHAFTS, MAX_TREADLES, parseDraft } from './weave'
  * - damask: turned 5-end satin, 5 shafts per block: pattern blocks warp-faced, the ground weft-faced, as drawloom
  *   damask is woven (each profile unit, its découpure, is 5 ends and 5 picks).
  * - shadow: Powell's shadow weave, 4 blocks on 4 shafts (A dark 1 light 2, B dark 3 light 4, C dark 4 light 3,
- *   D dark 2 light 1), dark and light ends and picks alternating, plain-weave sheds treadled as drawn in. Weaving a
- *   block gives horizontal lines (pattern) in two blocks and vertical lines in the other two.
+ *   D dark 2 light 1), dark and light ends and picks alternating, on Powell's tie-up (2-4, 1-3, 2-3, 1-4) treadled
+ *   as drawn in. Weaving a block gives horizontal lines in two blocks and vertical lines in the other two.
  * - taquete: taqueté, a weft-faced compound tabby on a summer and winter threading without tabby: two wefts, each
  *   pass woven with a tie-down shaft and the pattern shafts where that weft is to stay at the back.
  * - rep: warp-faced rep weave, 2 shafts per block with dark and light ends alternating; thick and thin picks
@@ -269,8 +269,15 @@ export function blockWeave(weave: BlockWeave, profile: Profile, colors: BlockCol
       // Each unit: dark, light, dark, light.
       threading = profile.threading.flatMap((b) => [...pairs[b - 1], ...pairs[b - 1]])
       secondWarp = (e) => e % 2 === 1
-      // Plain-weave sheds, treadled as drawn in: a shaft's pick lifts it and the shaft two along.
-      const shed = (s: number): number[] => (s % 2 === 0 ? [0, 2] : [1, 3])
+      // Powell's four treadles, one per shaft, treadled as drawn in thread by thread: the pick for a thread on
+      // shaft 1 lifts 2 and 4, shaft 2 lifts 1 and 3, shaft 3 lifts 2 and 3, shaft 4 lifts 1 and 4.
+      const shed = (s: number): number[] =>
+        [
+          [1, 3],
+          [0, 2],
+          [1, 2],
+          [0, 3],
+        ][s]
       unitPicks = (k) => {
         const [dark, light] = pairs[k]
         return [

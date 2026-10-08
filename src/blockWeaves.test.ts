@@ -111,14 +111,22 @@ describe('blockWeave', () => {
     expect(longestFloats(d).weft).toBeLessThanOrEqual(5)
   })
 
-  it('shadow weave (Powell): plain-weave sheds, and each woven block gives two blocks of lines each way', () => {
+  it("shadow weave: Powell's tie-up, and each woven block gives two blocks of lines each way", () => {
     const fourUnits: Profile = {
       ...fourBlocks,
       threading: [1, 1, 2, 2, 3, 3, 4, 4],
       treadling: [1, 1, 2, 2, 3, 3, 4, 4],
     }
     const d = blockWeave('shadow', fourUnits, COLORS)
-    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 2, 32, 32])
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 4, 32, 32])
+    // Powell's tie-up: treadles lifting 2-4, 1-3, 2-3 and 1-4.
+    const lifts = [0, 1, 2, 3].map((t) =>
+      [0, 1, 2, 3]
+        .filter((sh) => d.tieup[sh][t])
+        .map((sh) => sh + 1)
+        .join('-'),
+    )
+    expect(new Set(lifts)).toEqual(new Set(['2-4', '1-3', '2-3', '1-4']))
     expect(d.threading.slice(0, 4).map((s) => s + 1)).toEqual([1, 2, 1, 2])
     expect(d.warpColors.slice(0, 2)).toEqual([COLORS.warp, COLORS.warp2])
     expect(d.weftColors.slice(0, 2)).toEqual([COLORS.warp, COLORS.warp2])
@@ -133,7 +141,8 @@ describe('blockWeave', () => {
       return '?'
     }
     const grid = [0, 1, 2, 3].map((r) => [0, 1, 2, 3].map((c) => lines(r, c)).join(''))
-    expect(grid).toEqual(['HHVV', 'HHVV', 'VVHH', 'VVHH'])
+    // Each woven block gives horizontal lines in two blocks and vertical lines in the other two.
+    for (const row of grid) expect([...row].sort().join('')).toBe('HHVV')
   })
 
   it('taqueté: weft A shows where the profile is filled, weft B elsewhere, with no tabby', () => {
@@ -163,6 +172,39 @@ describe('blockWeave', () => {
     expect([0, 2, 4, 6].every((e) => dd[0][e])).toBe(true)
     expect([9, 11, 13, 15].every((e) => dd[0][e])).toBe(true)
     expect(d.weftColors.slice(0, 2)).toEqual([COLORS.pattern, COLORS.tabby])
+  })
+
+  it('rep weave and taqueté use the sheds of published 4-shaft drafts', () => {
+    const shedsOf = (d: Draft) =>
+      new Set(
+        d.tieup[0].map((_, t) =>
+          [0, 1, 2, 3]
+            .filter((sh) => d.tieup[sh][t])
+            .map((sh) => sh + 1)
+            .join('-'),
+        ),
+      )
+    // Every combination of two blocks, dark or light, in rep weave: 1-3, 1-4, 2-3 and 2-4 (Eva Stossel's placemats).
+    const all: Profile = {
+      threading: [1, 2],
+      treadling: [1, 2, 3, 4],
+      tieup: [
+        [true, true, false, false],
+        [true, false, true, false],
+      ],
+    }
+    expect(shedsOf(blockWeave('rep', all, COLORS))).toEqual(new Set(['1-3', '1-4', '2-3', '2-4']))
+    // Taqueté, block A on one weft and block B on the other: 1-4, 1-3, 2-4, 2-3, alternating wefts.
+    const t = blockWeave('taquete', twoBlocks, COLORS)
+    expect(shedsOf(t)).toEqual(new Set(['1-4', '1-3', '2-4', '2-3']))
+    const firstFour = [0, 1, 2, 3].map((p) => {
+      const tr = t.treadling[p].indexOf(true)
+      return [0, 1, 2, 3]
+        .filter((sh) => t.tieup[sh][tr])
+        .map((sh) => sh + 1)
+        .join('-')
+    })
+    expect(firstFour).toEqual(['1-4', '1-3', '2-4', '2-3'])
   })
 
   it('block weaves weave each block on its own treadle; unit weaves follow the profile tie-up', () => {
