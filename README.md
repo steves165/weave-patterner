@@ -16,6 +16,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 ## Features
 
 - Up to 24 shafts and 24 treadles, and up to 400 ends and picks
+- Double cloth: separate layers, tubes, double width and block double cloth, with face and back views that allow for layers
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation
 - Remembers your settings and the pattern you were working on (saved or not) on this device
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)

@@ -8,6 +8,8 @@ export interface ViewOptions {
   numbers: boolean
   /** Ruler tick every this many threads; 0 hides the rulers. */
   ruler: number
+  /** Show the plain drawdown, or the face or back of the cloth allowing for layers (double cloth). */
+  clothSide: 'drawdown' | 'face' | 'back'
   /** Draw the drawdown as shaded threads, like cloth. */
   fabric: boolean
   /** Show the tie-up as the shafts that sink (countermarch looms) instead of those that rise. */
@@ -32,6 +34,7 @@ export const DEFAULT_VIEW: ViewOptions = {
   colorBoxes: true,
   numbers: false,
   ruler: 4,
+  clothSide: 'drawdown',
   fabric: false,
   sinkingShed: false,
   threadingBelow: false,
@@ -50,6 +53,7 @@ const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   colorBoxes: isBool,
   numbers: isBool,
   ruler: intIn(0, 50),
+  clothSide: (v) => v === 'drawdown' || v === 'face' || v === 'back',
   fabric: isBool,
   sinkingShed: isBool,
   threadingBelow: isBool,

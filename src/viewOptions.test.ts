@@ -15,6 +15,7 @@ describe('parseViewOptions', () => {
       colorBoxes: false,
       numbers: true,
       ruler: 8,
+      clothSide: 'back',
       fabric: true,
       sinkingShed: true,
       threadingBelow: true,
@@ -39,6 +40,7 @@ describe('parseViewOptions', () => {
     ['ruler', -1],
     ['fabric', 'yes'],
     ['settingsOpen', 'open'],
+    ['clothSide', 'inside'],
   ])('ignores an invalid %s of %j', (key, value) => {
     expect(parseViewOptions({ [key]: value, numbers: true })).toEqual({ ...DEFAULT_VIEW, numbers: true })
   })

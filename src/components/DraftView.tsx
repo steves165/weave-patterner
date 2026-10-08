@@ -1,7 +1,8 @@
 import CloseIcon from '@mui/icons-material/Close'
 import { Alert, IconButton, Paper } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
+import { clothView } from '../layers'
 import { useCompact, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
 import { traceCell } from '../trace'
@@ -51,6 +52,11 @@ export function DraftView(p: Props) {
   const ownScroll = compact || touch
 
   const sinking = view.sinkingShed
+  // The face or back of the cloth, allowing for layers; null for the plain drawdown.
+  const cloth = useMemo(
+    () => (view.clothSide === 'drawdown' ? null : clothView(draft, view.clothSide, drawdown)),
+    [draft, drawdown, view.clothSide],
+  )
 
   // Clicking a drawdown square traces it back to the threading, tie-up and treadling cells that decide it.
   const [selected, setSelected] = useState<{ end: number; pick: number } | null>(null)
@@ -130,7 +136,7 @@ export function DraftView(p: Props) {
         ref={drawdownRef}
         className={`grid drawdown${view.fabric ? ' fabric' : ''}`}
         role="img"
-        aria-label={`Woven pattern, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
+        aria-label={`${view.clothSide === 'face' ? 'Face of the cloth' : view.clothSide === 'back' ? 'Back of the cloth' : 'Woven pattern'}, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
         style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}
         onClick={(e) => {
           const square = (e.target as HTMLElement).closest<HTMLElement>('[data-end]')
@@ -141,15 +147,21 @@ export function DraftView(p: Props) {
         }}
       >
         {drawdown.flatMap((row, pick) =>
-          columns.map((end) => (
-            <div
-              key={`${pick}-${end}`}
-              data-end={end}
-              data-pick={pick}
-              className={`cell ${row[end] ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}${trace?.end === end && trace.pick === pick ? ' traced' : ''}`}
-              style={{ backgroundColor: row[end] ? draft.warpColors[end] : draft.weftColors[pick] }}
-            />
-          )),
+          columns.map((end) => {
+            const square = cloth?.[pick][end]
+            const warp = square ? square.warp : row[end]
+            return (
+              <div
+                key={`${pick}-${end}`}
+                data-end={end}
+                data-pick={pick}
+                className={`cell ${warp ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}${trace?.end === end && trace.pick === pick ? ' traced' : ''}`}
+                style={{
+                  backgroundColor: square ? square.color : warp ? draft.warpColors[end] : draft.weftColors[pick],
+                }}
+              />
+            )
+          }),
         )}
       </div>
       <Grid

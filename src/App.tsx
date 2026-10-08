@@ -10,6 +10,7 @@ import { loadCurrent } from './current'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
 import { ClothDialog } from './dialogs/ClothDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
+import { DoubleClothDialog } from './dialogs/DoubleClothDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { ProfileDialog } from './dialogs/ProfileDialog'
@@ -40,6 +41,7 @@ type DialogName =
   | 'colors'
   | 'cloth'
   | 'profile'
+  | 'doublecloth'
   | 'yarns'
 
 export default function App() {
@@ -159,6 +161,7 @@ export default function App() {
           onColors={() => setDialog('colors')}
           onCloth={() => setDialog('cloth')}
           onProfile={() => setDialog('profile')}
+          onDoubleCloth={() => setDialog('doublecloth')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -301,6 +304,14 @@ export default function App() {
           draft={draft}
           onClose={() => setDialog(null)}
           onApply={applyFromDialog}
+        />
+        <DoubleClothDialog
+          open={dialog === 'doublecloth'}
+          onClose={() => setDialog(null)}
+          onApply={(d, message) => {
+            applyFromDialog(d, `${message}; showing the face of the cloth`)
+            setView({ clothSide: 'face' })
+          }}
         />
         <ProfileDialog
           open={dialog === 'profile'}

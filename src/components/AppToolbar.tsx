@@ -58,6 +58,7 @@ interface Props {
   onColors: () => void
   onCloth: () => void
   onProfile: () => void
+  onDoubleCloth: () => void
   onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
@@ -229,6 +230,9 @@ export function AppToolbar(p: Props) {
           </MenuItem>
           <MenuItem onClick={then(p.onProfile)}>
             <ListItemText primary="Block profile…" secondary="Design in blocks, substitute turned twill" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onDoubleCloth)}>
+            <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
           </MenuItem>
           <Divider />
           {p.isLiftplan ? (
