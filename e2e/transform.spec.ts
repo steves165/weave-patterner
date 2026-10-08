@@ -44,7 +44,7 @@ test('swaps face and back, flips and moves the repeat', async ({ page }) => {
   await openTool(page, /Transform draft/)
   await dialog(page).getByLabel('Right by (ends)').fill('1')
   await dialog(page).getByLabel('Down by (picks)').fill('-1')
-  await dialog(page).getByRole('button', { name: 'Move' }).click()
+  await dialog(page).getByRole('button', { name: 'Move', exact: true }).click()
   await expect(toast(page)).toContainText('Moved the pattern 1 end right and 1 pick up')
   expect(await threading(page)).toBe('121432')
   expect(await treadling(page)).toBe('143212')
