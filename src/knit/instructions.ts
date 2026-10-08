@@ -40,7 +40,8 @@ export function rowTokens(k: KnitChart, r: number, colored = usedColors(k).lengt
       steps.push({ id: cable.id, c, uses: cable.width })
       c += cable.width
     } else {
-      if (row[c] !== 'none') steps.push({ id: row[c], c, uses: STITCHES[row[c]].uses })
+      // "No stitch" squares are skipped, and so are those left unworked on a short row.
+      if (row[c] !== 'none' && row[c] !== 'rest') steps.push({ id: row[c], c, uses: STITCHES[row[c]].uses })
       c++
     }
   }
@@ -131,6 +132,13 @@ function withRepeat(before: Token[], unit: Token[], after: Token[]): string {
  * one, the row's best repeat is found.
  */
 export function writeRow(k: KnitChart, r: number, colored = usedColors(k).length > 1): string {
+  const text = writeWorked(k, r, colored)
+  // A short row: the squares left unworked stay on the needle.
+  const unworked = k.stitch[r].filter((s) => s === 'rest').length
+  return unworked ? `${text} (${unworked} ${unworked === 1 ? 'st' : 'sts'} left unworked)` : text
+}
+
+function writeWorked(k: KnitChart, r: number, colored: boolean): string {
   const tokens = rowTokens(k, r, colored)
   if (tokens.length === 0) return 'no stitches'
   const box = k.repeat

@@ -13,17 +13,40 @@ export function shade(hex: string, amount: number): string {
   return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
 }
 
+/** A cable's crossing: which way it leans, and how many stitches cross in front and pass behind. */
+export function crossing(id: StitchId): { right: boolean; front: number; back: number; purlBack: boolean } {
+  const s = STITCHES[id]
+  const width = s.cable ?? 2
+  const front = s.front ?? width / 2
+  return { right: s.cross !== 'left', front, back: width - front, purlBack: Boolean(s.purlBack) }
+}
+
 /**
- * The crossing of a cable, drawn over its squares: two bands of stitches swapping places, the front one on top.
- * A right cross (held at the back) brings the left stitches to the right in front; a left cross the opposite.
+ * The crossing of a cable, drawn over its squares: two bands of stitches swapping places, the front one on top. A
+ * right cross brings the stitches on the left over to the right in front; a left cross the opposite. Purl-backed
+ * crosses mark the back band with purl dots, at `dots`.
  */
-export function cablePaths(id: StitchId, w: number, h: number): { back: string; front: string } {
-  const right = id.startsWith('rc')
-  const half = w / 2
-  // A band half the cable wide, from the bottom on one side to the top on the other.
-  const band = (fromLeft: boolean) =>
-    fromLeft ? `M 0 ${h} L ${half} 0 L ${w} 0 L ${half} ${h} Z` : `M ${half} ${h} L 0 0 L ${half} 0 L ${w} ${h} Z`
-  return right ? { back: band(false), front: band(true) } : { back: band(true), front: band(false) }
+export function cablePaths(
+  id: StitchId,
+  w: number,
+  h: number,
+): { back: string; front: string; dots: [number, number][] } {
+  const { right, front, back, purlBack } = crossing(id)
+  const u = w / (front + back)
+  // A band from columns [a, a + n) at the bottom to [b, b + n) at the top.
+  const band = (a: number, b: number, n: number) =>
+    `M ${a * u} ${h} L ${b * u} 0 L ${(b + n) * u} 0 L ${(a + n) * u} ${h} Z`
+  const [frontPath, backPath] = right
+    ? [band(0, back, front), band(front, 0, back)]
+    : [band(back, 0, front), band(0, front, back)]
+  // Purl dots along the back band, where it shows either side of the front one.
+  const dots: [number, number][] = []
+  if (purlBack)
+    for (let i = 0; i < back; i++) {
+      const [bottom, top] = right ? [front + i, i] : [i, front + i]
+      dots.push([(bottom + 0.5) * u, h * 0.82], [(top + 0.5) * u, h * 0.18])
+    }
+  return { back: backPath, front: frontPath, dots }
 }
 
 interface ChartDrawing {
@@ -60,7 +83,7 @@ export function drawChart(ctx: CanvasRenderingContext2D, k: KnitChart, { cell, c
       }
     }
     for (const cable of cablesIn(k.stitch[r])) {
-      const { back, front } = cablePaths(cable.id, cable.width * cell, cellH)
+      const { back, front, dots } = cablePaths(cable.id, cable.width * cell, cellH)
       ctx.save()
       ctx.translate(margin + cable.start * cell, top(r))
       const bg = k.colors[k.color[r][cable.start]]
@@ -74,6 +97,12 @@ export function drawChart(ctx: CanvasRenderingContext2D, k: KnitChart, { cell, c
         ctx.strokeStyle = textOn(bg)
         ctx.lineWidth = 1
         ctx.stroke(path)
+      }
+      ctx.fillStyle = textOn(bg)
+      for (const [x, y] of dots) {
+        ctx.beginPath()
+        ctx.arc(x, y, Math.max(1, cell * 0.08), 0, Math.PI * 2)
+        ctx.fill()
       }
       ctx.restore()
     }
@@ -134,7 +163,46 @@ function drawStitch(
     ctx.fill()
     return
   }
-  if (s === 'p') {
+  if (s === 'yo2') {
+    // A large eyelet.
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.ellipse(x + w / 2, y + h / 2, w * 0.5, h * 0.58, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#1a1a1a'
+    ctx.beginPath()
+    ctx.ellipse(x + w / 2, y + h / 2, w * 0.3, h * 0.36, 0, 0, Math.PI * 2)
+    ctx.fill()
+    return
+  }
+  if (s === 'mb' || s === 'nupp') {
+    // A bobble (or smaller nupp) standing out from the fabric.
+    const r = s === 'mb' ? 0.62 : 0.46
+    const g = ctx.createRadialGradient(x + w * 0.4, y + h * 0.35, w * 0.05, x + w / 2, y + h / 2, w * r)
+    g.addColorStop(0, shade(color, 0.3))
+    g.addColorStop(1, shade(color, -0.25))
+    ctx.fillStyle = g
+    ctx.beginPath()
+    ctx.ellipse(x + w / 2, y + h / 2, w * r, h * r * 0.9, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+    return
+  }
+  if (s === 'bead') {
+    leg(x + w * 0.3, -0.45)
+    leg(x + w * 0.7, 0.45)
+    ctx.fillStyle = '#d4af37'
+    ctx.beginPath()
+    ctx.arc(x + w / 2, y + h * 0.45, Math.min(w, h) * 0.22, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.beginPath()
+    ctx.arc(x + w * 0.45, y + h * 0.38, Math.min(w, h) * 0.07, 0, Math.PI * 2)
+    ctx.fill()
+    return
+  }
+  if (s === 'p' || s === 'm1p') {
     // A purl bump: the loop's back, lying across the stitch.
     ctx.fillStyle = shade(color, -0.08)
     ctx.beginPath()
@@ -144,13 +212,13 @@ function drawStitch(
     return
   }
   // A knit V; decreases lean, twisted stitches cross their legs, slipped stitches are long.
-  const tilt = s === 'k2tog' ? 0.5 : s === 'ssk' ? -0.5 : lean
+  const tilt = s === 'k2tog' || s === 'k3tog' ? 0.5 : s === 'ssk' || s === 'sssk' ? -0.5 : lean
   const twist = s === 'ktbl' ? 0.12 : 0
   ctx.fillStyle = shade(color, 0.08)
   leg(x + w * (0.3 + twist) + tilt * w * 0.2, -0.45 + tilt * 0.4)
   ctx.fillStyle = shade(color, -0.04)
   leg(x + w * (0.7 - twist) + tilt * w * 0.2, 0.45 + tilt * 0.4)
-  if (s === 'cdd' || s === 'm1l' || s === 'm1r') {
+  if (s === 'cdd' || s === 'm1l' || s === 'm1r' || s === 'k3tog' || s === 'sssk' || s === 'kfb') {
     ctx.fillStyle = shade(color, 0.15)
     ctx.beginPath()
     ctx.ellipse(x + w / 2, y + h * 0.3, w * 0.18, h * 0.5, 0, 0, Math.PI * 2)
@@ -186,19 +254,24 @@ export function drawFabric(ctx: CanvasRenderingContext2D, k: KnitChart, stitchW:
         // A crossing: the stitches held at the back pass behind, shaded, and the others cross over them in front,
         // each half drawn midway to where it ends up.
         for (const cable of cables) {
-          const half = cable.width / 2
-          const right = cable.id.startsWith('rc')
+          const { right, front, back, purlBack } = crossing(cable.id)
           const color = k.colors[k.color[r][cable.start]]
-          const halves = [
-            { from: right ? half : 0, shift: right ? -half / 2 : half / 2, front: false },
-            { from: right ? 0 : half, shift: right ? half / 2 : -half / 2, front: true },
-          ]
-          for (const { from, shift, front } of halves)
-            for (let i = 0; i < half; i++)
+          // Each band drawn midway between where its stitches start (the bottom) and end up (the top).
+          const bands = right
+            ? [
+                { from: front, n: back, shift: -front / 2, isFront: false },
+                { from: 0, n: front, shift: back / 2, isFront: true },
+              ]
+            : [
+                { from: 0, n: back, shift: front / 2, isFront: false },
+                { from: back, n: front, shift: -back / 2, isFront: true },
+              ]
+          for (const { from, n, shift, isFront } of bands)
+            for (let i = 0; i < n; i++)
               drawStitch(
                 ctx,
-                'k',
-                shade(color, front ? 0.12 : -0.45),
+                !isFront && purlBack ? 'p' : 'k',
+                shade(color, isFront ? 0.12 : -0.45),
                 x(cable.start + from + i + shift),
                 y,
                 stitchW,

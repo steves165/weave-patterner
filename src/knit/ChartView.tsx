@@ -85,7 +85,7 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
         })}
         {cablesIn(p.stitches).map((cable) => {
           const w = cable.width * p.cell
-          const { back, front } = cablePaths(cable.id, w, p.cellH)
+          const { back, front, dots } = cablePaths(cable.id, w, p.cellH)
           const bg = p.palette[p.colors[cable.start]]
           return (
             <svg
@@ -98,6 +98,9 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
             >
               <path d={back} fill={shade(bg, -0.25)} stroke={textOn(bg)} strokeWidth={1} />
               <path d={front} fill={shade(bg, 0.25)} stroke={textOn(bg)} strokeWidth={1} />
+              {dots.map(([x, y]) => (
+                <circle key={`${x}-${y}`} cx={x} cy={y} r={Math.max(1.2, p.cell * 0.08)} fill={textOn(bg)} />
+              ))}
             </svg>
           )
         })}
