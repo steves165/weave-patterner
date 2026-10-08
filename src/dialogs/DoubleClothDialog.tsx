@@ -1,10 +1,12 @@
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   MenuItem,
   Stack,
   TextField,
@@ -44,6 +46,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
   const [weave, setWeave] = useState<LayerWeave>('plain')
   const [repeats, setRepeats] = useState('8')
   const [stitchEvery, setStitchEvery] = useState('2')
+  const [stitchBlocks, setStitchBlocks] = useState(false)
   const [colors, setColors] = useState({ warpA: '#1a237e', weftA: '#1a237e', warpB: '#fafafa', weftB: '#fafafa' })
   const [profile, setProfile] = useState(defaultProfileInput)
   const oneShuttle = structure === 'tubular' || structure === 'double-width'
@@ -56,6 +59,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
           weave,
           repeats: Number(repeats),
           stitchEvery: Number(stitchEvery),
+          stitchBlocks,
           ...colors,
           profile: structure === 'blocks' ? toProfile(profile) : undefined,
         }),
@@ -63,7 +67,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) }
     }
-  }, [structure, weave, repeats, stitchEvery, colors, profile])
+  }, [structure, weave, repeats, stitchEvery, stitchBlocks, colors, profile])
 
   const label = STRUCTURES.find(([s]) => s === structure)?.[1] ?? ''
 
@@ -114,7 +118,13 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
                 sx={{ width: 110 }}
               />
             )}
-            {structure === 'stitched' && (
+            {structure === 'blocks' && (
+              <FormControlLabel
+                control={<Checkbox checked={stitchBlocks} onChange={(e) => setStitchBlocks(e.target.checked)} />}
+                label="Stitch the layers together"
+              />
+            )}
+            {(structure === 'stitched' || (structure === 'blocks' && stitchBlocks)) && (
               <TextField
                 size="small"
                 type="number"

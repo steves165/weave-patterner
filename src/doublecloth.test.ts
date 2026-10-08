@@ -64,6 +64,48 @@ describe('doubleCloth', () => {
     expect(() => doubleCloth(opts({ structure: 'stitched', stitchEvery: 0 }))).toThrow(/at least every repeat/)
   })
 
+  it('stitches block double cloth together in every block, keeping each face', () => {
+    const profile = {
+      threading: [1, 1, 2, 2],
+      treadling: [1, 1, 2, 2],
+      tieup: [
+        [true, false],
+        [false, true],
+      ],
+    }
+    const plain = doubleCloth(opts({ structure: 'blocks', profile }))
+    const stitched = doubleCloth(opts({ structure: 'blocks', profile, stitchBlocks: true, stitchEvery: 2 }))
+    expect(stitched.treadles).toBeGreaterThan(plain.treadles)
+    const [a, b] = [computeDrawdown(plain), computeDrawdown(stitched)]
+    // Only the stitching repeats (picks 5–8 and 13–16) differ, and there in both blocks.
+    const differs = (p: number, ends: number[]) => ends.some((e) => a[p][e] !== b[p][e])
+    const rows = Array.from(
+      { length: 16 },
+      (_, p) => differs(p, [0, 1, 2, 3, 4, 5, 6, 7]) || differs(p, [8, 9, 10, 11, 12, 13, 14, 15]),
+    )
+    expect(rows.slice(0, 4).some(Boolean)).toBe(false)
+    expect(rows.slice(4, 8).some(Boolean)).toBe(true)
+    expect([4, 5, 6, 7].some((p) => differs(p, [0, 1, 2, 3, 4, 5, 6, 7]))).toBe(true)
+    expect([4, 5, 6, 7].some((p) => differs(p, [8, 9, 10, 11, 12, 13, 14, 15]))).toBe(true)
+    // The faces still show the right layer almost everywhere.
+    const face = clothView(stitched, 'face')
+    const right = face
+      .flatMap((row, p) => row.map((sq, e) => isA(sq.color) === (Math.floor(p / 8) === Math.floor(e / 8))))
+      .filter(Boolean)
+    expect(right.length / (16 * 16)).toBeGreaterThan(0.8)
+  })
+
+  it('stitches twill layers too', () => {
+    const d = doubleCloth(opts({ structure: 'stitched', weave: 'twill', repeats: 4, stitchEvery: 2 }))
+    expect([d.shafts, d.treadles]).toEqual([8, 12])
+    expect(
+      clothView(d, 'face')
+        .flat()
+        .filter((sq) => isA(sq.color)).length /
+        (d.ends * d.picks),
+    ).toBeGreaterThan(0.85)
+  })
+
   it('swaps layers by block, following the profile', () => {
     const d = doubleCloth(
       opts({

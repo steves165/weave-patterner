@@ -139,3 +139,14 @@ test('the Back switch turns the whole draft over, mirroring it left to right', a
   await expect(page.getByTestId('back-note')).toHaveCount(0)
   expect(await firstColumn()).toBe('31')
 })
+
+test('block double cloth can be stitched together', async ({ page }) => {
+  await openTool(page, /Double cloth/)
+  await expect(result(page)).toHaveText('Makes 8 shafts, 8 treadles, 28 ends × 28 picks')
+  await expect(dialog(page).getByLabel('Stitch every (repeats)')).toHaveCount(0)
+  await dialog(page).getByLabel('Stitch the layers together').check()
+  await expect(dialog(page).getByLabel('Stitch every (repeats)')).toHaveValue('2')
+  await expect(result(page)).toHaveText(/Makes 8 shafts, 1\d treadles, 28 ends × 28 picks/)
+  await choose(page, 'Each layer weaves', '2/2 twill')
+  await expect(result(page)).toHaveText(/Makes 16 shafts/)
+})
