@@ -12,6 +12,7 @@ import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
+import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import {
   AppBar,
   Button,
@@ -52,6 +53,8 @@ interface Props {
   /** Print the draft, optionally with a page of written instructions. */
   onPrint: (instructions: boolean) => void
   onWeave: () => void
+  /** Opens the 3D preview of the cloth. */
+  on3d: () => void
   onSequenceTools: () => void
   onTrompAsWrit: () => void
   onCalculator: () => void
@@ -194,6 +197,7 @@ export function AppToolbar(p: Props) {
           </Tooltip>
         )}
         <Action compact={p.compact} icon={<PlayCircleIcon />} label="Weave" onClick={p.onWeave} />
+        <Action compact={p.compact} icon={<ViewInArIcon />} label="3D" onClick={p.on3d} />
         <Action
           compact={p.compact}
           icon={<HandymanIcon />}

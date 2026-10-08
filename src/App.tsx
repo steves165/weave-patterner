@@ -1,5 +1,5 @@
 import { Box, Snackbar } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { AppToolbar } from './components/AppToolbar'
 import { DraftView } from './components/DraftView'
@@ -17,6 +17,10 @@ import { ProfileDialog } from './dialogs/ProfileDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
+
+// three.js is large, so the 3D preview loads only when it's first opened.
+const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
+
 import { YarnsDialog } from './dialogs/YarnsDialog'
 import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask, unwovenThreads } from './floats'
@@ -38,6 +42,7 @@ type DialogName =
   | 'tools'
   | 'calculator'
   | 'weave'
+  | '3d'
   | 'colors'
   | 'cloth'
   | 'profile'
@@ -147,6 +152,7 @@ export default function App() {
             window.print()
           }}
           onWeave={() => setDialog('weave')}
+          on3d={() => setDialog('3d')}
           onSequenceTools={() => setDialog('tools')}
           onTrompAsWrit={() => {
             const { draft: next, skipped } = trompAsWrit(draft)
@@ -327,6 +333,11 @@ export default function App() {
           draft={draft}
           onClose={() => setDialog(null)}
         />
+        {dialog === '3d' && (
+          <Suspense fallback={null}>
+            <Fabric3DDialog open name={name} draft={draft} onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
         <Snackbar
           open={toast !== null}
           autoHideDuration={toast && toast.length > 60 ? 8000 : 3000}
