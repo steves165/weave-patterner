@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Weave Patterner</title>
+  <rect width="32" height="32" rx="6" fill="#f5f0e6"/>
+  <g fill="#8b0a0a">
+    <rect x="4" y="4" width="6" height="6"/><rect x="10" y="4" width="6" height="6"/><rect x="10" y="10" width="6" height="6"/><rect x="16" y="10" width="6" height="6"/><rect x="16" y="16" width="6" height="6"/><rect x="22" y="16" width="6" height="6"/><rect x="4" y="22" width="6" height="6"/><rect x="22" y="22" width="6" height="6"/>
+  </g>
+  <path d="M4 4h24v24H4z" fill="none" stroke="#8b0a0a" stroke-width="1" stroke-opacity=".35"/>
+</svg>

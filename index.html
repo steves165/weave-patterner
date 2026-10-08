@@ -3,10 +3,107 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Weave Patterner</title>
+    <title>Weave Patterner – Free Online Weaving Draft Designer &amp; Drawdown Tool</title>
+    <meta
+      name="description"
+      content="Design weaving drafts free in your browser: threading, tie-up, treadling and a live drawdown. WIF for looms, 3D cloth preview, double cloth, overshot, summer and winter, up to 128 shafts."
+    />
+    <link rel="canonical" href="https://steves165.github.io/weave-patterner/" />
+    <meta name="theme-color" content="#8b0a0a" />
+    <meta name="author" content="Stephen Skidmore" />
+    <meta name="application-name" content="Weave Patterner" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <!-- How links to the app look when shared -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Weave Patterner" />
+    <meta property="og:title" content="Weave Patterner – Free Online Weaving Draft Designer" />
+    <meta
+      property="og:description"
+      content="Threading, tie-up, treadling and a live drawdown in your browser. WIF for looms, 3D cloth preview, double cloth and block weaves. Free and open source."
+    />
+    <meta property="og:url" content="https://steves165.github.io/weave-patterner/" />
+    <meta property="og:image" content="https://steves165.github.io/weave-patterner/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Weave Patterner: a weaving draft designer, beside a green block-weave drawdown" />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Weave Patterner – Free Online Weaving Draft Designer" />
+    <meta
+      name="twitter:description"
+      content="Design weaving drafts in your browser: live drawdown, WIF for looms, 3D cloth preview, double cloth and block weaves."
+    />
+    <meta name="twitter:image" content="https://steves165.github.io/weave-patterner/og-image.png" />
+
+    <!-- What search engines can show about the app -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Weave Patterner",
+        "url": "https://steves165.github.io/weave-patterner/",
+        "description": "A free online weaving draft designer: edit the threading, tie-up and treadling and see the drawdown as you go. Export WIF for computer-assisted looms, preview the cloth in 3D, and design double cloth, overshot, summer and winter and other block weaves on up to 128 shafts.",
+        "applicationCategory": "DesignApplication",
+        "applicationSubCategory": "Weaving draft software",
+        "operatingSystem": "Any (runs in a web browser)",
+        "browserRequirements": "A modern web browser; WebGL for the 3D preview",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+        "license": "https://opensource.org/licenses/MIT",
+        "image": "https://steves165.github.io/weave-patterner/og-image.png",
+        "screenshot": "https://steves165.github.io/weave-patterner/og-image.png",
+        "author": { "@type": "Person", "name": "Stephen Skidmore", "url": "https://github.com/steves165" },
+        "codeRepository": "https://github.com/steves165/weave-patterner",
+        "keywords": "weaving draft, drawdown, handweaving software, weaving software, WIF, loom, twill, overshot, double cloth, lift plan, dobby, tablet weaving, rigid heddle",
+        "featureList": [
+          "Threading, tie-up and treadling editor with a live drawdown",
+          "WIF import and export for computer-assisted dobby looms",
+          "Lift plans and a no-tie-up mode for table and dobby looms",
+          "Up to 128 shafts and 128 treadles",
+          "3D cloth preview, on a sofa, as a rug or as a tapestry",
+          "Double cloth, overshot, summer and winter, crackle, Bronson lace, M's and O's, damask, shadow weave, taqueté and rep weave",
+          "Picture to draft, colourways and draft variations",
+          "Warp calculator, yarn library and warp winding plan",
+          "Weaving and threading guides for use at the loom",
+          "Rigid heddle and tablet weaving tools"
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        A summary for search engines and anyone without JavaScript. The app replaces it as soon as it starts.
+      -->
+      <main style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
+        <h1>Weave Patterner: free online weaving draft designer</h1>
+        <p>
+          Design weaving drafts in your browser. Click the threading, tie-up and treadling and watch the drawdown
+          update as you go. Weave Patterner is free, open source, and needs no account or download.
+        </p>
+        <h2>Features</h2>
+        <ul>
+          <li>Threading, tie-up and treadling (or lift plan) with a live drawdown, on up to 128 shafts and treadles</li>
+          <li>WIF import and export for computer-assisted looms, plus PNG and SVG images and printed drafts</li>
+          <li>3D cloth preview with real yarn sizes, shown flat, draped, on a sofa, as a rug or as a tapestry</li>
+          <li>
+            Block weaves: overshot, summer and winter, crackle, Bronson lace, M's and O's, damask, shadow weave,
+            taqueté, rep weave and turned twill
+          </li>
+          <li>Double cloth: separate layers, tubes, double width, stitched and block double cloth</li>
+          <li>Picture to draft, colourways, variations, echo weave and drawing the cloth to find its draft</li>
+          <li>Warp calculator, yarn library, warp winding plan and step-by-step weaving and threading guides</li>
+          <li>Rigid heddle instructions and a tablet (card) weaving designer</li>
+        </ul>
+        <p>Weave Patterner needs JavaScript to run. Please turn it on to start designing.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

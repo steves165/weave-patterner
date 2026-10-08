@@ -1,6 +1,10 @@
-# Weave Patterner
+# Weave Patterner – free online weaving draft designer
 
-A weaving draft editor: set the threading, tie-up and treadling, pick warp and weft colours, and see the drawdown update live. Patterns can be saved in the browser (up to 200) or exported and imported as `.weave.json` files. An example is in `samples/`.
+**[Open Weave Patterner](https://steves165.github.io/weave-patterner/)**: it runs in your browser, free, with no account or download.
+
+![Weave Patterner: a weaving draft designer, beside a green block-weave drawdown](public/og-image.png)
+
+A weaving draft editor for handweavers: set the threading, tie-up and treadling, pick warp and weft colours, and see the drawdown update live. Patterns can be saved in the browser (up to 200) or exported and imported as `.weave.json` files. An example is in `samples/`.
 
 For looms and other weaving software, Export also writes [WIF](https://www.mhsoft.com/wif/wif.html) 1.1 files, either with tie-up and treadling or as a lift plan for computer-dobby looms. Import reads WIF files too.
 

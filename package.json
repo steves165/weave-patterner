@@ -2,7 +2,7 @@
   "name": "weave-patterner",
   "private": true,
   "version": "1.0.0",
-  "description": "Weaving draft editor: threading, tie-up, treadling and a live drawdown, with WIF export for looms",
+  "description": "Free online weaving draft designer: threading, tie-up, treadling and live drawdown, WIF export for looms, 3D cloth preview, double cloth and block weaves",
   "license": "MIT",
   "author": "Stephen Skidmore (https://github.com/steves165)",
   "homepage": "https://steves165.github.io/weave-patterner/",
@@ -23,7 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mcp": "tsx mcp/index.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "images": "tsx scripts/brand-images.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -49,5 +50,20 @@
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vitest": "4.1.11"
-  }
+  },
+  "keywords": [
+    "weaving",
+    "weaving draft",
+    "drawdown",
+    "handweaving",
+    "loom",
+    "WIF",
+    "twill",
+    "overshot",
+    "double cloth",
+    "textile design",
+    "weave design software",
+    "lift plan",
+    "dobby"
+  ]
 }

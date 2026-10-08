@@ -122,3 +122,13 @@ test('supports up to 128 shafts and treadles', async ({ page }) => {
   await expect(cell(page, 'Pick 128, treadle 128')).toHaveAttribute('aria-checked', 'true')
   await expect(page.getByText('128 shafts · 128 treadles').first()).toBeVisible()
 })
+
+test('the app replaces the search summary, and the page has its title and icons', async ({ page }) => {
+  await expect(page).toHaveTitle(/Weave Patterner – Free Online Weaving Draft Designer/)
+  await expect(page.getByRole('heading', { name: /free online weaving draft designer/ })).toHaveCount(0)
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', './favicon.svg')
+  const icon = await page.request.get('favicon.svg')
+  expect(icon.ok()).toBe(true)
+  const manifest = await page.request.get('manifest.webmanifest')
+  expect((await manifest.json()).short_name).toBe('Weave Patterner')
+})
