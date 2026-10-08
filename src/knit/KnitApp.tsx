@@ -11,6 +11,7 @@ import ImageIcon from '@mui/icons-material/Image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import NotesIcon from '@mui/icons-material/Notes'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
 import RemoveIcon from '@mui/icons-material/Remove'
@@ -81,6 +82,7 @@ import {
 import { writtenPattern, writtenRows } from './instructions'
 import { KnitLogo } from './KnitLogo'
 import { KnitThumb } from './KnitThumb'
+import { KnittingMode } from './KnittingMode'
 import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SAMPLES } from './samples'
@@ -230,7 +232,7 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | null>(null)
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [printImage, setPrintImage] = useState<string | null>(null)
@@ -694,7 +696,33 @@ export default function KnitApp() {
             </Box>
           )}
           {!compact && <Rule />}
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 'none' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? '2px' : 1, flex: 'none' }}>
+            {compact ? (
+              <Tooltip title="Start knitting" describeChild>
+                <IconButton
+                  aria-label="Start knitting"
+                  onClick={() => setDialog('knitting')}
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 3,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  }}
+                >
+                  <PlayArrowIcon />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Action
+                compact={false}
+                variant="contained"
+                icon={<PlayArrowIcon />}
+                label="Start knitting"
+                onClick={() => setDialog('knitting')}
+              />
+            )}
             <ThemeToggle />
             <Tooltip title="Weave Patterner: weaving drafts">
               <IconButton component="a" href="../" aria-label="Weave Patterner" sx={{ p: 1 }}>
@@ -733,6 +761,12 @@ export default function KnitApp() {
           setDialog(null)
           setToast(`Saved "${n}"`)
         }}
+      />
+      <KnittingMode
+        open={dialog === 'knitting'}
+        chart={chart}
+        name={name.trim() || 'Untitled'}
+        onClose={() => setDialog(null)}
       />
       <LoadDialog
         open={dialog === 'load'}

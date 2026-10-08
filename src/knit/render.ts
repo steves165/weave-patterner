@@ -30,6 +30,8 @@ interface ChartDrawing {
   cell: number
   /** Height of a square (shorter than wide when drawn to gauge). */
   cellH: number
+  /** Draw the key to the symbols and colours below the chart (default true). */
+  legend?: boolean
 }
 
 /** The chart as a picture, with row and stitch numbers, for saving as an image or printing. */
