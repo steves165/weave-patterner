@@ -42,3 +42,42 @@ export function saveProgress(name: string, progress: Progress) {
     // progress just won't be remembered
   }
 }
+
+/** True when this pick's weft differs from the one before (wrapping round to the last pick for pick 1). */
+export const weftChanges = (d: Draft, pick: number) =>
+  d.picks > 1 && d.weftColors[pick].toLowerCase() !== d.weftColors[(pick - 1 + d.picks) % d.picks].toLowerCase()
+
+/**
+ * What to do for one end (0-based) when threading: its shaft (1-based, or null if it's left empty), its colour, and
+ * which heddle that is on its shaft counting from end 1, so a threader can check their place.
+ */
+export function endInfo(d: Draft, end: number) {
+  const shaft = d.threading[end]
+  const heddle = shaft < 0 ? null : d.threading.slice(0, end + 1).filter((s) => s === shaft).length
+  return { shaft: shaft < 0 ? null : shaft + 1, heddle, color: d.warpColors[end] }
+}
+
+/** Heddles needed on each shaft (1-based shafts as indices 0..shafts-1). */
+export const heddleCounts = (d: Draft) =>
+  Array.from({ length: d.shafts }, (_, s) => d.threading.filter((t) => t === s).length)
+
+const threadKey = (name: string) => `thread-progress:${name}`
+
+/** Which end the threader has reached, remembered per pattern in this browser. */
+export function loadThreadProgress(name: string, ends: number): number {
+  try {
+    const n = JSON.parse(localStorage.getItem(threadKey(name)) ?? 'null')
+    if (Number.isInteger(n) && n >= 0 && n < ends) return n
+  } catch {
+    // fall through to the start
+  }
+  return 0
+}
+
+export function saveThreadProgress(name: string, end: number) {
+  try {
+    localStorage.setItem(threadKey(name), JSON.stringify(end))
+  } catch {
+    // progress just won't be remembered
+  }
+}

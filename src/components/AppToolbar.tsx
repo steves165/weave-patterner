@@ -62,6 +62,7 @@ interface Props {
   onCloth: () => void
   onProfile: () => void
   onDoubleCloth: () => void
+  onTransform: () => void
   onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
@@ -237,6 +238,9 @@ export function AppToolbar(p: Props) {
           </MenuItem>
           <MenuItem onClick={then(p.onDoubleCloth)}>
             <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onTransform)}>
+            <ListItemText primary="Transform draft…" secondary="Turn 90°, swap face and back, flip, move the repeat" />
           </MenuItem>
           <Divider />
           {p.isLiftplan ? (

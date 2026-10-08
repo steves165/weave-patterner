@@ -17,13 +17,15 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 
 - Up to 24 shafts and 24 treadles, and up to 400 ends and picks
 - Double cloth: separate layers, tubes, double width and block double cloth, with face and back views that allow for layers
-- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth
+- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes from the yarn library and spacing from the sett
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation
 - Remembers your settings and the pattern you were working on (saved or not) on this device
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
 - Per-thread warp and weft colours
 - **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner
-  pedal friendly, remembering where you stopped
+  pedal friendly, remembering where you stopped, with a chime when the weft colour changes; and an end-by-end
+  threading guide (shaft and heddle for each end, from either side)
+- **Transform draft**: turn 90° (swap warp and weft), swap face and back, flip, and move the repeat
 - **Sequence tools**: fill ranges with straight, point, advancing-twill or custom draws; repeat, mirror, reverse,
   insert, delete, **copy and paste** ends and picks (including threading into treadling); **tromp as writ**
 - **Lift plans**: convert to a lift plan for dobby looms and back to a tie-up and treadling

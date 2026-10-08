@@ -8,9 +8,11 @@ import {
   Box,
   Button,
   Dialog,
+  FormControlLabel,
   IconButton,
   Slider,
   Stack,
+  Switch,
   Toolbar,
   Typography,
   useTheme,
@@ -21,12 +23,16 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { download, fileBase } from '../exportDraft'
 import { fabricModel } from '../sim3d'
 import type { Draft } from '../weave'
+import { clothLook, loadDensity } from '../yarnGeometry'
+import type { Yarn } from '../yarns'
 
 interface Props {
   open: boolean
   /** Pattern name, or null if it hasn't been saved. */
   name: string | null
   draft: Draft
+  /** The yarn library: a thread's colour picks its yarn, whose grist sets its thickness. */
+  yarns: Yarn[]
   onClose: () => void
 }
 
@@ -73,7 +79,7 @@ function placeCamera(s: Scene, size: number, back: boolean) {
  * A 3D preview of the cloth: each thread is a tube following its path over and under the others (and, for double
  * cloth, between the layers). Drag to turn it, scroll or pinch to zoom, right-drag or two fingers to pan.
  */
-export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
+export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Props) {
   const theme = useTheme()
   // A callback ref: the dialog attaches its contents after this component first renders.
   const [box, setBox] = useState<HTMLDivElement | null>(null)
@@ -83,7 +89,16 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
   const [shown, setShown] = useState(Math.min(DEFAULT_SHOWN, largest))
   const [thickness, setThickness] = useState(80)
   const [back, setBack] = useState(false)
-  const model = useMemo(() => fabricModel(draft, shown, shown), [draft, shown])
+  // Real yarn sizes and spacing, from the yarn library and the warp calculator's sett.
+  const [realSizes, setRealSizes] = useState(true)
+  const density = useMemo(() => (open ? loadDensity() : null), [open])
+  const look = useMemo(
+    () => (realSizes && density ? clothLook(draft, yarns, density) : undefined),
+    [realSizes, density, draft, yarns],
+  )
+  const model = useMemo(() => fabricModel(draft, shown, shown, undefined, look), [draft, shown, look])
+  // Frame the whole cloth, which is taller than it is wide when picks are further apart than ends.
+  const frame = shown * Math.max(1, look?.pickSpacing ?? 1)
   const background = theme.palette.background.default
 
   // Set up WebGL once the dialog has mounted its box; tear it all down on close.
@@ -147,7 +162,6 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
     const s = scene3d
     if (!s) return
     clearCloth(s.cloth)
-    const radius = 0.5 * (thickness / 100)
     const materials = new Map<string, THREE.MeshStandardMaterial>()
     for (const path of model.paths) {
       const curve = new THREE.CatmullRomCurve3(
@@ -158,7 +172,7 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
       const geometry = new THREE.TubeGeometry(
         curve,
         path.points.length * SEGMENTS_PER_CROSSING,
-        radius,
+        path.radius * (thickness / 100),
         RADIAL_SEGMENTS,
         false,
       )
@@ -175,8 +189,8 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
 
   // Frame the cloth when it opens, when the area changes, and when it's turned over.
   useEffect(() => {
-    if (scene3d) placeCamera(scene3d, shown, back)
-  }, [scene3d, shown, back])
+    if (scene3d) placeCamera(scene3d, frame, back)
+  }, [scene3d, frame, back])
 
   const saveImage = () =>
     scene3d?.renderer.domElement.toBlob(
@@ -197,7 +211,7 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
           <Button startIcon={<FlipIcon />} onClick={() => setBack(!back)} aria-pressed={back}>
             {back ? 'Show face' : 'Show back'}
           </Button>
-          <Button startIcon={<RestartAltIcon />} onClick={() => scene3d && placeCamera(scene3d, shown, back)}>
+          <Button startIcon={<RestartAltIcon />} onClick={() => scene3d && placeCamera(scene3d, frame, back)}>
             Reset view
           </Button>
           <Button startIcon={<DownloadIcon />} onClick={saveImage} disabled={failed !== null}>
@@ -249,6 +263,21 @@ export default function Fabric3DDialog({ open, name, draft, onClose }: Props) {
             onChange={(_, v) => setThickness(v as number)}
             aria-labelledby="thickness-label"
           />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <FormControlLabel
+            control={<Switch checked={realSizes} onChange={(e) => setRealSizes(e.target.checked)} />}
+            label="Yarn sizes and sett"
+          />
+          {look && density && (
+            <Typography variant="caption" color="text.secondary" component="p" data-testid="look-info">
+              {density.sett} ends and {density.ppi} picks per {density.units === 'metric' ? 'cm' : 'inch'} (from the
+              warp calculator).{' '}
+              {look.fromYarns
+                ? 'Thread sizes from the grist in your yarn library.'
+                : 'Add a grist to yarns in the yarn library to size threads.'}
+            </Typography>
+          )}
         </Box>
         <Typography variant="body2" color="text.secondary">
           {model.layered ? 'Double cloth: the lower layer is drawn behind the upper. ' : ''}Drag to turn, scroll or

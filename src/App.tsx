@@ -16,6 +16,7 @@ import { LoadDialog } from './dialogs/LoadDialog'
 import { ProfileDialog } from './dialogs/ProfileDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
+import { TransformDialog } from './dialogs/TransformDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
@@ -47,6 +48,7 @@ type DialogName =
   | 'cloth'
   | 'profile'
   | 'doublecloth'
+  | 'transform'
   | 'yarns'
 
 export default function App() {
@@ -169,6 +171,7 @@ export default function App() {
           onCloth={() => setDialog('cloth')}
           onProfile={() => setDialog('profile')}
           onDoubleCloth={() => setDialog('doublecloth')}
+          onTransform={() => setDialog('transform')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -314,6 +317,12 @@ export default function App() {
           onClose={() => setDialog(null)}
           onApply={applyFromDialog}
         />
+        <TransformDialog
+          open={dialog === 'transform'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={applyFromDialog}
+        />
         <DoubleClothDialog
           open={dialog === 'doublecloth'}
           onClose={() => setDialog(null)}
@@ -336,7 +345,7 @@ export default function App() {
         />
         {dialog === '3d' && (
           <Suspense fallback={null}>
-            <Fabric3DDialog open name={name} draft={draft} onClose={() => setDialog(null)} />
+            <Fabric3DDialog open name={name} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
           </Suspense>
         )}
         <Snackbar

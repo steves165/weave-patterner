@@ -70,3 +70,29 @@ test('explains when WebGL is not available', async ({ page }) => {
   await expect(page.getByRole('alert')).toHaveText(/needs WebGL/)
   await expect(page.getByRole('button', { name: 'Save image' })).toBeDisabled()
 })
+
+test('sizes threads from the yarn library and spaces them by the sett', async ({ page }) => {
+  await toolbarButton(page, '3D').click()
+  await expect(page.getByTestId('look-info')).toHaveText(
+    '8 ends and 8 picks per cm (from the warp calculator). Add a grist to yarns in the yarn library to size threads.',
+  )
+  await page.getByRole('button', { name: 'Close 3D preview' }).click()
+
+  await openTool(page, /Yarn library/)
+  const yarns = page.getByRole('dialog', { name: 'Yarn library' })
+  await yarns.getByRole('button', { name: 'Add a yarn for #8b0a0a' }).click()
+  await yarns.getByLabel('Grist').fill('1500')
+  await yarns.getByRole('button', { name: 'Done' }).click()
+  await openTool(page, /Warp calculator/)
+  const calc = page.getByRole('dialog', { name: 'Warp calculator' })
+  await calc.getByLabel(/^Sett/).fill('6')
+  await calc.getByRole('button', { name: 'Close' }).click()
+
+  await toolbarButton(page, '3D').click()
+  await expect(page.getByTestId('look-info')).toHaveText(
+    '6 ends and 8 picks per cm (from the warp calculator). Thread sizes from the grist in your yarn library.',
+  )
+  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await page.getByLabel('Yarn sizes and sett').uncheck()
+  await expect(page.getByTestId('look-info')).toHaveCount(0)
+})

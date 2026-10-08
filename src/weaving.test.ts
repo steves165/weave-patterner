@@ -1,7 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { greenBlocks } from './testUtils'
 import { defaultDraft } from './weave'
-import { loadProgress, pickInfo, saveProgress, step } from './weaving'
+import {
+  endInfo,
+  heddleCounts,
+  loadProgress,
+  loadThreadProgress,
+  pickInfo,
+  saveProgress,
+  saveThreadProgress,
+  step,
+  weftChanges,
+} from './weaving'
 
 describe('pickInfo', () => {
   it('gives the treadle, lifted shafts and weft colour for a pick', () => {
@@ -35,6 +45,14 @@ describe('progress storage', () => {
     } as Storage
   })
 
+  it('remembers threading progress separately, per pattern', () => {
+    saveThreadProgress('Runner', 7)
+    saveProgress('Runner', { pick: 3, repeat: 0 })
+    expect(loadThreadProgress('Runner', 32)).toBe(7)
+    expect(loadThreadProgress('Runner', 5)).toBe(0) // past the end of a shorter draft
+    expect(loadThreadProgress('Other', 32)).toBe(0)
+  })
+
   it('remembers progress per pattern', () => {
     saveProgress('Runner', { pick: 5, repeat: 2 })
     expect(loadProgress('Runner', 32)).toEqual({ pick: 5, repeat: 2 })
@@ -59,5 +77,25 @@ describe('progress storage', () => {
     } as unknown as Storage
     expect(() => saveProgress('x', { pick: 1, repeat: 0 })).not.toThrow()
     expect(loadProgress('x', 4)).toEqual({ pick: 0, repeat: 0 })
+  })
+})
+
+describe('threading and weft changes', () => {
+  it('gives each end its shaft, colour and heddle number on that shaft', () => {
+    const d = defaultDraft() // straight draw 1 2 3 4 1 2 3 4 …
+    expect(endInfo(d, 0)).toEqual({ shaft: 1, heddle: 1, color: '#8b0a0a' })
+    expect(endInfo(d, 5)).toEqual({ shaft: 2, heddle: 2, color: '#8b0a0a' })
+    d.threading[6] = -1
+    expect(endInfo(d, 6)).toMatchObject({ shaft: null, heddle: null })
+    expect(heddleCounts(d)).toEqual([8, 8, 7, 8])
+  })
+
+  it('spots where the weft colour changes, wrapping round at the start', () => {
+    const d = defaultDraft()
+    expect(d.weftColors.map((_, p) => weftChanges(d, p)).some(Boolean)).toBe(false)
+    d.weftColors[3] = '#000000'
+    expect([2, 3, 4].map((p) => weftChanges(d, p))).toEqual([false, true, true])
+    d.weftColors[31] = '#000000'
+    expect(weftChanges(d, 0)).toBe(true)
   })
 })
