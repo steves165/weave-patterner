@@ -52,7 +52,7 @@ import { useSharedPatternLink } from './hooks/useSharedPatternLink'
 import { useViewOptions } from './hooks/useViewOptions'
 import { useYarns } from './hooks/useYarns'
 import { draftPng, draftSvg } from './imageExport'
-import { useCompact, usePhone, useTouch } from './layout'
+import { useCompact, usePhone, useRoomForSidebar, useTouch, useViewportWidth } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { selvedgeMisses } from './selvedge'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
@@ -87,6 +87,10 @@ export default function App() {
   const phone = usePhone()
   const compact = useCompact()
   const touch = useTouch()
+  // Mouse and a wide screen: the page itself scrolls to show a big draft (touch screens pan the draft in its box).
+  const pageScroll = !compact && !touch
+  const viewportWidth = useViewportWidth()
+  const roomForSidebar = useRoomForSidebar()
   // The pattern from last time on this device, saved or not.
   const [restored] = useState(loadCurrent)
   const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(
@@ -235,12 +239,15 @@ export default function App() {
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
+          // Desktop with a mouse: the page grows to fit the draft and scrolls both ways.
+          ...(pageScroll ? { width: 'max-content', minWidth: '100%' } : {}),
           bgcolor: 'background.default',
           // Room for the phone's bottom navigation.
           pb: phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
         }}
       >
         <AppToolbar
+          width={pageScroll ? viewportWidth : undefined}
           name={name}
           summary={summary}
           onDraft={() => {
@@ -349,11 +356,11 @@ export default function App() {
             display: 'flex',
             alignItems: 'stretch',
             // Desktop: the page grows to fit the draft and scrolls; the sidebar stays in view at the right.
-            width: compact ? 'auto' : 'max-content',
+            width: pageScroll ? 'max-content' : 'auto',
             minWidth: '100%',
           }}
         >
-          <Box component="main" sx={{ flex: '1 0 auto', minWidth: 0, maxWidth: compact ? '100%' : undefined }}>
+          <Box component="main" sx={pageScroll ? { flex: '1 0 auto' } : { flex: '1 1 auto', minWidth: 0 }}>
             <DraftView
               draft={draft}
               onView={changeView}
@@ -419,7 +426,10 @@ export default function App() {
             />
           </Box>
           {!compact && (
-            <SettingsSidebar open={view.settingsOpen ?? true} onToggle={(open) => setView({ settingsOpen: open })}>
+            <SettingsSidebar
+              open={view.settingsOpen ?? roomForSidebar}
+              onToggle={(open) => setView({ settingsOpen: open })}
+            >
               {settingsPanel}
             </SettingsSidebar>
           )}
@@ -444,6 +454,7 @@ export default function App() {
           onAnalytics={analyticsChoice}
           phone={phone}
           sticky={!compact}
+          width={pageScroll ? viewportWidth : undefined}
         />
 
         <SaveDialog

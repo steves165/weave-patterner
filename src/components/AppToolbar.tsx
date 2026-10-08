@@ -31,7 +31,7 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
-import { useMidWidth } from '../layout'
+import { useMidWidth, useNarrow } from '../layout'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -39,6 +39,8 @@ interface Props {
   name: string | null
   /** "4 shafts · 4 treadles · 32 × 32", under the name. */
   summary: string
+  /** The window's width, when the page can scroll sideways (desktop): the bar stays that wide and in view. */
+  width?: number
   /** Phone: brings the draft back into view (the Draft tab). */
   onDraft: () => void
   /** Phone: file actions move into a "More" menu. */
@@ -173,6 +175,8 @@ export function AppToolbar(p: Props) {
   const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null)
   // Between tablet and big desktop widths, the file buttons are icons only so the app bar fits on one line.
   const fileCompact = useMidWidth() || p.compact
+  // Narrower still, the name drops its wordmark and Tools and 3D cloth lose their labels.
+  const narrow = useNarrow() || p.compact
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [printAnchor, setPrintAnchor] = useState<HTMLElement | null>(null)
   const close = () => {
@@ -242,7 +246,11 @@ export function AppToolbar(p: Props) {
 
   return (
     <>
-      <AppBar position="sticky">
+      <AppBar
+        position="sticky"
+        // When the page scrolls sideways to show a wide draft, the bar stays put across the window.
+        sx={p.width ? { left: 0, width: p.width } : undefined}
+      >
         <Toolbar
           sx={{
             gap: p.compact ? 0.25 : 1.5,
@@ -254,7 +262,7 @@ export function AppToolbar(p: Props) {
           }}
         >
           <Box sx={{ display: 'flex', flex: 'none', ml: p.phone ? 0.5 : 0 }}>
-            <Logo compact={p.compact} />
+            <Logo compact={narrow} />
           </Box>
           {!p.compact && <Rule />}
           <Box
@@ -342,15 +350,9 @@ export function AppToolbar(p: Props) {
             aria-label="Studio"
             sx={{ display: 'flex', alignItems: 'center', gap: p.compact ? '2px' : 1, flex: 'none' }}
           >
-            {!p.phone && <Action compact={p.compact} icon={<HandymanIcon />} label="Tools" onClick={openTools} />}
+            {!p.phone && <Action compact={narrow} icon={<HandymanIcon />} label="Tools" onClick={openTools} />}
             {!p.phone && (
-              <Action
-                compact={p.compact}
-                variant="outlined"
-                icon={<ViewInArIcon />}
-                label="3D cloth"
-                onClick={p.on3d}
-              />
+              <Action compact={narrow} variant="outlined" icon={<ViewInArIcon />} label="3D cloth" onClick={p.on3d} />
             )}
             {p.compact ? (
               <Tooltip title="Start weaving" describeChild>

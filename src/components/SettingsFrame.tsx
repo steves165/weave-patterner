@@ -44,28 +44,58 @@ export function SettingsSidebar({
           maxHeight: `calc(100vh - ${BAR}px - 41px)`,
           overflowY: 'auto',
           boxSizing: 'border-box',
-          p: open ? '16px 22px 24px' : '12px 6px',
+          p: open ? '0 22px 24px' : '12px 6px',
         }}
       >
         {open ? (
           <>
-            <ButtonBase
-              aria-expanded
-              onClick={() => onToggle(false)}
-              sx={{ width: '100%', justifyContent: 'space-between', borderRadius: 3, py: 0.75, mb: 1.5 }}
+            {/* Pinned at the top of the sidebar as it scrolls, so it can always be folded away. */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 2,
+                mx: '-22px',
+                mb: 1.5,
+                px: '14px',
+                pt: '10px',
+                pb: '6px',
+                bgcolor: 'background.paper',
+                borderBottom: 1,
+                borderColor: 'divider',
+              }}
             >
-              <Typography sx={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, color: 'text.secondary' }}>
-                Pattern settings
-              </Typography>
-              <ChevronRightIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-            </ButtonBase>
+              <ButtonBase
+                aria-expanded
+                aria-label="Pattern settings: hide"
+                onClick={() => onToggle(false)}
+                sx={{ width: '100%', minHeight: 44, justifyContent: 'space-between', borderRadius: 3, px: 1 }}
+              >
+                <Typography sx={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.4, color: 'text.secondary' }}>
+                  Pattern settings
+                </Typography>
+                <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5, color: 'text.secondary', fontSize: 13 }}>
+                  Hide
+                  <ChevronRightIcon fontSize="small" />
+                </Stack>
+              </ButtonBase>
+            </Box>
             {children}
           </>
         ) : (
           <ButtonBase
             aria-expanded={false}
+            aria-label="Pattern settings: show"
             onClick={() => onToggle(true)}
-            sx={{ width: 40, py: 1.5, borderRadius: 3, flexDirection: 'column', gap: 1, color: 'text.secondary' }}
+            sx={{
+              width: 40,
+              minHeight: 44,
+              py: 1.5,
+              borderRadius: 3,
+              flexDirection: 'column',
+              gap: 1,
+              color: 'text.secondary',
+            }}
           >
             <TuneIcon fontSize="small" />
             <Typography sx={{ writingMode: 'vertical-rl', fontWeight: 700, fontSize: 13 }}>Pattern settings</Typography>

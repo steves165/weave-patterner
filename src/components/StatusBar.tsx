@@ -20,6 +20,8 @@ interface Props {
   phone: boolean
   /** Stays in view at the bottom of the screen (wide screens; narrow ones have the settings bar there). */
   sticky: boolean
+  /** The window's width, when the page can scroll sideways: the bar stays that wide and in view. */
+  width?: number
 }
 
 /** "1, 5, 9 and 3 more" style list of 0-based thread indices, numbered from 1. */
@@ -67,6 +69,8 @@ export function StatusBar(p: Props) {
       sx={{
         position: p.sticky ? 'sticky' : 'static',
         bottom: 0,
+        left: 0,
+        width: p.width,
         zIndex: 5,
         display: 'flex',
         flexWrap: 'wrap',

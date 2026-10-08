@@ -138,3 +138,23 @@ test('filled boxes show the colour of the thread they stand for', async ({ page 
   expect(await bg('End 1, shaft 1')).toBe('rgb(59, 23, 48)')
   await expect(cell(page, 'Pick 1, treadle 1')).not.toHaveClass(/colored/)
 })
+
+test.describe('on a landscape tablet', () => {
+  test.use({ viewport: { width: 1100, height: 800 }, hasTouch: true })
+
+  test('the settings sidebar starts folded, and can always be hidden again however far it is scrolled', async ({
+    page,
+  }) => {
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
+    await expect(sidebar.getByLabel('Fabric view')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Pattern settings: show' }).click()
+    await expect(sidebar.getByLabel('Fabric view')).toBeVisible()
+    await sidebar.getByRole('button', { name: 'New' }).scrollIntoViewIfNeeded()
+    const hide = page.getByRole('button', { name: 'Pattern settings: hide' })
+    await expect(hide).toBeInViewport()
+    await hide.click()
+    await expect(sidebar.getByLabel('Fabric view')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  })
+})

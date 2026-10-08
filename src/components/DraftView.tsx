@@ -279,6 +279,10 @@ export function DraftView(p: Props) {
           py: 1.5,
           borderBottom: 1,
           borderColor: 'divider',
+          // Take the width the draft gives, rather than widening the page to fit on one line.
+          width: 0,
+          minWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <ToggleButtonGroup
