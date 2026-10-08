@@ -103,3 +103,13 @@ test('finds the smallest repeat and trims the draft to it', async ({ page }) => 
   await setField(page.getByLabel('Ends', { exact: true }), '12')
   await expect(page.getByTestId('repeat')).toHaveText('Repeat: 12 ends × 4 picks')
 })
+
+test('a dialog loads when first opened and keeps what you set in it', async ({ page }) => {
+  await openTool(page, /Echo weave/)
+  const echo = page.getByRole('dialog', { name: 'Echo weave' })
+  await echo.getByLabel('Echo shift (shafts)').fill('3')
+  await echo.getByRole('button', { name: 'Cancel' }).click()
+  await expect(echo).toBeHidden()
+  await openTool(page, /Echo weave/)
+  await expect(echo.getByLabel('Echo shift (shafts)')).toHaveValue('3')
+})

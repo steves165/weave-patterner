@@ -1,5 +1,5 @@
 import { Box, Snackbar } from '@mui/material'
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
 import { AppToolbar } from './components/AppToolbar'
@@ -9,31 +9,37 @@ import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
 import { SettingsPanel } from './components/SettingsPanel'
 import { loadCurrent } from './current'
-import { CalculatorDialog } from './dialogs/CalculatorDialog'
-import { ClothDialog } from './dialogs/ClothDialog'
-import { ClothReportDialog } from './dialogs/ClothReportDialog'
-import { ColorsDialog } from './dialogs/ColorsDialog'
-import { ColorwaysDialog } from './dialogs/ColorwaysDialog'
-import { DoubleClothDialog } from './dialogs/DoubleClothDialog'
-import { EchoDialog } from './dialogs/EchoDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
-import { PictureDialog } from './dialogs/PictureDialog'
-import { ProfileDialog } from './dialogs/ProfileDialog'
-import { RigidHeddleDialog } from './dialogs/RigidHeddleDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
-import { ToolsDialog } from './dialogs/ToolsDialog'
-import { TransformDialog } from './dialogs/TransformDialog'
-import { VariationsDialog } from './dialogs/VariationsDialog'
-import { WarpPlanDialog } from './dialogs/WarpPlanDialog'
-import { WeavingMode } from './dialogs/WeavingMode'
 import { findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
 const TabletDialog = lazy(() => import('./dialogs/TabletDialog'))
 
-import { YarnsDialog } from './dialogs/YarnsDialog'
+/** A dialog loaded the first time it's needed, keeping the main download small. */
+// biome-ignore lint/suspicious/noExplicitAny: React.lazy takes any component; each dialog keeps its own prop types
+function lazyDialog<K extends string, C extends ComponentType<any>>(load: () => Promise<{ [k in K]: C }>, name: K) {
+  return lazy(async () => ({ default: (await load())[name] }))
+}
+const CalculatorDialog = lazyDialog(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
+const ClothDialog = lazyDialog(() => import('./dialogs/ClothDialog'), 'ClothDialog')
+const ClothReportDialog = lazyDialog(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
+const ColorsDialog = lazyDialog(() => import('./dialogs/ColorsDialog'), 'ColorsDialog')
+const ColorwaysDialog = lazyDialog(() => import('./dialogs/ColorwaysDialog'), 'ColorwaysDialog')
+const DoubleClothDialog = lazyDialog(() => import('./dialogs/DoubleClothDialog'), 'DoubleClothDialog')
+const EchoDialog = lazyDialog(() => import('./dialogs/EchoDialog'), 'EchoDialog')
+const PictureDialog = lazyDialog(() => import('./dialogs/PictureDialog'), 'PictureDialog')
+const ProfileDialog = lazyDialog(() => import('./dialogs/ProfileDialog'), 'ProfileDialog')
+const RigidHeddleDialog = lazyDialog(() => import('./dialogs/RigidHeddleDialog'), 'RigidHeddleDialog')
+const ToolsDialog = lazyDialog(() => import('./dialogs/ToolsDialog'), 'ToolsDialog')
+const TransformDialog = lazyDialog(() => import('./dialogs/TransformDialog'), 'TransformDialog')
+const VariationsDialog = lazyDialog(() => import('./dialogs/VariationsDialog'), 'VariationsDialog')
+const WarpPlanDialog = lazyDialog(() => import('./dialogs/WarpPlanDialog'), 'WarpPlanDialog')
+const WeavingMode = lazyDialog(() => import('./dialogs/WeavingMode'), 'WeavingMode')
+const YarnsDialog = lazyDialog(() => import('./dialogs/YarnsDialog'), 'YarnsDialog')
+
 import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask, unwovenThreads } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
@@ -86,6 +92,11 @@ export default function App() {
   // Touch only: when on, a finger drag-paints the grids instead of scrolling.
   const [touchPaint, setTouchPaint] = useState(false)
   const [dialog, setDialog] = useState<DialogName | null>(null)
+  // Dialogs opened so far: each loads the first time it opens, then stays ready (keeping what you'd set in it).
+  const [seen, setSeen] = useState<Set<string>>(() => new Set())
+  useEffect(() => {
+    if (dialog) setSeen((s) => (s.has(dialog) ? s : new Set(s).add(dialog)))
+  }, [dialog])
   const [toast, setToast] = useState<string | null>(null)
   // Google Analytics, only once the visitor has agreed; the choice is remembered.
   const [consent, setConsentState] = useState<Consent | null>(loadConsent)
@@ -375,82 +386,151 @@ export default function App() {
           onClose={() => setDialog(null)}
           onImport={(n, d, warnings) => open(d, n, [`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))}
         />
-        <ToolsDialog
-          open={dialog === 'tools'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-          clip={clip}
-          onCopy={setClip}
-        />
-        <ColorsDialog
-          open={dialog === 'colors'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <CalculatorDialog open={dialog === 'calculator'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
-        <YarnsDialog
-          open={dialog === 'yarns'}
-          draft={draft}
-          yarns={yarns}
-          onChange={setYarns}
-          onClose={() => setDialog(null)}
-        />
-        <ClothDialog
-          open={dialog === 'cloth'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <ClothReportDialog open={dialog === 'report'} draft={draft} onClose={() => setDialog(null)} />
-        <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
+        {seen.has('tools') && (
+          <Suspense fallback={null}>
+            <ToolsDialog
+              open={dialog === 'tools'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+              clip={clip}
+              onCopy={setClip}
+            />
+          </Suspense>
+        )}
+        {seen.has('colors') && (
+          <Suspense fallback={null}>
+            <ColorsDialog
+              open={dialog === 'colors'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('calculator') && (
+          <Suspense fallback={null}>
+            <CalculatorDialog
+              open={dialog === 'calculator'}
+              draft={draft}
+              yarns={yarns}
+              onClose={() => setDialog(null)}
+            />
+          </Suspense>
+        )}
+        {seen.has('yarns') && (
+          <Suspense fallback={null}>
+            <YarnsDialog
+              open={dialog === 'yarns'}
+              draft={draft}
+              yarns={yarns}
+              onChange={setYarns}
+              onClose={() => setDialog(null)}
+            />
+          </Suspense>
+        )}
+        {seen.has('cloth') && (
+          <Suspense fallback={null}>
+            <ClothDialog
+              open={dialog === 'cloth'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('report') && (
+          <Suspense fallback={null}>
+            <ClothReportDialog open={dialog === 'report'} draft={draft} onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
+        {seen.has('rigid') && (
+          <Suspense fallback={null}>
+            <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
         {dialog === 'tablet' && (
           <Suspense fallback={null}>
             <TabletDialog open onClose={() => setDialog(null)} />
           </Suspense>
         )}
-        <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
-        <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
-        <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
-        <ColorwaysDialog
-          open={dialog === 'colorways'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <VariationsDialog
-          open={dialog === 'variations'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <TransformDialog
-          open={dialog === 'transform'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <DoubleClothDialog
-          open={dialog === 'doublecloth'}
-          onClose={() => setDialog(null)}
-          onApply={(d, message) => {
-            applyFromDialog(d, `${message}; showing the face of the cloth`)
-            setView({ clothSide: 'face' })
-          }}
-        />
-        <ProfileDialog
-          open={dialog === 'profile'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-          onApply={applyFromDialog}
-        />
-        <WeavingMode
-          open={dialog === 'weave'}
-          name={name ?? 'Unsaved pattern'}
-          draft={draft}
-          onClose={() => setDialog(null)}
-        />
+        {seen.has('echo') && (
+          <Suspense fallback={null}>
+            <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
+          </Suspense>
+        )}
+        {seen.has('picture') && (
+          <Suspense fallback={null}>
+            <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
+          </Suspense>
+        )}
+        {seen.has('warpplan') && (
+          <Suspense fallback={null}>
+            <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
+        {seen.has('colorways') && (
+          <Suspense fallback={null}>
+            <ColorwaysDialog
+              open={dialog === 'colorways'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('variations') && (
+          <Suspense fallback={null}>
+            <VariationsDialog
+              open={dialog === 'variations'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('transform') && (
+          <Suspense fallback={null}>
+            <TransformDialog
+              open={dialog === 'transform'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('doublecloth') && (
+          <Suspense fallback={null}>
+            <DoubleClothDialog
+              open={dialog === 'doublecloth'}
+              onClose={() => setDialog(null)}
+              onApply={(d, message) => {
+                applyFromDialog(d, `${message}; showing the face of the cloth`)
+                setView({ clothSide: 'face' })
+              }}
+            />
+          </Suspense>
+        )}
+        {seen.has('profile') && (
+          <Suspense fallback={null}>
+            <ProfileDialog
+              open={dialog === 'profile'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('weave') && (
+          <Suspense fallback={null}>
+            <WeavingMode
+              open={dialog === 'weave'}
+              name={name ?? 'Unsaved pattern'}
+              draft={draft}
+              onClose={() => setDialog(null)}
+            />
+          </Suspense>
+        )}
         {dialog === '3d' && (
           <Suspense fallback={null}>
             <Fabric3DDialog open name={name} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
