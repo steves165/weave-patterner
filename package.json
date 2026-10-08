@@ -23,11 +23,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mcp": "tsx mcp/index.ts",
-    "test:e2e": "playwright test --grep-invert @3d",
+    "test:e2e": "vite build && playwright test --grep-invert @3d",
     "images": "tsx scripts/brand-images.ts",
-    "test:e2e:3d": "playwright test --grep @3d",
-    "test:e2e:all": "playwright test",
-    "test:e2e:changed": "node scripts/e2e.mjs"
+    "test:e2e:3d": "vite build && playwright test --grep @3d",
+    "test:e2e:all": "vite build && playwright test",
+    "test:e2e:changed": "node scripts/e2e.mjs",
+    "test:e2e:live": "E2E_BASE_URL=https://steves165.github.io/weave-patterner/ node scripts/e2e.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

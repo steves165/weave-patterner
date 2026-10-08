@@ -17,8 +17,13 @@ npm run test:e2e          # browser tests (Playwright; desktop, phone and tablet
 npm run test:e2e:3d       # just the 3D preview tests
 npm run test:e2e:changed  # the 3D tests too, but only if 3D code changed (what CI runs)
 npm run test:e2e:all      # everything
+npm run test:e2e:live     # against the live site (what CI runs after deploying)
 npm run lint      # Biome lint + format check (npm run format to fix)
 ```
+
+## Issues
+
+Bugs and feature ideas are tracked in [GitHub issues](https://github.com/steves165/weave-patterner/issues), with templates for each. If the live site fails its browser tests after a deploy, CI opens an issue automatically.
 
 ## Features
 

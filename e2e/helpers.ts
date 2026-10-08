@@ -6,7 +6,7 @@ export const SAMPLE = fileURLToPath(new URL('../samples/Green blocks.weave.json'
 export const sampleText = () => readFileSync(SAMPLE, 'utf8')
 
 export async function openApp(page: Page) {
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
 }
 

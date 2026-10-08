@@ -70,7 +70,7 @@ test('rejects a file that is not a pattern', async ({ page }) => {
 
 test('opens a pattern from a share link', async ({ page }) => {
   const { draft } = parsePattern(sampleText())
-  await page.goto(`/#pattern=${await encodePattern('Linked', draft)}`)
+  await page.goto(`./#pattern=${await encodePattern('Linked', draft)}`)
   await expect(title(page)).toContainText('Linked')
   await expect(toast(page)).toContainText('Opened "Linked" from link')
   expect(new URL(page.url()).hash).toBe('')

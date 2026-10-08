@@ -9,19 +9,21 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # To open an issue when the live site fails its browser tests.
+  issues: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
+  # Lint, unit tests and the production build: these must pass before anything is deployed.
   build:
     runs-on: ubuntu-latest
+    outputs:
+      bundle: ${{ steps.bundle.outputs.name }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          # History, to see which files this push changed.
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -29,18 +31,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      - run: npx playwright install --with-deps chromium
-      # The slow 3D browser tests run only when 3D code changed since the previous push (all of them on a manual run).
-      - run: npm run test:e2e:changed
-        env:
-          BASE_SHA: ${{ github.event.before }}
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-results
-          path: test-results/
-          retention-days: 7
       - run: npm run build
+      # The built script's hashed name, so the browser tests can tell when the live site is serving this build.
+      - id: bundle
+        run: echo "name=$(grep -o 'assets/index-[^"]*\.js' dist/index.html)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -54,3 +48,62 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Browser tests against the live site once it's deployed.
+  e2e:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://steves165.github.io/weave-patterner/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # History, to see which files this push changed.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+      # GitHub Pages caches pages for a few minutes: wait until the live site serves this build, not the last one.
+      - name: Wait for the new build to be live
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS -H 'Cache-Control: no-cache' "$SITE?build=${{ github.sha }}" | grep -q "${{ needs.build.outputs.bundle }}"; then
+              echo "Live site is serving ${{ needs.build.outputs.bundle }}"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The live site didn't update within 10 minutes" >&2
+          exit 1
+      # The slow 3D tests run only when 3D code changed since the previous push (all of them on a manual run).
+      - run: npm run test:e2e:changed
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          E2E_BASE_URL: ${{ env.SITE }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+      - name: Open an issue for the failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "${{ github.repository }}" --label bug --label ci \
+            --title "Live site failed its browser tests after ${GITHUB_SHA::7}" \
+            --body "The browser tests failed against the live site after deploying ${{ github.sha }}.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} (test results are attached as an artifact).
+
+          The site is already live with this change: fix forward, or revert the commit."

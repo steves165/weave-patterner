@@ -1,0 +1,21 @@
+name: Feature
+description: An idea for something new or better
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you'd like
+      description: What it should do, from a weaver's point of view.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The weaving it helps with, or the software it's like (Treadl, WeavePoint, Fiberworks …).
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How we'll know it works.

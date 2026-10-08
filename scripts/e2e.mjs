@@ -1,6 +1,7 @@
 /**
  * Runs the browser tests, leaving out the slow 3D ones (tagged @3d) unless 3D code has changed: compared with
  * BASE_SHA if set (CI sets it to the previous push), otherwise origin/main, plus anything not yet committed.
+ * Tests a fresh production build, or the site at E2E_BASE_URL (such as the live one) if set.
  * Extra arguments go to Playwright. Exits with Playwright's own exit code.
  *
  *   npm run test:e2e:changed            3D tests only if 3D code changed
@@ -44,6 +45,11 @@ console.log(
     ? `Running all browser tests${files ? ' (3D code changed)' : ''}.`
     : 'Skipping the 3D browser tests: no 3D code changed. Use --all to run them.',
 )
+// Locally the tests run against a fresh production build; a live site or the dev server needs no build.
+if (!process.env.E2E_BASE_URL && !process.env.E2E_DEV) {
+  const build = spawnSync('npx', ['vite', 'build', '--logLevel', 'warn'], { stdio: 'inherit' })
+  if (build.status !== 0) process.exit(build.status ?? 1)
+}
 const result = spawnSync('npx', ['playwright', 'test', ...(run3d ? [] : ['--grep-invert', '@3d']), ...rest], {
   stdio: 'inherit',
 })
