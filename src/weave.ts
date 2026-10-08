@@ -1,3 +1,5 @@
+import { cleanBlocks, type EndBlock, parseBlocks } from './endBlocks'
+
 export interface Draft {
   shafts: number
   treadles: number
@@ -11,6 +13,8 @@ export interface Draft {
   treadling: boolean[][]
   warpColors: string[]
   weftColors: string[]
+  /** Named blocks of ends, marked above the threading. */
+  blocks?: EndBlock[]
 }
 
 /** Most shafts and treadles a draft can have: 128, as in WeavePoint, for large dobby and computer looms. */
@@ -69,6 +73,7 @@ export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'trea
   const colors = {
     warpColors: resize(d.warpColors, ends, () => lastWarp),
     weftColors: resize(d.weftColors, picks, () => lastWeft),
+    ...(d.blocks?.length ? { blocks: cleanBlocks(d.blocks, ends) } : {}),
   }
   // A new shaft or treadle count regenerates the grids so the pattern uses all of them.
   if (shafts !== d.shafts || treadles !== d.treadles) {
@@ -143,6 +148,7 @@ export function parseDraft(data: unknown): Draft {
     treadling: d.treadling,
     warpColors: d.warpColors,
     weftColors: d.weftColors,
+    ...(Array.isArray(d.blocks) && d.blocks.length ? { blocks: parseBlocks(d.blocks, ends) } : {}),
   }
 }
 

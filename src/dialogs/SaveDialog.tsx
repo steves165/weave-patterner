@@ -1,19 +1,28 @@
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { usePhone } from '../layout'
-import { listPatterns, MAX_PATTERNS, nextPatternName, savePattern } from '../storage'
+import { MAX_PATTERNS, nextPatternName, type PatternStore, weaveStore } from '../storage'
 import type { Draft } from '../weave'
 
-interface Props {
+interface Props<T> {
   open: boolean
-  draft: Draft
+  draft: T
+  /** Where patterns are saved: Weave Patterner's drafts unless given. */
+  store?: PatternStore<T>
   /** Name the current pattern was loaded or saved as, if any; offered as the default. */
   currentName: string | null
   onClose: () => void
   onSaved: (name: string) => void
 }
 
-export function SaveDialog({ open, draft, currentName, onClose, onSaved }: Props) {
+export function SaveDialog<T = Draft>({
+  open,
+  draft,
+  store = weaveStore as unknown as PatternStore<T>,
+  currentName,
+  onClose,
+  onSaved,
+}: Props<T>) {
   const phone = usePhone()
   const [name, setName] = useState('')
   const [existing, setExisting] = useState<string[]>([])
@@ -23,14 +32,15 @@ export function SaveDialog({ open, draft, currentName, onClose, onSaved }: Props
   useEffect(() => {
     if (!open) return
     setError(null)
-    listPatterns()
+    store
+      .listPatterns()
       .then((ps) => {
         const names = ps.map((p) => p.name)
         setExisting(names)
         setName(currentName ?? nextPatternName(names))
       })
       .catch((e) => setError(String(e?.message ?? e)))
-  }, [open, currentName])
+  }, [open, currentName, store])
 
   const trimmed = name.trim()
   const overwriting = existing.includes(trimmed)
@@ -39,7 +49,7 @@ export function SaveDialog({ open, draft, currentName, onClose, onSaved }: Props
   const save = async () => {
     setSaving(true)
     try {
-      await savePattern(trimmed, draft)
+      await store.savePattern(trimmed, draft)
       onSaved(trimmed)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

@@ -48,6 +48,7 @@ test('numbers in boxes show shaft and treadle numbers', async ({ page }) => {
 })
 
 test('the crosshair follows the mouse and names the end and pick', async ({ page }) => {
+  await page.locator('.drawdown').scrollIntoViewIfNeeded()
   const box = await page.locator('.drawdown').boundingBox()
   if (!box) throw new Error('drawdown not visible')
   const pitch = Number((await page.getByLabel('Cell size').getAttribute('aria-valuenow')) ?? 20) + 1

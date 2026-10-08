@@ -1,6 +1,17 @@
 import CloseIcon from '@mui/icons-material/Close'
 import FlipIcon from '@mui/icons-material/Flip'
-import { Alert, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
+import ViewColumnIcon from '@mui/icons-material/ViewColumn'
+import {
+  Alert,
+  Button,
+  IconButton,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
@@ -8,6 +19,7 @@ import { useCompact, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
 import { layerNote, traceCell } from '../trace'
 import type { Draft } from '../weave'
+import { BlockStrip } from './BlockStrip'
 import { Crosshair } from './Crosshair'
 import { ColorStrip, Grid } from './Grid'
 import { Ruler } from './Ruler'
@@ -27,6 +39,10 @@ interface Props {
   onWarpColor: (end: number, color: string) => void
   onWeftColor: (pick: number, color: string) => void
   onView: (patch: Partial<ViewOptions>) => void
+  /** Marks ends `from` to `to` (0-based) as a block. */
+  onAddBlock: (from: number, to: number) => void
+  /** Opens the blocks and block store, at block i if given. */
+  onBlocks: (i?: number) => void
 }
 
 /**
@@ -100,6 +116,19 @@ export function DraftView(p: Props) {
         orientation="horizontal"
         reversed={mirrored}
         label="End numbers"
+      />
+      {pad(cols - 1)}
+    </>
+  )
+  const blockRow = (
+    <>
+      <BlockStrip
+        ends={ends}
+        blocks={draft.blocks ?? []}
+        cellSize={p.cellSize}
+        endAt={endAt}
+        onAdd={p.onAddBlock}
+        onOpen={p.onBlocks}
       />
       {pad(cols - 1)}
     </>
@@ -283,6 +312,9 @@ export function DraftView(p: Props) {
             <ToggleButton value="point">Point draw</ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
+        <Button size="small" variant="outlined" startIcon={<ViewColumnIcon />} onClick={() => p.onBlocks()}>
+          Blocks
+        </Button>
         {back && (
           <Typography variant="body2" color="text.secondary" data-testid="back-note">
             Turned over: left and right are swapped, so end 1 is on the {mirrored ? 'right' : 'left'}.
@@ -295,12 +327,14 @@ export function DraftView(p: Props) {
         data-layout={view.threadingBelow ? 'threading-below' : 'threading-above'}
         style={{ ['--cell' as string]: `${p.cellSize}px`, gridTemplateColumns: `repeat(${cols}, max-content)` }}
       >
+        {!view.threadingBelow && blockRow}
         {rulerRow}
         {view.threadingBelow ? (
           <>
             {drawdownRow}
             {threadingRow}
             {warpRow}
+            {blockRow}
           </>
         ) : (
           <>

@@ -19,32 +19,53 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
-import { deletePattern, listPatterns, MAX_PATTERNS, renamePattern, type SavedPattern } from '../storage'
+import { MAX_PATTERNS, type PatternStore, type Saved, weaveStore } from '../storage'
+import type { Draft } from '../weave'
 
-interface Props {
+interface Props<T> {
   open: boolean
+  /** Where patterns are saved: Weave Patterner's drafts unless given. */
+  store?: PatternStore<T>
+  /** A small picture of a pattern, and a line about it (both a weaving draft's unless given). */
+  thumb?: (draft: T) => ReactNode
+  describe?: (draft: T) => string
   onClose: () => void
-  onLoad: (pattern: SavedPattern) => void
+  onLoad: (pattern: Saved<T>) => void
   /** Called when a pattern is renamed or deleted, so the app can keep its current name in sync. */
   onRenamed: (from: string, to: string | null) => void
 }
 
-export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
+const weaveThumb = (d: unknown) => <PatternThumb draft={d as Draft} />
+const weaveLine = (d: unknown) => {
+  const draft = d as Draft
+  return `${draft.shafts} shafts · ${draft.treadles} treadles · ${draft.ends}×${draft.picks}`
+}
+
+export function LoadDialog<T = Draft>({
+  open,
+  store = weaveStore as unknown as PatternStore<T>,
+  thumb = weaveThumb,
+  describe = weaveLine,
+  onClose,
+  onLoad,
+  onRenamed,
+}: Props<T>) {
   const phone = usePhone()
-  const [patterns, setPatterns] = useState<SavedPattern[] | null>(null)
+  const [patterns, setPatterns] = useState<Saved<T>[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ from: string; to: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const refresh = useCallback(
     () =>
-      listPatterns()
+      store
+        .listPatterns()
         .then(setPatterns)
         .catch((e) => setError(String(e?.message ?? e))),
-    [],
+    [store],
   )
 
   useEffect(() => {
@@ -70,7 +91,7 @@ export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
       if (!editing) return
       const to = editing.to.trim()
       if (to && to !== editing.from) {
-        await renamePattern(editing.from, to)
+        await store.renamePattern(editing.from, to)
         onRenamed(editing.from, to)
       }
       setEditing(null)
@@ -78,7 +99,7 @@ export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
 
   const remove = (name: string) =>
     run(async () => {
-      await deletePattern(name)
+      await store.deletePattern(name)
       onRenamed(name, null)
       setConfirmDelete(null)
     })
@@ -106,7 +127,7 @@ export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
           {patterns?.map((p) =>
             editing?.from === p.name ? (
               <ListItem key={p.name} sx={{ gap: 2 }}>
-                <PatternThumb draft={p.draft} />
+                {thumb(p.draft)}
                 <TextField
                   autoFocus
                   fullWidth
@@ -165,12 +186,10 @@ export function LoadDialog({ open, onClose, onLoad, onRenamed }: Props) {
                 }
               >
                 <ListItemButton onClick={() => onLoad(p)} sx={{ gap: 2, pr: 16 }}>
-                  <PatternThumb draft={p.draft} />
+                  {thumb(p.draft)}
                   <ListItemText
                     primary={p.name}
-                    secondary={`${p.draft.shafts} shafts · ${p.draft.treadles} treadles · ${p.draft.ends}×${
-                      p.draft.picks
-                    } · ${new Date(p.updatedAt).toLocaleString()}`}
+                    secondary={`${describe(p.draft)} · ${new Date(p.updatedAt).toLocaleString()}`}
                   />
                 </ListItemButton>
               </ListItem>

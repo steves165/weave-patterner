@@ -1,6 +1,7 @@
 import AddIcon from '@mui/icons-material/Add'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DownloadIcon from '@mui/icons-material/Download'
+import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import ImageIcon from '@mui/icons-material/Image'
@@ -40,9 +41,12 @@ import { ConsentBanner } from '../components/ConsentBanner'
 import { Footer } from '../components/Footer'
 import { LoomMark } from '../components/Logo'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { LoadDialog } from '../dialogs/LoadDialog'
+import { SaveDialog } from '../dialogs/SaveDialog'
 import { download } from '../exportDraft'
 import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
+import { patternStore } from '../storage'
 import { ChartView } from './ChartView'
 import {
   blankChart,
@@ -65,11 +69,18 @@ import {
 } from './chart'
 import { writtenPattern, writtenRows } from './instructions'
 import { KnitLogo } from './KnitLogo'
+import { KnitThumb } from './KnitThumb'
 import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SAMPLES } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import './knit.css'
+
+/** Charts saved by name in this browser, like Weave Patterner's patterns but kept apart from them. */
+const knitStore = patternStore<KnitChart>('knit-patterner')
+const knitThumb = (chart: KnitChart) => <KnitThumb chart={chart} />
+const knitLine = (chart: KnitChart) =>
+  `${widthOf(chart)} stitches × ${rowsOf(chart)} ${chart.mode === 'round' ? 'rounds' : 'rows'}`
 
 const KEY = 'knit-current'
 const VIEW_KEY = 'knit-view'
@@ -143,7 +154,8 @@ function FabricPreview({ chart, repeats }: { chart: KnitChart; repeats: boolean 
     const rows = rowsOf(chart)
     const across = repeats ? Math.max(1, Math.min(4, Math.ceil(36 / w))) : 1
     const up = repeats ? Math.max(1, Math.min(4, Math.ceil(30 / rows))) : 1
-    const stitchW = Math.max(4, Math.min(16, 360 / (w * across)))
+    // Drawn about 900px wide (sharper on high-density screens) and shown filling the panel.
+    const stitchW = Math.max(8, Math.min(48, 900 / (w * across)))
     drawFabric(ctx, chart, stitchW, across, up)
   }, [chart, repeats])
   return <canvas ref={ref} className="knit-fabric" role="img" aria-label="Knitted fabric preview" />
@@ -174,6 +186,7 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | null>(null)
   const [printImage, setPrintImage] = useState<string | null>(null)
   const [target, setTarget] = useState({ width: '50', edges: '0' })
   const fileInput = useRef<HTMLInputElement>(null)
@@ -357,8 +370,10 @@ export default function KnitApp() {
           <KnitLogo compact={compact} />
           <Box sx={{ flexGrow: 1 }} />
           {action('New', <InsertDriveFileIcon />, () => replace(blankChart(), 'Untitled'))}
+          {action('Save', <SaveIcon />, () => setDialog('save'))}
+          {action('Load', <FolderOpenIcon />, () => setDialog('load'))}
           {action('Samples', <LibraryBooksIcon />, (e) => setSamplesAnchor(e.currentTarget))}
-          {!phone && action('Open', <FolderOpenIcon />, () => fileInput.current?.click())}
+          {!phone && action('Import', <FileUploadIcon />, () => fileInput.current?.click())}
           {action('Export', <DownloadIcon />, (e) => setExportAnchor(e.currentTarget))}
           {!phone && action('Print', <PrintIcon />, print)}
           {action('Undo', <UndoIcon />, () => setHistory(undo), history.past.length === 0)}
@@ -371,6 +386,35 @@ export default function KnitApp() {
           </Tooltip>
         </Toolbar>
       </AppBar>
+      <SaveDialog
+        open={dialog === 'save'}
+        draft={chart}
+        store={knitStore}
+        currentName={name.trim() && name !== 'Untitled' ? name.trim() : null}
+        onClose={() => setDialog(null)}
+        onSaved={(n) => {
+          setName(n)
+          setDialog(null)
+          setToast(`Saved "${n}"`)
+        }}
+      />
+      <LoadDialog
+        open={dialog === 'load'}
+        store={knitStore}
+        thumb={knitThumb}
+        describe={knitLine}
+        onClose={() => setDialog(null)}
+        onLoad={(p) => {
+          const loaded = parseChart(p.draft)
+          setDialog(null)
+          if (!loaded) return setToast(`"${p.name}" couldn't be read`)
+          replace(loaded, p.name)
+          setToast(`Loaded "${p.name}"`)
+        }}
+        onRenamed={(from, to) => {
+          if (to && name === from) setName(to)
+        }}
+      />
       <Menu anchorEl={samplesAnchor} open={samplesAnchor !== null} onClose={() => setSamplesAnchor(null)}>
         {SAMPLES.map((s) => (
           <MenuItem
@@ -398,7 +442,7 @@ export default function KnitApp() {
               fileInput.current?.click()
             }}
           >
-            Open a chart file…
+            Import a chart file…
           </MenuItem>
         )}
         {phone && (
@@ -698,6 +742,7 @@ export default function KnitApp() {
               <Panel title="Knitted preview">
                 <FabricPreview chart={chart} repeats={view.repeats} />
                 <FormControlLabel
+                  sx={{ display: 'flex', mt: 1.5 }}
                   control={<Switch checked={view.repeats} onChange={(e) => setView({ repeats: e.target.checked })} />}
                   label="Show repeats"
                 />

@@ -91,6 +91,13 @@ test('colourwork names the colours and flags long floats', async ({ page }) => {
   await expect(page.getByRole('img', { name: 'Knitted fabric preview' })).toBeVisible()
 })
 
+test('the knitted preview is large, with the repeats switch below it', async ({ page }) => {
+  const preview = await page.getByRole('img', { name: 'Knitted fabric preview' }).boundingBox()
+  const toggle = await page.getByLabel('Show repeats').boundingBox()
+  expect(preview?.width).toBeGreaterThan(500)
+  expect(toggle?.y).toBeGreaterThan((preview?.y ?? 0) + (preview?.height ?? 0) + 4)
+})
+
 test('works out the cast-on for a finished width', async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
   await page.getByRole('menuitem', { name: /2×2 rib/ }).click()
@@ -155,4 +162,32 @@ test('mirrors the chart, and paints with the keyboard', async ({ page }) => {
   await page.keyboard.press('ArrowUp')
   await page.keyboard.press(' ')
   expect(await writtenRow(page, 2)).toBe('p23, k1.')
+})
+
+test('saves charts by name and loads them again, apart from the weaving patterns', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Seed stitch/ }).click()
+  const seedRow = await writtenRow(page, 1)
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const save = page.getByRole('dialog', { name: 'Save pattern' })
+  await save.getByLabel('Name').fill('My seed')
+  await save.getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('.MuiSnackbarContent-message')).toHaveText('Saved "My seed"')
+
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /2×2 rib/ }).click()
+  expect(await writtenRow(page, 1)).not.toBe(seedRow)
+
+  await page.getByRole('button', { name: 'Load', exact: true }).click()
+  const load = page.getByRole('dialog', { name: /Load pattern/ })
+  await expect(load).toContainText('1 of 200 saved')
+  await load.getByRole('button', { name: /My seed/ }).click()
+  await expect(page.locator('.MuiSnackbarContent-message')).toHaveText('Loaded "My seed"')
+  expect(await writtenRow(page, 1)).toBe(seedRow)
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('My seed')
+
+  // Weave Patterner keeps its own list.
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load' }).click()
+  await expect(page.getByRole('dialog', { name: /Load pattern/ })).not.toContainText('My seed')
 })

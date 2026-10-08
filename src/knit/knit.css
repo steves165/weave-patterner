@@ -81,7 +81,14 @@
   line-height: 1;
 }
 .knit-fabric {
-  max-width: 100%;
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  /* Tall charts keep their shape, fitting the screen. */
+  max-height: 80vh;
+  object-fit: contain;
+  object-position: left top;
   border-radius: 4px;
 }
 .knit-written {

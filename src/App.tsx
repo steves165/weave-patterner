@@ -24,6 +24,7 @@ const DrawloomDialog = lazy(() => import('./dialogs/DrawloomDialog'))
 function lazyDialog<K extends string, C extends ComponentType<any>>(load: () => Promise<{ [k in K]: C }>, name: K) {
   return lazy(async () => ({ default: (await load())[name] }))
 }
+const BlocksDialog = lazyDialog(() => import('./dialogs/BlocksDialog'), 'BlocksDialog')
 const CalculatorDialog = lazyDialog(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
 const ClothDialog = lazyDialog(() => import('./dialogs/ClothDialog'), 'ClothDialog')
 const ClothReportDialog = lazyDialog(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
@@ -41,6 +42,7 @@ const WarpPlanDialog = lazyDialog(() => import('./dialogs/WarpPlanDialog'), 'War
 const WeavingMode = lazyDialog(() => import('./dialogs/WeavingMode'), 'WeavingMode')
 const YarnsDialog = lazyDialog(() => import('./dialogs/YarnsDialog'), 'YarnsDialog')
 
+import { addBlock, loadSavedBlocks, type SavedBlock, storeSavedBlocks } from './endBlocks'
 import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask, unwovenThreads } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
@@ -78,6 +80,7 @@ type DialogName =
   | 'tablet'
   | 'drawloom'
   | 'yarns'
+  | 'blocks'
 
 export default function App() {
   const phone = usePhone()
@@ -120,6 +123,13 @@ export default function App() {
   const [yarns, setYarns] = useYarns()
   // Ends or picks copied in the sequence tools, kept until replaced.
   const [clip, setClip] = useState<Clip | null>(null)
+  // Blocks saved to use again, kept on this device; and the block the Blocks dialog opens at.
+  const [blockStore, setBlockStoreState] = useState<SavedBlock[]>(loadSavedBlocks)
+  const setBlockStore = (next: SavedBlock[]) => {
+    setBlockStoreState(next)
+    if (!storeSavedBlocks(next)) setToast("Couldn't save the block store on this device")
+  }
+  const [blockFocus, setBlockFocus] = useState<number | null>(null)
   // Whether the next print includes the written-instructions page.
   const [printInstructions, setPrintInstructions] = useState(false)
 
@@ -359,6 +369,16 @@ export default function App() {
                 { merge: continuing },
               )
             }}
+            onAddBlock={(from, to) => {
+              update((d) => addBlock(d, from, to))
+              setToast(
+                `Marked ends ${Math.min(from, to) + 1}–${Math.max(from, to) + 1} as a block: click it to name it`,
+              )
+            }}
+            onBlocks={(i) => {
+              setBlockFocus(i ?? null)
+              setDialog('blocks')
+            }}
             onWarpColor={(i, c) =>
               update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), { key: `warp:${i}` })
             }
@@ -400,6 +420,20 @@ export default function App() {
               onApply={applyFromDialog}
               clip={clip}
               onCopy={setClip}
+            />
+          </Suspense>
+        )}
+        {seen.has('blocks') && (
+          <Suspense fallback={null}>
+            <BlocksDialog
+              open={dialog === 'blocks'}
+              draft={draft}
+              focus={blockFocus}
+              store={blockStore}
+              onStore={setBlockStore}
+              onChange={(fn, key) => update((d) => keepLiftplan(fn(d)), key ? { key } : {})}
+              onMessage={setToast}
+              onClose={() => setDialog(null)}
             />
           </Suspense>
         )}

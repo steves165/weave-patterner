@@ -284,3 +284,63 @@
   background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.25) 45%, rgba(0, 0, 0, 0.45));
   border-radius: 12% / 35%;
 }
+
+/* Blocks of ends, labelled above their columns. Columns line up with the grids: a cell wide, 1px apart. */
+.block-strip {
+  display: grid;
+  grid-template-rows: 22px;
+  gap: 1px;
+  padding: 0 1px;
+  width: max-content;
+  touch-action: none;
+  cursor: col-resize;
+}
+.block-strip > * {
+  grid-row: 1;
+  min-width: 0;
+}
+.block-hint {
+  font-size: 11px;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--mui-palette-text-secondary);
+  border-bottom: 1px dashed var(--mui-palette-divider);
+  pointer-events: none;
+}
+.block-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--mui-palette-primary-main);
+  border-bottom-width: 3px;
+  border-radius: 4px 4px 0 0;
+  background: var(--mui-palette-background-paper);
+  color: var(--mui-palette-text-primary);
+  cursor: pointer;
+}
+.block-label:nth-of-type(even) {
+  border-color: var(--mui-palette-secondary-main);
+}
+.block-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.block-label:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 1px;
+}
+.block-drag {
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+  border: 1px dashed var(--mui-palette-primary-main);
+  background: rgba(25, 118, 210, 0.12);
+  border-radius: 4px 4px 0 0;
+  pointer-events: none;
+}
