@@ -224,3 +224,57 @@ export function pasteClip(
     throw new Error(`That would make ${size} ${target === 'threading' ? 'ends' : 'picks'}; the limit is ${MAX_THREADS}`)
   return parseDraft(result)
 }
+
+/** How a drag across the threading or treadling draws: one box at a time, or a straight or point draw. */
+export type DrawTool = 'click' | 'straight' | 'point'
+
+/**
+ * Positions (0-based shafts or treadles) for `steps` threads drawn from `start` in `direction` (+1 up, −1 down)
+ * among `count`. A straight draw wraps round (1 2 3 4 1 2 …); a point draw turns back at the ends without
+ * repeating them (1 2 3 4 3 2 1 2 …).
+ */
+export function drawRun(tool: 'straight' | 'point', start: number, steps: number, count: number, direction: 1 | -1) {
+  const out = [start]
+  let pos = start
+  let dir = direction
+  for (let i = 1; i < steps; i++) {
+    if (tool === 'straight') pos = (pos + dir + count) % count
+    else {
+      if (count > 1 && (pos + dir < 0 || pos + dir >= count)) dir = dir === 1 ? -1 : 1
+      pos = count > 1 ? pos + dir : 0
+    }
+    out.push(pos)
+  }
+  return out
+}
+
+/**
+ * Fills ends (threading) or picks (treadling) from `from` to `to` with a straight or point draw starting at
+ * position `start` on `from`. Dragging backwards (to < from) draws backwards from the start too.
+ */
+export function drawAlong(
+  d: Draft,
+  target: Target,
+  tool: 'straight' | 'point',
+  from: number,
+  to: number,
+  start: number,
+  direction: 1 | -1,
+): Draft {
+  const steps = Math.abs(to - from) + 1
+  const step = to >= from ? 1 : -1
+  if (target === 'threading') {
+    const run = drawRun(tool, start, steps, d.shafts, direction)
+    const threading = [...d.threading]
+    run.forEach((s, i) => {
+      threading[from + i * step] = s
+    })
+    return { ...d, threading }
+  }
+  const run = drawRun(tool, start, steps, d.treadles, direction)
+  const treadling = [...d.treadling]
+  run.forEach((t, i) => {
+    treadling[from + i * step] = Array.from({ length: d.treadles }, (_, k) => k === t)
+  })
+  return { ...d, treadling }
+}

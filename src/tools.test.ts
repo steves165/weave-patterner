@@ -4,6 +4,8 @@ import {
   advancing,
   applyRangeOp,
   copyRange,
+  drawAlong,
+  drawRun,
   MAX_THREADS,
   parseSequence,
   pasteClip,
@@ -197,5 +199,28 @@ describe('copy and paste', () => {
     const clip = copyRange(d, 'threading', 1, 32)
     for (let i = 0; i < 11; i++) d = pasteClip(d, 'threading', 1, clip, 'insert')
     expect(() => pasteClip(d, 'threading', 1, clip, 'insert')).toThrow(/limit is 400/)
+  })
+})
+
+describe('drawing tools', () => {
+  it('draws straight runs that wrap round, up or down', () => {
+    expect(drawRun('straight', 0, 6, 4, 1)).toEqual([0, 1, 2, 3, 0, 1])
+    expect(drawRun('straight', 1, 5, 4, -1)).toEqual([1, 0, 3, 2, 1])
+  })
+
+  it('draws point runs that turn back without repeating the end shaft', () => {
+    expect(drawRun('point', 0, 9, 4, 1)).toEqual([0, 1, 2, 3, 2, 1, 0, 1, 2])
+    expect(drawRun('point', 3, 5, 4, -1)).toEqual([3, 2, 1, 0, 1])
+    expect(drawRun('point', 0, 3, 1, 1)).toEqual([0, 0, 0])
+  })
+
+  it('fills the dragged ends or picks, forwards or backwards', () => {
+    const d = defaultDraft()
+    const t = drawAlong(d, 'threading', 'point', 2, 8, 0, 1)
+    expect(t.threading.slice(0, 10).map((s) => s + 1)).toEqual([1, 2, 1, 2, 3, 4, 3, 2, 1, 2])
+    const back = drawAlong(d, 'threading', 'straight', 5, 2, 3, 1)
+    expect(back.threading.slice(2, 6).map((s) => s + 1)).toEqual([3, 2, 1, 4])
+    const tr = drawAlong(d, 'treadling', 'straight', 0, 5, 3, -1)
+    expect(tr.treadling.slice(0, 6).map((row) => row.indexOf(true) + 1)).toEqual([4, 3, 2, 1, 4, 3])
   })
 })

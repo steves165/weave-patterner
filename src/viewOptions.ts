@@ -1,5 +1,9 @@
+import type { DrawTool } from './tools'
+
 /** Display settings, remembered in this browser between visits. */
 export interface ViewOptions {
+  /** What dragging across the threading or treadling does: paint boxes, or draw a straight or point draw. */
+  drawTool: DrawTool
   /** Number ends right to left, with end 1 on the right (common in US drafts). */
   endOneRight: boolean
   /** Fill threading boxes in their warp colour and treadling boxes in their weft colour. */
@@ -32,6 +36,7 @@ export const CELL_MAX = 24
 export const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
 
 export const DEFAULT_VIEW: ViewOptions = {
+  drawTool: 'click',
   endOneRight: false,
   colorBoxes: true,
   numbers: false,
@@ -52,6 +57,7 @@ const intIn = (min: number, max: number) => (v: unknown) =>
   Number.isInteger(v) && (v as number) >= min && (v as number) <= max
 
 const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
+  drawTool: (v) => v === 'click' || v === 'straight' || v === 'point',
   endOneRight: isBool,
   colorBoxes: isBool,
   numbers: isBool,

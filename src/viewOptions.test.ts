@@ -11,6 +11,7 @@ describe('parseViewOptions', () => {
 
   it('restores every saved setting', () => {
     const saved = {
+      drawTool: 'point',
       endOneRight: true,
       colorBoxes: false,
       numbers: true,
@@ -42,6 +43,7 @@ describe('parseViewOptions', () => {
     ['fabric', 'yes'],
     ['settingsOpen', 'open'],
     ['clothSide', 'inside'],
+    ['drawTool', 'spray'],
   ])('ignores an invalid %s of %j', (key, value) => {
     expect(parseViewOptions({ [key]: value, numbers: true })).toEqual({ ...DEFAULT_VIEW, numbers: true })
   })

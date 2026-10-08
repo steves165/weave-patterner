@@ -1,5 +1,5 @@
 import { Box, Snackbar } from '@mui/material'
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { AppToolbar } from './components/AppToolbar'
 import { DraftView } from './components/DraftView'
@@ -43,7 +43,7 @@ import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useTouch } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { selvedgeMisses } from './selvedge'
-import { type Clip, trompAsWrit } from './tools'
+import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
 
 type DialogName =
@@ -112,6 +112,21 @@ export default function App() {
       update(toLiftplan)
       setToast('No tie-up: the right-hand grid is now a lift plan, marking the shafts to lift on each pick')
     }
+  }
+
+  /**
+   * Straight and point drawing: pressing a threading (or treadling) box starts a draw there, and dragging along the
+   * ends (or picks) fills them in, climbing if the drag goes up the shafts (treadles) and descending if it goes down.
+   * The whole drag is one undo step, redrawn from the draft as it was when the drag began.
+   */
+  const stroke = useRef<{ base: Draft; from: number; start: number; direction: 1 | -1 } | null>(null)
+  const drawStroke = (target: Target, index: number, position: number, continuing: boolean) => {
+    if (view.drawTool === 'click') return
+    if (!continuing || !stroke.current) stroke.current = { base: draft, from: index, start: position, direction: 1 }
+    const s = stroke.current
+    if (position !== s.start) s.direction = position > s.start ? 1 : -1
+    const tool = view.drawTool
+    update(() => drawAlong(s.base, target, tool, s.from, index, s.start, s.direction), { merge: continuing })
   }
 
   /** Applies a change made in a dialog as one undoable step, then closes it. */
@@ -280,14 +295,16 @@ export default function App() {
             view={view}
             touchPaint={touchPaint}
             onThreading={(shaft, end, value, continuing) =>
-              update(
-                (d) => {
-                  const threading = [...d.threading]
-                  threading[end] = value ? shaft : threading[end] === shaft ? -1 : threading[end]
-                  return { ...d, threading }
-                },
-                { merge: continuing },
-              )
+              view.drawTool !== 'click'
+                ? drawStroke('threading', end, shaft, continuing)
+                : update(
+                    (d) => {
+                      const threading = [...d.threading]
+                      threading[end] = value ? shaft : threading[end] === shaft ? -1 : threading[end]
+                      return { ...d, threading }
+                    },
+                    { merge: continuing },
+                  )
             }
             onTieup={(shaft, t, value, continuing) =>
               update(
@@ -299,13 +316,15 @@ export default function App() {
               )
             }
             onTreadling={(pick, t, value, continuing) =>
-              update(
-                (d) => ({
-                  ...d,
-                  treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
-                }),
-                { merge: continuing },
-              )
+              view.drawTool !== 'click'
+                ? drawStroke('treadling', pick, t, continuing)
+                : update(
+                    (d) => ({
+                      ...d,
+                      treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
+                    }),
+                    { merge: continuing },
+                  )
             }
             onWarpColor={(i, c) =>
               update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), { key: `warp:${i}` })

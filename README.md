@@ -25,6 +25,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes and textures (smooth, wool, silk, slub, bouclé) from the yarn library and spacing from the sett; shown flat, draped, as a cushion or rolled, with a weaving animation; soft shadows, room lighting and flattened, fibrous yarns; or made up on a sofa, as a rug or as a tapestry at real (or enlarged) scale
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation
 - Remembers your settings and the pattern you were working on (saved or not) on this device
+- **Straight and point draw**: drag along the threading or treadling to draw 1 2 3 4 … or 1 2 3 4 3 2 …
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
 - Per-thread warp and weft colours
 - **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner

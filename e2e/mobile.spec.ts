@@ -100,3 +100,9 @@ test('the 3D preview fills the screen and can be closed', async ({ page }) => {
   await page.getByRole('button', { name: 'Close 3D preview' }).tap()
   await expect(canvas).toBeHidden()
 })
+
+test('the toolbar and logo fit the screen, so nothing is pushed off the side', async ({ page }) => {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(overflow).toBeLessThanOrEqual(0)
+  await expect(page.getByRole('link', { name: 'Weave Patterner' })).toBeVisible()
+})

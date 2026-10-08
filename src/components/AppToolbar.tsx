@@ -15,6 +15,7 @@ import UndoIcon from '@mui/icons-material/Undo'
 import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import {
   AppBar,
+  Box,
   Button,
   Divider,
   IconButton,
@@ -29,6 +30,7 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
+import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
 interface Props {
@@ -163,11 +165,9 @@ export function AppToolbar(p: Props) {
   return (
     <AppBar position="sticky">
       <Toolbar sx={{ gap: p.compact ? 0.25 : 1, flexWrap: p.compact ? 'nowrap' : 'wrap' }}>
-        {!p.phone && (
-          <Typography variant="h6" sx={{ mr: 2 }} noWrap>
-            Weave Patterner
-          </Typography>
-        )}
+        <Box sx={{ mr: p.compact ? 0.5 : 2, display: 'flex' }}>
+          <Logo compact={p.compact} />
+        </Box>
         <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1, minWidth: 0 }} noWrap>
           {p.name ?? 'Unsaved pattern'}
         </Typography>

@@ -1,6 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close'
 import FlipIcon from '@mui/icons-material/Flip'
-import { Alert, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { Alert, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
@@ -265,6 +265,23 @@ export function DraftView(p: Props) {
             <FlipIcon fontSize="small" sx={{ mr: 0.5 }} />
             Back
           </ToggleButton>
+        </ToggleButtonGroup>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={view.drawTool}
+          onChange={(_, tool) => tool && p.onView({ drawTool: tool })}
+          aria-label="Drawing tool"
+        >
+          <Tooltip title="Click or drag to set boxes one at a time" describeChild>
+            <ToggleButton value="click">Click</ToggleButton>
+          </Tooltip>
+          <Tooltip title="Drag along the threading or treadling to draw 1 2 3 4 1 2 …" describeChild>
+            <ToggleButton value="straight">Straight draw</ToggleButton>
+          </Tooltip>
+          <Tooltip title="Drag along the threading or treadling to draw 1 2 3 4 3 2 1 …" describeChild>
+            <ToggleButton value="point">Point draw</ToggleButton>
+          </Tooltip>
         </ToggleButtonGroup>
         {back && (
           <Typography variant="body2" color="text.secondary" data-testid="back-note">

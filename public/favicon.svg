@@ -1,8 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Weave Patterner</title>
   <rect width="32" height="32" rx="6" fill="#f5f0e6"/>
-  <g fill="#8b0a0a">
-    <rect x="4" y="4" width="6" height="6"/><rect x="10" y="4" width="6" height="6"/><rect x="10" y="10" width="6" height="6"/><rect x="16" y="10" width="6" height="6"/><rect x="16" y="16" width="6" height="6"/><rect x="22" y="16" width="6" height="6"/><rect x="4" y="22" width="6" height="6"/><rect x="22" y="22" width="6" height="6"/>
+  <!-- Warp threads running down from the back beam to the cloth -->
+  <g stroke="#b71c1c" stroke-width="1.3">
+    <path d="M9.5 7v12M12.5 7v12M15.5 7v12M18.5 7v12M21.5 7v12"/>
   </g>
-  <path d="M4 4h24v24H4z" fill="none" stroke="#8b0a0a" stroke-width="1" stroke-opacity=".35"/>
+  <!-- Woven cloth: a little twill -->
+  <rect x="8" y="19" width="15" height="5" fill="#f5f0e6"/>
+  <g fill="#8b0a0a">
+    <rect x="8" y="19" width="3" height="2.5"/><rect x="14" y="19" width="3" height="2.5"/><rect x="20" y="19" width="3" height="2.5"/>
+    <rect x="11" y="21.5" width="3" height="2.5"/><rect x="17" y="21.5" width="3" height="2.5"/>
+  </g>
+  <!-- The loom's wooden frame: posts, back beam, shaft and breast beam -->
+  <g fill="#6d4c33">
+    <rect x="4" y="4" width="3" height="25" rx="1"/>
+    <rect x="25" y="4" width="3" height="25" rx="1"/>
+    <rect x="4" y="4" width="24" height="3" rx="1"/>
+    <rect x="6" y="11.5" width="20" height="2" rx="0.8"/>
+    <rect x="4" y="24" width="24" height="2.5" rx="1"/>
+  </g>
 </svg>
