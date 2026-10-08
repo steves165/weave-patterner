@@ -13,7 +13,7 @@ describe('fabricModel', () => {
     expect(m.paths.filter((p) => p.kind === 'weft')).toHaveLength(6)
     const warp = m.paths[0]
     expect(warp.points).toHaveLength(6 + 2) // one point per pick, plus a lead-in and lead-out
-    expect(warp.color).toBe('#8b0a0a')
+    expect(warp.color).toBe('#d6246e')
   })
 
   it('puts the thread on top higher than the one beneath it at every crossing', () => {

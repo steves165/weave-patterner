@@ -96,14 +96,14 @@ test('stitched layers, layer labels in weaving mode, and hidden crossings when t
   await expect(page.getByTestId('trace-info')).toContainText('so this crossing is hidden on the face')
   await page.keyboard.press('Escape')
 
-  await toolbarButton(page, 'Weave').click()
+  await toolbarButton(page, 'Start weaving').click()
   await expect(page.getByTestId('pick-layer')).toHaveText('Top layer')
   await page.getByRole('button', { name: 'Next pick' }).click()
   await expect(page.getByTestId('pick-layer')).toHaveText('Bottom layer (top layer lifted out of the way)')
 })
 
 test('single-layer drafts show no layer label when weaving', async ({ page }) => {
-  await toolbarButton(page, 'Weave').click()
+  await toolbarButton(page, 'Start weaving').click()
   await expect(page.getByTestId('instruction')).toBeVisible()
   await expect(page.getByTestId('pick-layer')).toHaveCount(0)
 })

@@ -15,7 +15,7 @@ import {
 
 describe('pickInfo', () => {
   it('gives the treadle, lifted shafts and weft colour for a pick', () => {
-    expect(pickInfo(defaultDraft(), 0)).toEqual({ treadles: [1], shafts: [1, 2], color: '#ffffff' })
+    expect(pickInfo(defaultDraft(), 0)).toEqual({ treadles: [1], shafts: [1, 2], color: '#ffd3e4' })
     expect(pickInfo(greenBlocks(), 0).treadles).toEqual([1])
   })
 
@@ -83,8 +83,8 @@ describe('progress storage', () => {
 describe('threading and weft changes', () => {
   it('gives each end its shaft, colour and heddle number on that shaft', () => {
     const d = defaultDraft() // straight draw 1 2 3 4 1 2 3 4 …
-    expect(endInfo(d, 0)).toEqual({ shaft: 1, heddle: 1, color: '#8b0a0a' })
-    expect(endInfo(d, 5)).toEqual({ shaft: 2, heddle: 2, color: '#8b0a0a' })
+    expect(endInfo(d, 0)).toEqual({ shaft: 1, heddle: 1, color: '#d6246e' })
+    expect(endInfo(d, 5)).toEqual({ shaft: 2, heddle: 2, color: '#d6246e' })
     d.threading[6] = -1
     expect(endInfo(d, 6)).toMatchObject({ shaft: null, heddle: null })
     expect(heddleCounts(d)).toEqual([8, 8, 7, 8])

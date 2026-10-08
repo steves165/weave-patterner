@@ -20,7 +20,7 @@ test('converts to a lift plan and back without changing the cloth', async ({ pag
   expect(await cloth()).toBe(before)
 
   // Weaving mode starts in the shafts view for a lift plan.
-  await toolbarButton(page, 'Weave').click()
+  await toolbarButton(page, 'Start weaving').click()
   await expect(page.getByTestId('instruction')).toHaveText('Lift shafts 1, 2')
   await page.getByRole('button', { name: 'Close weaving mode' }).click()
 
@@ -33,7 +33,7 @@ test('converts to a lift plan and back without changing the cloth', async ({ pag
 test('editing the lift plan sets the shafts for a pick', async ({ page }) => {
   await openTool(page, /Convert to lift plan/)
   await page.getByRole('checkbox', { name: 'Pick 1, shaft 4' }).click()
-  await toolbarButton(page, 'Weave').click()
+  await toolbarButton(page, 'Start weaving').click()
   await expect(page.getByTestId('instruction')).toHaveText('Lift shafts 1, 2, 4')
 })
 

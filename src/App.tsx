@@ -5,9 +5,10 @@ import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnal
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
-import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
+import { SettingsSheet, SettingsSidebar } from './components/SettingsFrame'
 import { SettingsPanel } from './components/SettingsPanel'
+import { StatusBar } from './components/StatusBar'
 import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
@@ -182,13 +183,70 @@ export default function App() {
     setDialog(null)
     if (message) setToast(message)
   }
+  const summary = `${draft.shafts} shafts · ${view.noTieup ? 'lift plan' : `${draft.treadles} treadles`} · ${draft.ends} × ${draft.picks}`
+  // Phones and portrait tablets: the settings come up in a sheet from the bottom of the screen.
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const analyticsChoice = GA_ID ? () => setConsent(null) : undefined
+  const settingsPanel = (
+    <SettingsPanel
+      draft={draft}
+      name={name}
+      touch={touch}
+      onResize={(dim, n) =>
+        // Without a tie-up, a lift plan has one column per shaft.
+        update((d) =>
+          keepLiftplan(resizeDraft(d, dim === 'shafts' && view.noTieup ? { shafts: n, treadles: n } : { [dim]: n })),
+        )
+      }
+      cellSize={cellSize}
+      onCellSize={(n) => setView({ cellSize: n })}
+      onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
+      onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
+      onColors={() => setDialog('colors')}
+      repeat={repeat}
+      onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
+      highlightFloats={highlightFloats}
+      onHighlightFloats={(on) => setView({ highlightFloats: on })}
+      floatLimit={floatLimit}
+      onFloatLimit={(n) => setView({ floatLimit: n })}
+      view={view}
+      onView={changeView}
+      onClear={() =>
+        update((d) => ({
+          ...d,
+          threading: d.threading.map(() => -1),
+          tieup: d.tieup.map((r) => r.map(() => false)),
+          treadling: d.treadling.map((r) => r.map(() => false)),
+        }))
+      }
+      canReset={draft !== baseline}
+      onReset={() => update(() => baseline)}
+      onNew={() => open(emptyDraft(), null, 'New pattern: empty grids, ready to design')}
+    />
+  )
+
   useSharedPatternLink((n, d) => open(d, n, `Opened "${n}" from link — use Save to keep it`), setToast)
 
   return (
     <>
-      <Box className="screen-only" sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 6 }}>
+      <Box
+        className="screen-only"
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'background.default',
+          // Room for the phone's bottom navigation.
+          pb: phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
+        }}
+      >
         <AppToolbar
           name={name}
+          summary={summary}
+          onDraft={() => {
+            setSheetOpen(false)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
           phone={phone}
           compact={compact}
           touch={touch}
@@ -285,108 +343,108 @@ export default function App() {
           }}
         />
 
-        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-          <SettingsPanel
-            draft={draft}
-            name={name}
-            compact={compact}
-            touch={touch}
-            onResize={(dim, n) =>
-              // Without a tie-up, a lift plan has one column per shaft.
-              update((d) =>
-                keepLiftplan(
-                  resizeDraft(d, dim === 'shafts' && view.noTieup ? { shafts: n, treadles: n } : { [dim]: n }),
-                ),
-              )
-            }
-            cellSize={cellSize}
-            onCellSize={(n) => setView({ cellSize: n })}
-            onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
-            onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
-            floats={floats}
-            unwoven={unwoven}
-            selvedge={selvedge}
-            repeat={repeat}
-            onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
-            highlightFloats={highlightFloats}
-            onHighlightFloats={(on) => setView({ highlightFloats: on })}
-            floatLimit={floatLimit}
-            onFloatLimit={(n) => setView({ floatLimit: n })}
-            view={view}
-            onView={changeView}
-            onClear={() =>
-              update((d) => ({
-                ...d,
-                threading: d.threading.map(() => -1),
-                tieup: d.tieup.map((r) => r.map(() => false)),
-                treadling: d.treadling.map((r) => r.map(() => false)),
-              }))
-            }
-            canReset={draft !== baseline}
-            onReset={() => update(() => baseline)}
-            onNew={() => open(emptyDraft(), null, 'New pattern: empty grids, ready to design')}
-          />
-
-          <DraftView
-            draft={draft}
-            onView={changeView}
-            drawdown={drawdown}
-            floatMask={floatMask}
-            cellSize={cellSize}
-            view={view}
-            touchPaint={touchPaint}
-            onThreading={(shaft, end, value, continuing) =>
-              view.drawTool !== 'click'
-                ? drawStroke('threading', end, shaft, continuing)
-                : update(
-                    (d) => {
-                      const threading = [...d.threading]
-                      threading[end] = value ? shaft : threading[end] === shaft ? -1 : threading[end]
-                      return { ...d, threading }
-                    },
-                    { merge: continuing },
-                  )
-            }
-            onTieup={(shaft, t, value, continuing) =>
-              update(
-                (d) => ({
-                  ...d,
-                  tieup: d.tieup.map((r, s) => (s === shaft ? r.map((v, i) => (i === t ? value : v)) : r)),
-                }),
-                { merge: continuing },
-              )
-            }
-            onTreadling={(pick, t, value, continuing) => {
-              // A pick can use several treadles (or lift several shafts), so pressing a box always toggles it, adding
-              // to the pick; with a draw tool, dragging on from there draws a run with one treadle per pick.
-              if (view.drawTool !== 'click' && continuing) return drawStroke('treadling', pick, t, continuing)
-              if (view.drawTool !== 'click') stroke.current = { base: draft, from: pick, start: t, direction: 1 }
-              update(
-                (d) => ({
-                  ...d,
-                  treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
-                }),
-                { merge: continuing },
-              )
-            }}
-            onAddBlock={(from, to) => {
-              update((d) => addBlock(d, from, to))
-              setToast(
-                `Marked ends ${Math.min(from, to) + 1}–${Math.max(from, to) + 1} as a block: click it to name it`,
-              )
-            }}
-            onBlocks={(i) => {
-              setBlockFocus(i ?? null)
-              setDialog('blocks')
-            }}
-            onWarpColor={(i, c) =>
-              update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), { key: `warp:${i}` })
-            }
-            onWeftColor={(i, c) =>
-              update((d) => ({ ...d, weftColors: d.weftColors.map((v, j) => (j === i ? c : v)) }), { key: `weft:${i}` })
-            }
-          />
+        <Box
+          sx={{
+            flex: '1 0 auto',
+            display: 'flex',
+            alignItems: 'stretch',
+            // Desktop: the page grows to fit the draft and scrolls; the sidebar stays in view at the right.
+            width: compact ? 'auto' : 'max-content',
+            minWidth: '100%',
+          }}
+        >
+          <Box component="main" sx={{ flex: '1 0 auto', minWidth: 0, maxWidth: compact ? '100%' : undefined }}>
+            <DraftView
+              draft={draft}
+              onView={changeView}
+              drawdown={drawdown}
+              floatMask={floatMask}
+              cellSize={cellSize}
+              view={view}
+              touchPaint={touchPaint}
+              onThreading={(shaft, end, value, continuing) =>
+                view.drawTool !== 'click'
+                  ? drawStroke('threading', end, shaft, continuing)
+                  : update(
+                      (d) => {
+                        const threading = [...d.threading]
+                        threading[end] = value ? shaft : threading[end] === shaft ? -1 : threading[end]
+                        return { ...d, threading }
+                      },
+                      { merge: continuing },
+                    )
+              }
+              onTieup={(shaft, t, value, continuing) =>
+                update(
+                  (d) => ({
+                    ...d,
+                    tieup: d.tieup.map((r, s) => (s === shaft ? r.map((v, i) => (i === t ? value : v)) : r)),
+                  }),
+                  { merge: continuing },
+                )
+              }
+              onTreadling={(pick, t, value, continuing) => {
+                // A pick can use several treadles (or lift several shafts), so pressing a box always toggles it, adding
+                // to the pick; with a draw tool, dragging on from there draws a run with one treadle per pick.
+                if (view.drawTool !== 'click' && continuing) return drawStroke('treadling', pick, t, continuing)
+                if (view.drawTool !== 'click') stroke.current = { base: draft, from: pick, start: t, direction: 1 }
+                update(
+                  (d) => ({
+                    ...d,
+                    treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
+                  }),
+                  { merge: continuing },
+                )
+              }}
+              onAddBlock={(from, to) => {
+                update((d) => addBlock(d, from, to))
+                setToast(
+                  `Marked ends ${Math.min(from, to) + 1}–${Math.max(from, to) + 1} as a block: click it to name it`,
+                )
+              }}
+              onBlocks={(i) => {
+                setBlockFocus(i ?? null)
+                setDialog('blocks')
+              }}
+              onWarpColor={(i, c) =>
+                update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), {
+                  key: `warp:${i}`,
+                })
+              }
+              onWeftColor={(i, c) =>
+                update((d) => ({ ...d, weftColors: d.weftColors.map((v, j) => (j === i ? c : v)) }), {
+                  key: `weft:${i}`,
+                })
+              }
+            />
+          </Box>
+          {!compact && (
+            <SettingsSidebar open={view.settingsOpen ?? true} onToggle={(open) => setView({ settingsOpen: open })}>
+              {settingsPanel}
+            </SettingsSidebar>
+          )}
         </Box>
+        {compact && (
+          <SettingsSheet
+            open={sheetOpen}
+            onOpen={setSheetOpen}
+            summary={summary}
+            phone={phone}
+            analytics={analyticsChoice}
+          >
+            {settingsPanel}
+          </SettingsSheet>
+        )}
+        <StatusBar
+          draft={draft}
+          floats={floats}
+          floatLimit={floatLimit}
+          unwoven={unwoven}
+          selvedge={selvedge}
+          onAnalytics={analyticsChoice}
+          phone={phone}
+          sticky={!compact}
+        />
 
         <SaveDialog
           open={dialog === 'save'}
@@ -586,8 +644,9 @@ export default function App() {
           onClose={() => setToast(null)}
           message={toast}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          // Above the phone's bottom navigation.
+          sx={phone ? { bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))' } : undefined}
         />
-        <Footer onAnalytics={GA_ID ? () => setConsent(null) : undefined} />
         {GA_ID && consent === null && (
           <ConsentBanner
             onChoose={(allow) => {

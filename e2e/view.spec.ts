@@ -121,11 +121,11 @@ test('on desktop the draft grows to full size and the page scrolls instead', asy
 test('filled boxes show the colour of the thread they stand for', async ({ page }) => {
   const bg = (name: string) => cell(page, name).evaluate((el) => getComputedStyle(el).backgroundColor)
   // Default draft: red warp, white weft; end 1 is on shaft 1 and pick 1 on treadle 1.
-  expect(await bg('End 1, shaft 1')).toBe('rgb(139, 10, 10)')
-  expect(await bg('Pick 1, treadle 1')).toBe('rgb(255, 255, 255)')
-  expect(await bg('End 1, shaft 2')).toBe('rgb(255, 255, 255)') // empty
+  expect(await bg('End 1, shaft 1')).toBe('rgb(214, 36, 110)')
+  expect(await bg('Pick 1, treadle 1')).toBe('rgb(255, 211, 228)')
+  expect(await bg('End 1, shaft 2')).toBe('rgb(255, 253, 254)') // empty: the paper colour
   await expect(cell(page, 'Pick 1, treadle 1')).toHaveClass(/colored/) // ringed so white still reads as filled
-  expect(await bg('Treadle 1, shaft 1')).toBe('rgb(17, 17, 17)') // the tie-up has no thread colour
+  expect(await bg('Treadle 1, shaft 1')).toBe('rgb(59, 23, 48)') // the tie-up has no thread colour: ink
 
   await page.getByLabel('Warp 1', { exact: true }).fill('#00ff00')
   expect(await bg('End 1, shaft 1')).toBe('rgb(0, 255, 0)')
@@ -135,6 +135,6 @@ test('filled boxes show the colour of the thread they stand for', async ({ page 
   expect(await cell(page, 'End 1, shaft 1').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)')
 
   await page.getByLabel('Thread colours in boxes').uncheck()
-  expect(await bg('End 1, shaft 1')).toBe('rgb(17, 17, 17)')
+  expect(await bg('End 1, shaft 1')).toBe('rgb(59, 23, 48)')
   await expect(cell(page, 'Pick 1, treadle 1')).not.toHaveClass(/colored/)
 })

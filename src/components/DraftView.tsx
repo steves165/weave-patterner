@@ -3,6 +3,7 @@ import FlipIcon from '@mui/icons-material/Flip'
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'
 import {
   Alert,
+  Box,
   Button,
   IconButton,
   Paper,
@@ -15,7 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
-import { useCompact, useTouch } from '../layout'
+import { useCompact, usePhone, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
 import { layerNote, traceCell } from '../trace'
 import type { Draft } from '../weave'
@@ -71,6 +72,7 @@ export function DraftView(p: Props) {
   // Phones, tablets and touch screens pan the pattern in its own box; desktops and laptops grow it to full size and
   // scroll the page instead.
   const compact = useCompact()
+  const phone = usePhone()
   const touch = useTouch()
   const ownScroll = compact || touch
 
@@ -152,6 +154,7 @@ export function DraftView(p: Props) {
         isOn={(r, c) => draft.threading[endAt(c)] === shaftAt(r)}
         onPaint={(r, c, v, cont) => p.onThreading(shaftAt(r), endAt(c), v, cont)}
         label="Threading"
+        fromRight={mirrored}
         cellLabel={(r, c) => `End ${endAt(c) + 1}, shaft ${shaftAt(r) + 1}`}
         cellText={view.numbers ? (r) => String(shaftAt(r) + 1) : undefined}
         cellColor={view.colorBoxes ? (_, c) => draft.warpColors[endAt(c)] : undefined}
@@ -183,7 +186,7 @@ export function DraftView(p: Props) {
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: a pointer shortcut; the explanation is shown as text and the same cells are reachable by keyboard in the threading and treadling */}
       <div
         ref={drawdownRef}
-        className={`grid drawdown${view.fabric ? ' fabric' : ''}`}
+        className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}`}
         role="img"
         aria-label={`${view.clothSide === 'face' ? 'Face of the cloth' : view.clothSide === 'back' ? 'Back of the cloth' : 'Woven pattern'}, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
         style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}
@@ -239,23 +242,7 @@ export function DraftView(p: Props) {
   )
 
   return (
-    <Paper
-      variant="outlined"
-      className="draft-scroll"
-      data-scroll={ownScroll ? 'own' : 'page'}
-      sx={
-        ownScroll
-          ? {
-              p: { xs: 1, sm: 2 },
-              overflow: 'auto',
-              // Fill the screen below the toolbar so the pattern pans in both directions in one place.
-              maxHeight: { xs: 'calc(100dvh - 72px)', sm: 'calc(100dvh - 96px)' },
-              // Stop horizontal pans at the edge from triggering browser back/forward swipes.
-              overscrollBehaviorX: 'contain',
-            }
-          : { p: 2, width: 'max-content', minWidth: '100%', boxSizing: 'border-box' }
-      }
-    >
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       {trace && (
         <Alert
           severity="info"
@@ -265,7 +252,9 @@ export function DraftView(p: Props) {
             zIndex: 1200,
             left: '50%',
             transform: 'translateX(-50%)',
-            bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+            bottom: phone
+              ? 'calc(140px + env(safe-area-inset-bottom, 0px))'
+              : 'calc(60px + env(safe-area-inset-bottom, 0px))',
             width: 'max-content',
             maxWidth: 'calc(100vw - 32px)',
             boxShadow: 6,
@@ -280,7 +269,18 @@ export function DraftView(p: Props) {
           {note && ` ${note}`}
         </Alert>
       )}
-      <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>
+      <Stack
+        direction="row"
+        sx={{
+          gap: '10px 16px',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          px: { xs: 1.75, sm: 3 },
+          py: 1.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
         <ToggleButtonGroup
           exclusive
           size="small"
@@ -312,7 +312,7 @@ export function DraftView(p: Props) {
             <ToggleButton value="point">Point draw</ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
-        <Button size="small" variant="outlined" startIcon={<ViewColumnIcon />} onClick={() => p.onBlocks()}>
+        <Button color="inherit" startIcon={<ViewColumnIcon />} onClick={() => p.onBlocks()} sx={{ height: 40 }}>
           Blocks
         </Button>
         {back && (
@@ -320,38 +320,71 @@ export function DraftView(p: Props) {
             Turned over: left and right are swapped, so end 1 is on the {mirrored ? 'right' : 'left'}.
           </Typography>
         )}
-      </Stack>
-      <div
-        ref={container}
-        className="draft"
-        data-layout={view.threadingBelow ? 'threading-below' : 'threading-above'}
-        style={{ ['--cell' as string]: `${p.cellSize}px`, gridTemplateColumns: `repeat(${cols}, max-content)` }}
-      >
-        {!view.threadingBelow && blockRow}
-        {rulerRow}
-        {view.threadingBelow ? (
+        {!compact && !touch && (
           <>
-            {drawdownRow}
-            {threadingRow}
-            {warpRow}
-            {blockRow}
-          </>
-        ) : (
-          <>
-            {warpRow}
-            {threadingRow}
-            {drawdownRow}
+            <Box sx={{ flex: '1 1 0px' }} />
+            <Typography variant="body2" color="text.secondary">
+              Click or drag on the grids · arrow keys and Space work too
+            </Typography>
           </>
         )}
-        <Crosshair
-          container={container}
-          drawdown={drawdownRef}
-          cellSize={p.cellSize}
-          ends={ends}
-          picks={picks}
-          endAt={endAt}
-        />
-      </div>
-    </Paper>
+      </Stack>
+      <Box sx={{ px: { xs: 1.25, sm: 3 }, py: { xs: 1.25, sm: 4 }, display: 'flex', justifyContent: 'center' }}>
+        <Paper
+          variant="outlined"
+          className="draft-scroll"
+          data-scroll={ownScroll ? 'own' : 'page'}
+          sx={{
+            borderRadius: { xs: '20px', sm: '26px' },
+            bgcolor: 'var(--wp-paper)',
+            boxShadow: '0 1px 2px var(--wp-shadow-soft), 0 12px 32px var(--wp-shadow)',
+            boxSizing: 'border-box',
+            ...(ownScroll
+              ? {
+                  p: { xs: 1.75, sm: 3 },
+                  overflow: 'auto',
+                  maxWidth: '100%',
+                  // Fill the screen between the toolbars so the pattern pans in both directions in one place.
+                  maxHeight: phone ? 'calc(100dvh - 250px)' : 'calc(100dvh - 200px)',
+                  // Stop horizontal pans at the edge from triggering browser back/forward swipes.
+                  overscrollBehaviorX: 'contain',
+                }
+              : { p: '28px 30px 30px', width: 'max-content' }),
+          }}
+        >
+          <div
+            ref={container}
+            className="draft"
+            data-layout={view.threadingBelow ? 'threading-below' : 'threading-above'}
+            style={{ ['--cell' as string]: `${p.cellSize}px`, gridTemplateColumns: `repeat(${cols}, max-content)` }}
+          >
+            {!view.threadingBelow && blockRow}
+            {rulerRow}
+            {view.threadingBelow ? (
+              <>
+                {drawdownRow}
+                {threadingRow}
+                {warpRow}
+                {blockRow}
+              </>
+            ) : (
+              <>
+                {warpRow}
+                {threadingRow}
+                {drawdownRow}
+              </>
+            )}
+            <Crosshair
+              container={container}
+              drawdown={drawdownRef}
+              cellSize={p.cellSize}
+              ends={ends}
+              picks={picks}
+              endAt={endAt}
+            />
+          </div>
+        </Paper>
+      </Box>
+    </Box>
   )
 }

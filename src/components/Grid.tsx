@@ -22,6 +22,8 @@ interface GridProps {
   cellColor?: (r: number, c: number) => string
   /** Cells to outline because they decide the drawdown square being traced. */
   traced?: (r: number, c: number) => boolean
+  /** Columns count from the right (end 1 on the right), so the heavier lines every 4 do too. */
+  fromRight?: boolean
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -47,6 +49,7 @@ export function Grid({
   cellText,
   cellColor,
   traced,
+  fromRight = false,
 }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
   const lastPointer = useRef('mouse')
@@ -127,7 +130,7 @@ export function Grid({
       ref={container}
       role="group"
       aria-label={label}
-      className={`grid paintable${touchPaint ? ' touch-paint' : ''}`}
+      className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}`}
       style={{ gridTemplateColumns: `repeat(${cols}, var(--cell))` }}
     >
       {cells}

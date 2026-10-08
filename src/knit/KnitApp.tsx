@@ -39,7 +39,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { Footer } from '../components/Footer'
-import { LoomMark } from '../components/Logo'
+import { WeaveMark } from '../components/Logo'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { LoadDialog } from '../dialogs/LoadDialog'
 import { SaveDialog } from '../dialogs/SaveDialog'
@@ -381,7 +381,7 @@ export default function KnitApp() {
           <ThemeToggle />
           <Tooltip title="Weave Patterner: weaving drafts">
             <IconButton color="inherit" component="a" href="../" aria-label="Weave Patterner">
-              <LoomMark size={26} />
+              <WeaveMark size={26} />
             </IconButton>
           </Tooltip>
         </Toolbar>

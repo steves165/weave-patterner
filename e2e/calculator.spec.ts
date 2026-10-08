@@ -15,7 +15,7 @@ test('works out the warp from the draft and default settings', async ({ page }) 
   await expect(summary(page)).toContainText('Width in reed: 4 cm')
   await expect(summary(page)).toContainText('Warp length: 3.22 m')
   await expect(summary(page)).toContainText('Picks to weave: 1,778')
-  await expect(dialog(page).getByRole('table', { name: 'Yarn needed' })).toContainText('#8b0a0a')
+  await expect(dialog(page).getByRole('table', { name: 'Yarn needed' })).toContainText('#d6246e')
 })
 
 test('recalculates as you type and adds weight and cost columns', async ({ page }) => {

@@ -8,7 +8,7 @@ describe('tabby', () => {
     const d = defaultDraft()
     const t = insertTabby(d, '#cccccc')
     expect([t.picks, t.treadles]).toEqual([64, 6])
-    expect(t.weftColors.slice(0, 4)).toEqual(['#ffffff', '#cccccc', '#ffffff', '#cccccc'])
+    expect(t.weftColors.slice(0, 4)).toEqual(['#ffd3e4', '#cccccc', '#ffd3e4', '#cccccc'])
     const dd = computeDrawdown(t)
     // Tabby picks alternate across the cloth (straight draw on 4 shafts).
     for (const p of [1, 3]) expect(dd[p].every((v, e) => e === 0 || v !== dd[p][e - 1])).toBe(true)

@@ -3,11 +3,11 @@ import CalculateIcon from '@mui/icons-material/Calculate'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
+import GridOnIcon from '@mui/icons-material/GridOn'
 import HandymanIcon from '@mui/icons-material/Handyman'
 import ImageIcon from '@mui/icons-material/Image'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
 import PaletteIcon from '@mui/icons-material/Palette'
-import PlayCircleIcon from '@mui/icons-material/PlayCircle'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
 import SaveIcon from '@mui/icons-material/Save'
@@ -17,6 +17,7 @@ import {
   AppBar,
   Box,
   Button,
+  ButtonBase,
   Divider,
   IconButton,
   ListItemIcon,
@@ -30,11 +31,16 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
+import { useMidWidth } from '../layout'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
 interface Props {
   name: string | null
+  /** "4 shafts · 4 treadles · 32 × 32", under the name. */
+  summary: string
+  /** Phone: brings the draft back into view (the Draft tab). */
+  onDraft: () => void
   /** Phone: file actions move into a "More" menu. */
   phone: boolean
   /** Phone or narrow tablet: icon-only buttons. */
@@ -103,8 +109,10 @@ function Action(props: {
   onClick: (e: MouseEvent<HTMLElement>) => void
   disabled?: boolean
   iconOnly?: boolean
+  /** Outlined or filled pills stand out from the plain text buttons. */
+  variant?: 'text' | 'outlined' | 'contained'
 }) {
-  const { compact, icon, label, onClick, disabled, iconOnly } = props
+  const { compact, icon, label, onClick, disabled, iconOnly, variant = 'text' } = props
   return compact || iconOnly ? (
     <Tooltip title={label} describeChild>
       {/* span keeps the tooltip working while the button is disabled */}
@@ -115,21 +123,62 @@ function Action(props: {
       </span>
     </Tooltip>
   ) : (
-    <Button color="inherit" startIcon={icon} onClick={onClick} disabled={disabled}>
+    <Button
+      color={variant === 'contained' ? 'primary' : 'inherit'}
+      variant={variant}
+      disableElevation
+      startIcon={icon}
+      onClick={onClick}
+      disabled={disabled}
+      sx={{ height: 40, px: 1.5, fontWeight: variant === 'text' ? 500 : 600, flex: 'none' }}
+    >
       {label}
     </Button>
+  )
+}
+
+/** A thin upright line between groups of toolbar buttons. */
+const Rule = () => <Box aria-hidden sx={{ width: '1px', height: 28, bgcolor: 'divider', flex: 'none' }} />
+
+/** A tab of the phone's bottom navigation bar. */
+function NavTab(props: {
+  icon: ReactNode
+  label: string
+  current?: boolean
+  onClick: (e: MouseEvent<HTMLElement>) => void
+}) {
+  return (
+    <ButtonBase
+      aria-current={props.current ? 'page' : undefined}
+      onClick={props.onClick}
+      sx={{
+        minHeight: 52,
+        borderRadius: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '3px',
+        fontSize: 11,
+        fontWeight: props.current ? 700 : 600,
+        color: props.current ? 'primary.main' : 'text.secondary',
+      }}
+    >
+      {props.icon}
+      {props.label}
+    </ButtonBase>
   )
 }
 
 export function AppToolbar(p: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null)
-  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null)
+  // Between tablet and big desktop widths, the file buttons are icons only so the app bar fits on one line.
+  const fileCompact = useMidWidth() || p.compact
+  const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [printAnchor, setPrintAnchor] = useState<HTMLElement | null>(null)
   const close = () => {
     setExportAnchor(null)
     setToolsAnchor(null)
-    setMoreAnchor(null)
+    setFileAnchor(null)
     setPrintAnchor(null)
   }
   const then = (fn: () => void) => () => {
@@ -163,213 +212,309 @@ export function AppToolbar(p: Props) {
     </MenuItem>,
   ]
 
-  return (
-    <AppBar position="sticky">
-      <Toolbar sx={{ gap: p.compact ? 0.25 : 1, flexWrap: p.compact ? 'nowrap' : 'wrap' }}>
-        <Box sx={{ mr: p.compact ? 0.5 : 2, display: 'flex' }}>
-          <Logo compact={p.compact} />
-        </Box>
-        <Typography variant="body2" sx={{ opacity: 0.8, flexGrow: 1, minWidth: 0 }} noWrap>
-          {p.name ?? 'Unsaved pattern'}
-        </Typography>
+  const fileItems = [
+    <MenuItem key="save" onClick={then(p.onSave)}>
+      <ListItemIcon>
+        <SaveIcon fontSize="small" />
+      </ListItemIcon>
+      Save
+    </MenuItem>,
+    <MenuItem key="load" onClick={then(p.onLoad)}>
+      <ListItemIcon>
+        <FolderOpenIcon fontSize="small" />
+      </ListItemIcon>
+      Load
+    </MenuItem>,
+    <MenuItem key="import" onClick={then(p.onImport)}>
+      <ListItemIcon>
+        <FileUploadIcon fontSize="small" />
+      </ListItemIcon>
+      Import
+    </MenuItem>,
+    <Divider key="d1" />,
+    <ListSubheader key="print">Print</ListSubheader>,
+    ...printItems,
+    <Divider key="d2" />,
+    <ListSubheader key="export">Export</ListSubheader>,
+    ...exportItems,
+  ]
+  const openTools = (e: MouseEvent<HTMLElement>) => setToolsAnchor(e.currentTarget)
 
-        <Action
-          compact={p.compact}
-          iconOnly
-          icon={<UndoIcon />}
-          label="Undo"
-          onClick={p.onUndo}
-          disabled={!p.canUndo}
-        />
-        <Action
-          compact={p.compact}
-          iconOnly
-          icon={<RedoIcon />}
-          label="Redo"
-          onClick={p.onRedo}
-          disabled={!p.canRedo}
-        />
-        {p.touch && (
-          <Tooltip title={p.touchPaint ? 'Drag-painting on: tap to scroll instead' : 'Drag to paint'}>
-            <IconButton
-              color="inherit"
-              aria-label="Drag to paint"
-              aria-pressed={p.touchPaint}
-              onClick={p.onToggleTouchPaint}
-              sx={
-                p.touchPaint
-                  ? { bgcolor: 'rgba(255,255,255,0.25)', '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' } }
-                  : undefined
-              }
+  return (
+    <>
+      <AppBar position="sticky">
+        <Toolbar
+          sx={{
+            gap: p.compact ? 0.25 : 1.5,
+            rowGap: 1,
+            flexWrap: p.compact ? 'nowrap' : 'wrap',
+            py: 1,
+            px: { xs: 1, sm: 2.5 },
+            minHeight: { xs: 60, sm: 64 },
+          }}
+        >
+          <Box sx={{ display: 'flex', flex: 'none', ml: p.phone ? 0.5 : 0 }}>
+            <Logo compact={p.compact} />
+          </Box>
+          {!p.compact && <Rule />}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0,
+              flex: p.compact ? '1 1 auto' : '0 1 auto',
+              ml: p.compact ? 1 : 0,
+            }}
+          >
+            <Typography variant="body2" noWrap sx={{ fontWeight: 600, fontSize: 15 }}>
+              {p.name ?? 'Unsaved pattern'}
+            </Typography>
+            <Typography variant="caption" noWrap color="text.secondary" data-testid="draft-summary">
+              {p.summary}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flex: 'none' }}>
+            <Action
+              compact={p.compact}
+              iconOnly
+              icon={<UndoIcon />}
+              label="Undo"
+              onClick={p.onUndo}
+              disabled={!p.canUndo}
+            />
+            <Action
+              compact={p.compact}
+              iconOnly
+              icon={<RedoIcon />}
+              label="Redo"
+              onClick={p.onRedo}
+              disabled={!p.canRedo}
+            />
+          </Box>
+          {p.touch && (
+            <Tooltip title={p.touchPaint ? 'Drag-painting on: tap to scroll instead' : 'Drag to paint'}>
+              <IconButton
+                color={p.touchPaint ? 'primary' : 'inherit'}
+                aria-label="Drag to paint"
+                aria-pressed={p.touchPaint}
+                onClick={p.onToggleTouchPaint}
+                sx={p.touchPaint ? { bgcolor: 'var(--wp-hover)' } : undefined}
+              >
+                <BrushIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {!p.compact && <Box sx={{ flex: '1 1 0px' }} />}
+
+          {!p.phone && (
+            <Box
+              component="nav"
+              aria-label="File"
+              sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px', flex: 'none' }}
             >
-              <BrushIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-        <Action compact={p.compact} icon={<PlayCircleIcon />} label="Weave" onClick={p.onWeave} />
-        <Action compact={p.compact} icon={<ViewInArIcon />} label="3D" onClick={p.on3d} />
-        <Action
-          compact={p.compact}
-          icon={<HandymanIcon />}
-          label="Tools"
-          onClick={(e) => setToolsAnchor(e.currentTarget)}
-        />
-        <Menu anchorEl={toolsAnchor} open={toolsAnchor !== null} onClose={close}>
-          <ListSubheader disableSticky>Edit</ListSubheader>
-          <MenuItem onClick={then(p.onSequenceTools)}>
-            <ListItemText
-              primary="Sequence tools…"
-              secondary="Fill, repeat, mirror, reverse, insert or delete ends and picks"
-            />
-          </MenuItem>
-          <MenuItem onClick={then(p.onTrompAsWrit)}>
-            <ListItemText
-              primary="Tromp as writ"
-              secondary="Treadle as drawn in: copy the threading to the treadling"
-            />
-          </MenuItem>
-          <ListSubheader disableSticky>Design</ListSubheader>
-          <MenuItem onClick={then(p.onColors)}>
-            <ListItemIcon>
-              <PaletteIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText
-              primary="Colours and presets…"
-              secondary="Stripe sequences; houndstooth, log cabin and more"
-            />
-          </MenuItem>
-          <MenuItem onClick={then(p.onCloth)}>
-            <ListItemText
-              primary="Draw the cloth…"
-              secondary="Paint the cloth; get the threading, tie-up and treadling"
-            />
-          </MenuItem>
-          <MenuItem onClick={then(p.onProfile)}>
-            <ListItemText
-              primary="Block profile…"
-              secondary="Design in blocks: overshot, summer and winter, lace, crackle, twill…"
-            />
-          </MenuItem>
-          <MenuItem onClick={then(p.onDoubleCloth)}>
-            <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onPicture)}>
-            <ListItemText primary="Picture to draft…" secondary="Turn a picture into blocks and a draft" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onEcho)}>
-            <ListItemText primary="Echo weave…" secondary="A design line threaded with its echo, in two colours" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onVariations)}>
-            <ListItemText primary="Variations…" secondary="Same threading, other tie-ups and treadlings" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onColorways)}>
-            <ListItemText primary="Colourways…" secondary="The same cloth in other colours, side by side" />
-          </MenuItem>
-          <ListSubheader disableSticky>Change the whole draft</ListSubheader>
-          <MenuItem onClick={then(p.onTransform)}>
-            <ListItemText primary="Transform draft…" secondary="Turn 90°, swap face and back, flip, move the repeat" />
-          </MenuItem>
-          {p.isLiftplan ? (
-            <MenuItem onClick={then(p.onToTreadling)}>
+              <Action compact={fileCompact} icon={<SaveIcon />} label="Save" onClick={p.onSave} />
+              <Action compact={fileCompact} icon={<FolderOpenIcon />} label="Load" onClick={p.onLoad} />
+              <Action compact={fileCompact} icon={<FileUploadIcon />} label="Import" onClick={p.onImport} />
+              <Action
+                compact={fileCompact}
+                icon={<FileDownloadIcon />}
+                label="Export"
+                onClick={(e) => setExportAnchor(e.currentTarget)}
+              />
+              <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={close}>
+                {exportItems}
+              </Menu>
+              <Action
+                compact={fileCompact}
+                icon={<PrintIcon />}
+                label="Print"
+                onClick={(e) => setPrintAnchor(e.currentTarget)}
+              />
+              <Menu anchorEl={printAnchor} open={printAnchor !== null} onClose={close}>
+                {printItems}
+              </Menu>
+            </Box>
+          )}
+          {!p.compact && <Rule />}
+          <Box
+            component="nav"
+            aria-label="Studio"
+            sx={{ display: 'flex', alignItems: 'center', gap: p.compact ? '2px' : 1, flex: 'none' }}
+          >
+            {!p.phone && <Action compact={p.compact} icon={<HandymanIcon />} label="Tools" onClick={openTools} />}
+            {!p.phone && (
+              <Action
+                compact={p.compact}
+                variant="outlined"
+                icon={<ViewInArIcon />}
+                label="3D cloth"
+                onClick={p.on3d}
+              />
+            )}
+            {p.compact ? (
+              <Tooltip title="Start weaving" describeChild>
+                <IconButton
+                  aria-label="Start weaving"
+                  onClick={p.onWeave}
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 3,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  }}
+                >
+                  <PlayArrowIcon />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Action
+                compact={false}
+                variant="contained"
+                icon={<PlayArrowIcon />}
+                label="Start weaving"
+                onClick={p.onWeave}
+              />
+            )}
+            <ThemeToggle />
+          </Box>
+          <Menu anchorEl={toolsAnchor} open={toolsAnchor !== null} onClose={close}>
+            <ListSubheader disableSticky>Edit</ListSubheader>
+            <MenuItem onClick={then(p.onSequenceTools)}>
               <ListItemText
-                primary="Convert to tie-up and treadling"
-                secondary="One treadle for each different shed, for floor looms"
+                primary="Sequence tools…"
+                secondary="Fill, repeat, mirror, reverse, insert or delete ends and picks"
               />
             </MenuItem>
-          ) : (
-            <MenuItem onClick={then(p.onToLiftplan)}>
-              <ListItemText primary="Convert to lift plan" secondary="Shafts per pick, for dobby looms" />
+            <MenuItem onClick={then(p.onTrompAsWrit)}>
+              <ListItemText
+                primary="Tromp as writ"
+                secondary="Treadle as drawn in: copy the threading to the treadling"
+              />
             </MenuItem>
-          )}
-          <MenuItem onClick={then(p.onReport)}>
-            <ListItemText primary="Cloth report…" secondary="Warp and weft faces, interlacing, floats, firmness" />
-          </MenuItem>
-          <ListSubheader disableSticky>Plan the warp</ListSubheader>
-          <MenuItem onClick={then(p.onWarpPlan)}>
-            <ListItemText primary="Warp winding plan…" secondary="Colour order for the warping board, in bouts" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onCalculator)}>
-            <ListItemIcon>
-              <CalculateIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="Warp calculator…" secondary="Warp length, width in reed and yarn per colour" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onYarns)}>
-            <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
-          </MenuItem>
-          <ListSubheader disableSticky>Other looms</ListSubheader>
-          <MenuItem onClick={then(p.onRigidHeddle)}>
-            <ListItemText primary="Rigid heddle…" secondary="Weave this draft with a rigid heddle and pick-up stick" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onDrawloom)}>
-            <ListItemText primary="Drawloom…" secondary="Damask and other pattern-harness designs, drawn in units" />
-          </MenuItem>
-          <MenuItem onClick={then(p.onTablet)}>
-            <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />
-          </MenuItem>
-          <ListSubheader disableSticky>Other crafts</ListSubheader>
-          <MenuItem component="a" href="./knit/" onClick={close}>
-            <ListItemText primary="Knit Patterner" secondary="Knitting charts, written patterns and colourwork" />
-          </MenuItem>
-        </Menu>
-
-        {p.phone ? (
-          <>
-            <Action compact icon={<MoreVertIcon />} label="More" onClick={(e) => setMoreAnchor(e.currentTarget)} />
-            <Menu anchorEl={moreAnchor} open={moreAnchor !== null} onClose={close}>
-              <MenuItem onClick={then(p.onSave)}>
-                <ListItemIcon>
-                  <SaveIcon fontSize="small" />
-                </ListItemIcon>
-                Save
+            <ListSubheader disableSticky>Design</ListSubheader>
+            <MenuItem onClick={then(p.onColors)}>
+              <ListItemIcon>
+                <PaletteIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Colours and presets…"
+                secondary="Stripe sequences; houndstooth, log cabin and more"
+              />
+            </MenuItem>
+            <MenuItem onClick={then(p.onCloth)}>
+              <ListItemText
+                primary="Draw the cloth…"
+                secondary="Paint the cloth; get the threading, tie-up and treadling"
+              />
+            </MenuItem>
+            <MenuItem onClick={then(p.onProfile)}>
+              <ListItemText
+                primary="Block profile…"
+                secondary="Design in blocks: overshot, summer and winter, lace, crackle, twill…"
+              />
+            </MenuItem>
+            <MenuItem onClick={then(p.onDoubleCloth)}>
+              <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onPicture)}>
+              <ListItemText primary="Picture to draft…" secondary="Turn a picture into blocks and a draft" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onEcho)}>
+              <ListItemText primary="Echo weave…" secondary="A design line threaded with its echo, in two colours" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onVariations)}>
+              <ListItemText primary="Variations…" secondary="Same threading, other tie-ups and treadlings" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onColorways)}>
+              <ListItemText primary="Colourways…" secondary="The same cloth in other colours, side by side" />
+            </MenuItem>
+            <ListSubheader disableSticky>Change the whole draft</ListSubheader>
+            <MenuItem onClick={then(p.onTransform)}>
+              <ListItemText
+                primary="Transform draft…"
+                secondary="Turn 90°, swap face and back, flip, move the repeat"
+              />
+            </MenuItem>
+            {p.isLiftplan ? (
+              <MenuItem onClick={then(p.onToTreadling)}>
+                <ListItemText
+                  primary="Convert to tie-up and treadling"
+                  secondary="One treadle for each different shed, for floor looms"
+                />
               </MenuItem>
-              <MenuItem onClick={then(p.onLoad)}>
-                <ListItemIcon>
-                  <FolderOpenIcon fontSize="small" />
-                </ListItemIcon>
-                Load
+            ) : (
+              <MenuItem onClick={then(p.onToLiftplan)}>
+                <ListItemText primary="Convert to lift plan" secondary="Shafts per pick, for dobby looms" />
               </MenuItem>
-              <MenuItem onClick={then(p.onImport)}>
-                <ListItemIcon>
-                  <FileUploadIcon fontSize="small" />
-                </ListItemIcon>
-                Import
-              </MenuItem>
-              <Divider />
-              <ListSubheader>Print</ListSubheader>
-              {printItems}
-              <Divider />
-              <ListSubheader>Export</ListSubheader>
-              {exportItems}
-            </Menu>
-          </>
-        ) : (
-          <>
-            <Action compact={p.compact} icon={<SaveIcon />} label="Save" onClick={p.onSave} />
-            <Action compact={p.compact} icon={<FolderOpenIcon />} label="Load" onClick={p.onLoad} />
-            <Action
-              compact={p.compact}
-              icon={<FileDownloadIcon />}
-              label="Export"
-              onClick={(e) => setExportAnchor(e.currentTarget)}
-            />
-            <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={close}>
-              {exportItems}
-            </Menu>
-            <Action compact={p.compact} icon={<FileUploadIcon />} label="Import" onClick={p.onImport} />
-            <Action
-              compact={p.compact}
-              icon={<PrintIcon />}
-              label="Print"
-              onClick={(e) => setPrintAnchor(e.currentTarget)}
-            />
-            <Menu anchorEl={printAnchor} open={printAnchor !== null} onClose={close}>
-              {printItems}
-            </Menu>
-          </>
-        )}
-        <ThemeToggle />
-      </Toolbar>
-    </AppBar>
+            )}
+            <MenuItem onClick={then(p.onReport)}>
+              <ListItemText primary="Cloth report…" secondary="Warp and weft faces, interlacing, floats, firmness" />
+            </MenuItem>
+            <ListSubheader disableSticky>Plan the warp</ListSubheader>
+            <MenuItem onClick={then(p.onWarpPlan)}>
+              <ListItemText primary="Warp winding plan…" secondary="Colour order for the warping board, in bouts" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onCalculator)}>
+              <ListItemIcon>
+                <CalculateIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Warp calculator…" secondary="Warp length, width in reed and yarn per colour" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onYarns)}>
+              <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
+            </MenuItem>
+            <ListSubheader disableSticky>Other looms</ListSubheader>
+            <MenuItem onClick={then(p.onRigidHeddle)}>
+              <ListItemText
+                primary="Rigid heddle…"
+                secondary="Weave this draft with a rigid heddle and pick-up stick"
+              />
+            </MenuItem>
+            <MenuItem onClick={then(p.onDrawloom)}>
+              <ListItemText primary="Drawloom…" secondary="Damask and other pattern-harness designs, drawn in units" />
+            </MenuItem>
+            <MenuItem onClick={then(p.onTablet)}>
+              <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />
+            </MenuItem>
+            <ListSubheader disableSticky>Other crafts</ListSubheader>
+            <MenuItem component="a" href="./knit/" onClick={close}>
+              <ListItemText primary="Knit Patterner" secondary="Knitting charts, written patterns and colourwork" />
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+      {p.phone && (
+        <Box
+          component="nav"
+          aria-label="Main"
+          sx={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: (t) => t.zIndex.appBar,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+            px: 0.75,
+            pt: 0.75,
+            pb: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+            bgcolor: 'background.paper',
+            borderTop: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <NavTab current icon={<GridOnIcon />} label="Draft" onClick={p.onDraft} />
+          <NavTab icon={<ViewInArIcon />} label="3D cloth" onClick={p.on3d} />
+          <NavTab icon={<HandymanIcon />} label="Tools" onClick={openTools} />
+          <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
+          <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={close}>
+            {fileItems}
+          </Menu>
+        </Box>
+      )}
+    </>
   )
 }

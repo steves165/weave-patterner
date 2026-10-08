@@ -28,7 +28,8 @@ test('swiping on the pattern scrolls it in both directions', async ({ page }) =>
   const picks = page.getByLabel('Picks', { exact: true })
   await picks.fill('120')
   await picks.press('Enter')
-  await page.getByText('Pattern settings').click()
+  if (await page.getByRole('button', { name: 'Close pattern settings' }).isVisible())
+    await page.getByRole('button', { name: 'Close pattern settings' }).click()
 
   const cdp = await page.context().newCDPSession(page)
   const box = await page.locator('.draft-scroll').boundingBox()
@@ -63,7 +64,7 @@ test('a tap toggles a box, and a drag does not paint unless the brush is on', as
 })
 
 test('weaving mode works with big touch targets', async ({ page }) => {
-  await toolbarButton(page, 'Weave').tap()
+  await toolbarButton(page, 'Start weaving').tap()
   await page.getByRole('button', { name: 'Next pick' }).tap()
   await expect(page.getByTestId('pick-number')).toContainText('Pick 2')
 })
@@ -71,7 +72,7 @@ test('weaving mode works with big touch targets', async ({ page }) => {
 test('file actions are reachable on small screens', async ({ page }) => {
   const width = page.viewportSize()?.width ?? 0
   if (width < 600) {
-    await toolbarButton(page, 'More').tap()
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'File' }).tap()
     await expect(page.getByRole('menuitem', { name: 'Save' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: /WIF lift plan/ })).toBeVisible()
   } else {
@@ -91,7 +92,8 @@ test('tapping a drawdown square traces it, with the explanation on screen', asyn
 })
 
 test('the 3D preview fills the screen and can be closed', { tag: '@3d' }, async ({ page }) => {
-  await toolbarButton(page, '3D').tap()
+  const nav = page.getByRole('navigation', { name: 'Main' })
+  await ((await nav.isVisible()) ? nav.getByRole('button', { name: '3D cloth' }) : toolbarButton(page, '3D')).tap()
   const canvas = page.getByRole('img', { name: '3D preview of the cloth' })
   // Software-rendered WebGL on an emulated phone can take a while to start.
   await expect(canvas).toBeVisible({ timeout: 20_000 })

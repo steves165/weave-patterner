@@ -1,11 +1,7 @@
 import ClearAllIcon from '@mui/icons-material/ClearAll'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
   Divider,
@@ -19,10 +15,10 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
-import type { Miss } from '../selvedge'
+import { MONO_FONT } from '../theme'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
-import { type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
+import { DEFAULT_WARP, DEFAULT_WEFT, type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
 
 export const LIMITS = {
   shafts: [2, MAX_SHAFTS],
@@ -40,9 +36,9 @@ function CommitField(props: {
   min: number
   max: number
   onCommit: (n: number) => void
-  width?: number
+  width?: number | string
 }) {
-  const { label, value, min, max, onCommit, width = 96 } = props
+  const { label, value, min, max, onCommit, width = '100%' } = props
   const [text, setText] = useState(String(value))
   useEffect(() => setText(String(value)), [value])
   const commit = () => {
@@ -68,19 +64,14 @@ function CommitField(props: {
 interface Props {
   draft: Draft
   name: string | null
-  compact: boolean
   touch: boolean
   onResize: (dim: Dim, n: number) => void
   cellSize: number
   onCellSize: (n: number) => void
   onFillWarp: (color: string) => void
   onFillWeft: (color: string) => void
-  /** Long-float highlighting. */
-  floats: { warp: number; weft: number }
-  /** Threads that never interlace (0-based). */
-  unwoven: { ends: number[]; picks: number[] }
-  /** Turns where the weft won't catch the edge end (shuttle starting from the left). */
-  selvedge: Miss[]
+  /** Opens the colour sequences and presets. */
+  onColors: () => void
   /** The smallest repeat of the cloth. */
   repeat: { ends: number; picks: number }
   onTrimToRepeat: () => void
@@ -108,213 +99,205 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
   ['threadingBelow', 'Threading below'],
 ]
 
-/** "1, 5, 9 and 3 more" style list of 0-based thread indices, numbered from 1. */
-const listThreads = (indices: number[], max = 6) =>
-  indices.length > max
-    ? `${indices
-        .slice(0, max)
-        .map((i) => i + 1)
-        .join(', ')} and ${indices.length - max} more`
-    : indices.map((i) => i + 1).join(', ')
-
-/** A labelled row of settings; the label sits above the controls on narrow screens. */
+/** A heading and its settings. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: { xs: 1, sm: 2 }, alignItems: { sm: 'center' } }}>
-      <Typography variant="overline" color="text.secondary" sx={{ width: 80, flexShrink: 0, lineHeight: 1.5 }}>
+    <Stack component="section" sx={{ gap: 1.5 }}>
+      <Typography variant="h2" sx={{ fontSize: 17, m: 0 }}>
         {title}
       </Typography>
-      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-        {children}
-      </Stack>
+      {children}
     </Stack>
   )
 }
 
-/** The fold-away settings above the draft. */
+/** A switch with its label on the left, filling the row. */
+function SwitchRow(props: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <FormControlLabel
+      labelPlacement="start"
+      control={<Switch checked={props.checked} onChange={(e) => props.onChange(e.target.checked)} />}
+      label={props.label}
+      sx={{ mx: 0, minHeight: 40, justifyContent: 'space-between', gap: 1.5 }}
+    />
+  )
+}
+
+/** A colour swatch, its name and what it does, and a button to apply it. */
+function ColorRow(props: {
+  label: string
+  hint: string
+  aria: string
+  button: string
+  onApply: (c: string) => void
+  initial: string
+}) {
+  const [color, setColor] = useState(props.initial)
+  return (
+    <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center' }}>
+      <input
+        type="color"
+        className="picker"
+        aria-label={props.aria}
+        value={color}
+        onChange={(e) => setColor(e.target.value)}
+      />
+      <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <Typography sx={{ fontWeight: 600 }}>{props.label}</Typography>
+        <Typography variant="caption" color="text.secondary">
+          {props.hint}
+        </Typography>
+      </Box>
+      <Button size="small" variant="outlined" color="inherit" onClick={() => props.onApply(color)}>
+        {props.button}
+      </Button>
+    </Stack>
+  )
+}
+
+/** Pattern settings: the loom, colours, view, floats and the pattern itself, in the sidebar or the phone's sheet. */
 export function SettingsPanel(p: Props) {
-  const [fillWarp, setFillWarp] = useState('#8b0a0a')
-  const [fillWeft, setFillWeft] = useState('#ffffff')
   const { draft } = p
-  const longest = Math.max(p.floats.warp, p.floats.weft)
 
   return (
-    <Accordion
-      variant="outlined"
-      disableGutters
-      expanded={p.view.settingsOpen ?? !p.compact}
-      onChange={(_, open) => p.onView({ settingsOpen: open })}
-      sx={{ mb: { xs: 1, sm: 2 } }}
-    >
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle2">
-          Pattern settings
-          <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            {draft.shafts} shafts · {p.view.noTieup ? 'lift plan' : `${draft.treadles} treadles`} · {draft.ends} ×{' '}
-            {draft.picks}
-          </Typography>
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Stack sx={{ gap: 1.5 }} divider={<Divider flexItem />}>
-          <Section title="Size">
-            {(Object.keys(LIMITS) as Dim[])
-              // Without a tie-up there's a lift plan column per shaft, so no separate treadle count.
-              .filter((dim) => !(dim === 'treadles' && p.view.noTieup))
-              .map((dim) => (
-                <CommitField
-                  key={dim}
-                  label={DIM_LABEL[dim]}
-                  value={draft[dim]}
-                  min={LIMITS[dim][0]}
-                  max={LIMITS[dim][1]}
-                  onCommit={(n) => p.onResize(dim, n)}
-                />
-              ))}
-          </Section>
-
-          <Section title="Colours">
-            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="picker"
-                aria-label="Warp colour for all ends"
-                value={fillWarp}
-                onChange={(e) => setFillWarp(e.target.value)}
-              />
-              <Button size="small" variant="outlined" onClick={() => p.onFillWarp(fillWarp)}>
-                Set all warp
-              </Button>
-            </Stack>
-            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="picker"
-                aria-label="Weft colour for all picks"
-                value={fillWeft}
-                onChange={(e) => setFillWeft(e.target.value)}
-              />
-              <Button size="small" variant="outlined" onClick={() => p.onFillWeft(fillWeft)}>
-                Set all weft
-              </Button>
-            </Stack>
-          </Section>
-
-          <Section title="View">
-            <Box sx={{ width: 170, px: 1 }}>
-              <Typography variant="caption" color="text.secondary" id="cell-size-label">
-                Cell size
-              </Typography>
-              <Slider
-                size="small"
-                min={CELL_MIN}
-                max={CELL_MAX}
-                value={p.cellSize}
-                valueLabelDisplay="auto"
-                aria-labelledby="cell-size-label"
-                onChange={(_, v) => p.onCellSize(v as number)}
-              />
-            </Box>
-            <CommitField
-              label="Ruler every"
-              value={p.view.ruler}
-              min={0}
-              max={50}
-              onCommit={(n) => p.onView({ ruler: n })}
-              width={110}
-            />
-            {VIEW_SWITCHES.map(([key, label]) => (
-              <FormControlLabel
-                key={key}
-                control={<Switch checked={p.view[key]} onChange={(e) => p.onView({ [key]: e.target.checked })} />}
-                label={label}
+    <Stack sx={{ gap: 2.5 }} divider={<Divider flexItem />}>
+      <Section title="Loom">
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+          {(Object.keys(LIMITS) as Dim[])
+            // Without a tie-up there's a lift plan column per shaft, so no separate treadle count.
+            .filter((dim) => !(dim === 'treadles' && p.view.noTieup))
+            .map((dim) => (
+              <CommitField
+                key={dim}
+                label={DIM_LABEL[dim]}
+                value={draft[dim]}
+                min={LIMITS[dim][0]}
+                max={LIMITS[dim][1]}
+                onCommit={(n) => p.onResize(dim, n)}
               />
             ))}
-          </Section>
+        </Box>
+      </Section>
 
-          <Section title="Floats">
-            <FormControlLabel
-              control={<Switch checked={p.highlightFloats} onChange={(e) => p.onHighlightFloats(e.target.checked)} />}
-              label="Highlight floats longer than"
-            />
-            <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} width={80} />
-            <Typography
-              variant="body2"
-              color={longest > p.floatLimit ? 'warning.main' : 'text.secondary'}
-              data-testid="float-stats"
-            >
-              Longest floats: warp {p.floats.warp}, weft {p.floats.weft}
-            </Typography>
-            {(p.unwoven.ends.length > 0 || p.unwoven.picks.length > 0) && (
-              <Typography variant="body2" color="warning.main" data-testid="unwoven">
-                Not woven in:{' '}
-                {[
-                  p.unwoven.ends.length > 0 &&
-                    `${p.unwoven.ends.length === 1 ? 'end' : 'ends'} ${listThreads(p.unwoven.ends)}`,
-                  p.unwoven.picks.length > 0 &&
-                    `${p.unwoven.picks.length === 1 ? 'pick' : 'picks'} ${listThreads(p.unwoven.picks)}`,
-                ]
-                  .filter(Boolean)
-                  .join('; ')}{' '}
-                (they never cross over and under)
-              </Typography>
-            )}
-            {p.selvedge.length > 0 && (
-              <Typography variant="body2" color="warning.main" data-testid="selvedge">
-                Edges: the weft won't catch the edge end at {p.selvedge.length} of {Math.max(1, p.draft.picks - 1)}{' '}
-                turns (first after pick {p.selvedge[0].pick}, {p.selvedge[0].side} edge). Use a floating selvedge, or
-                change the edge threading.
-              </Typography>
-            )}
-          </Section>
+      <Section title="Colours">
+        <ColorRow
+          label="Warp"
+          hint="Sets every end"
+          aria="Warp colour for all ends"
+          button="Set all warp"
+          initial={DEFAULT_WARP}
+          onApply={p.onFillWarp}
+        />
+        <ColorRow
+          label="Weft"
+          hint="Sets every pick"
+          aria="Weft colour for all picks"
+          button="Set all weft"
+          initial={DEFAULT_WEFT}
+          onApply={p.onFillWeft}
+        />
+        <Button size="small" onClick={p.onColors} sx={{ alignSelf: 'flex-start', ml: -1 }}>
+          Colours and presets…
+        </Button>
+      </Section>
 
-          <Section title="Pattern">
-            <Typography variant="body2" data-testid="repeat">
-              Repeat: {p.repeat.ends} ends × {p.repeat.picks} picks
-            </Typography>
-            <Tooltip title="Cut the draft down to one repeat, ready to weave as many times as you like" describeChild>
-              <span>
-                <Button
-                  size="small"
-                  disabled={p.repeat.ends === draft.ends && p.repeat.picks === draft.picks}
-                  onClick={p.onTrimToRepeat}
-                >
-                  Trim to one repeat
-                </Button>
-              </span>
-            </Tooltip>
-            <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
-              <Button size="small" startIcon={<ClearAllIcon />} onClick={p.onClear}>
-                Clear grids
-              </Button>
-            </Tooltip>
-            <Tooltip
-              title={
-                p.name
-                  ? `Undo all changes since "${p.name}" was last saved or loaded`
-                  : 'Undo all changes since starting this pattern'
-              }
-              describeChild
-            >
-              <span>
-                <Button size="small" startIcon={<RestartAltIcon />} disabled={!p.canReset} onClick={p.onReset}>
-                  Reset
-                </Button>
-              </span>
-            </Tooltip>
-            <Tooltip title="Start a new pattern with empty grids" describeChild>
-              <Button size="small" startIcon={<NoteAddIcon />} onClick={p.onNew}>
-                New
-              </Button>
-            </Tooltip>
-          </Section>
+      <Section title="View">
+        <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', minHeight: 40 }}>
+          <Typography id="cell-size-label" sx={{ flex: 'none', width: 70, fontWeight: 500 }}>
+            Cell size
+          </Typography>
+          <Slider
+            size="small"
+            min={CELL_MIN}
+            max={CELL_MAX}
+            value={p.cellSize}
+            aria-labelledby="cell-size-label"
+            onChange={(_, v) => p.onCellSize(v as number)}
+            sx={{ flex: '1 1 auto' }}
+          />
+          <Typography
+            sx={{ flex: 'none', width: 44, textAlign: 'right', fontFamily: MONO_FONT, fontSize: 13 }}
+            color="text.secondary"
+          >
+            {p.cellSize} px
+          </Typography>
         </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+        <CommitField
+          label="Ruler every"
+          value={p.view.ruler}
+          min={0}
+          max={50}
+          onCommit={(n) => p.onView({ ruler: n })}
+          width={130}
+        />
+        <Stack>
+          {VIEW_SWITCHES.map(([key, label]) => (
+            <SwitchRow key={key} label={label} checked={p.view[key]} onChange={(on) => p.onView({ [key]: on })} />
+          ))}
+        </Stack>
+      </Section>
+
+      <Section title="Floats">
+        <SwitchRow label="Highlight floats longer than" checked={p.highlightFloats} onChange={p.onHighlightFloats} />
+        <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} width={130} />
+      </Section>
+
+      <Section title="Pattern">
+        <Typography sx={{ color: 'var(--wp-body)' }} data-testid="repeat">
+          Repeat: {p.repeat.ends} ends × {p.repeat.picks} picks
+        </Typography>
+        <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
+          <Tooltip title="Cut the draft down to one repeat, ready to weave as many times as you like" describeChild>
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                disabled={p.repeat.ends === draft.ends && p.repeat.picks === draft.picks}
+                onClick={p.onTrimToRepeat}
+              >
+                Trim to one repeat
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
+            <Button size="small" variant="outlined" color="inherit" startIcon={<ClearAllIcon />} onClick={p.onClear}>
+              Clear grids
+            </Button>
+          </Tooltip>
+          <Tooltip
+            title={
+              p.name
+                ? `Undo all changes since "${p.name}" was last saved or loaded`
+                : 'Undo all changes since starting this pattern'
+            }
+            describeChild
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                startIcon={<RestartAltIcon />}
+                disabled={!p.canReset}
+                onClick={p.onReset}
+              >
+                Reset
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Start a new pattern with empty grids" describeChild>
+            <Button size="small" variant="outlined" color="inherit" startIcon={<NoteAddIcon />} onClick={p.onNew}>
+              New
+            </Button>
+          </Tooltip>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
           {p.touch
             ? 'Tap boxes on the threading, tie-up and treadling to toggle them, and swipe to move around the pattern. Turn on the brush in the toolbar to paint by dragging. Tap a colour swatch to change that warp end or weft pick.'
             : 'Click or drag on the threading, tie-up and treadling; arrow keys and Space work too. Click a colour swatch to change that warp end or weft pick. Ctrl+Z undoes, Ctrl+Shift+Z redoes.'}
         </Typography>
-      </AccordionDetails>
-    </Accordion>
+      </Section>
+    </Stack>
   )
 }

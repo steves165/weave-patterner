@@ -83,7 +83,7 @@ test('sizes threads from the yarn library and spaces them by the sett', { tag: '
 
   await openTool(page, /Yarn library/)
   const yarns = page.getByRole('dialog', { name: 'Yarn library' })
-  await yarns.getByRole('button', { name: 'Add a yarn for #8b0a0a' }).click()
+  await yarns.getByRole('button', { name: 'Add a yarn for #d6246e' }).click()
   await yarns.getByLabel('Grist').fill('1500')
   await yarns.getByRole('button', { name: 'Done' }).click()
   await openTool(page, /Warp calculator/)
@@ -103,7 +103,7 @@ test('sizes threads from the yarn library and spaces them by the sett', { tag: '
 test('yarn textures from the library shape the threads', { tag: '@3d' }, async ({ page }) => {
   await openTool(page, /Yarn library/)
   const yarns = page.getByRole('dialog', { name: 'Yarn library' })
-  await yarns.getByRole('button', { name: 'Add a yarn for #ffffff' }).click()
+  await yarns.getByRole('button', { name: 'Add a yarn for #ffd3e4' }).click()
   await yarns.getByRole('combobox', { name: 'Texture' }).click()
   await page.getByRole('option', { name: 'Bouclé' }).click()
   await yarns.getByRole('button', { name: 'Done' }).click()

@@ -126,16 +126,16 @@ test.describe('yarn library', () => {
   test('adds yarns for the draft colours and the calculator uses them', async ({ page }) => {
     await openTool(page, /Yarn library/)
     await expect(dialog(page)).toContainText('No yarns yet.')
-    await dialog(page).getByRole('button', { name: 'Add a yarn for #8b0a0a' }).click()
+    await dialog(page).getByRole('button', { name: 'Add a yarn for #d6246e' }).click()
     await dialog(page).getByLabel('Yarn 1 name').fill('Red 8/2 cotton')
     await dialog(page).getByLabel('Grist').fill('3360')
     await dialog(page).getByLabel('Price').fill('45')
-    await expect(dialog(page).getByRole('button', { name: 'Add a yarn for #8b0a0a' })).toHaveCount(0)
+    await expect(dialog(page).getByRole('button', { name: 'Add a yarn for #d6246e' })).toHaveCount(0)
     await dialog(page).getByRole('button', { name: 'Done' }).click()
 
     await openTool(page, /Warp calculator/)
     const calc = page.getByRole('dialog', { name: 'Warp calculator' })
-    await expect(calc.getByRole('table', { name: 'Yarn needed' })).toContainText('Red 8/2 cotton (#8b0a0a)')
+    await expect(calc.getByRole('table', { name: 'Yarn needed' })).toContainText('Red 8/2 cotton (#d6246e)')
     await expect(calc.getByRole('columnheader', { name: 'Weight' })).toBeVisible()
     // The white weft has no yarn and there's no default grist, so its weight (and the total) can't be worked out.
     await expect(page.getByTestId('calc-total')).toContainText('—')

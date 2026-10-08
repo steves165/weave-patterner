@@ -19,10 +19,10 @@ describe('yarnDiameter', () => {
 })
 
 describe('clothLook', () => {
-  const d = defaultDraft() // red warp, white weft
+  const d = defaultDraft() // magenta warp, pale pink weft
   const yarns = [
-    { id: 'a', name: 'Red wool', color: '#8b0a0a', grist: 1000 },
-    { id: 'b', name: 'White, no grist', color: '#ffffff' },
+    { id: 'a', name: 'Magenta wool', color: '#d6246e', grist: 1000 },
+    { id: 'b', name: 'Pale pink, no grist', color: '#ffd3e4' },
   ]
 
   it('sizes each thread from its yarn, relative to the end spacing', () => {

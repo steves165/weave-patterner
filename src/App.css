@@ -1,14 +1,53 @@
 :root {
-  --grid-line: #9e9e9e;
-  --grid-off: #ffffff;
-  --grid-on: #111111;
-  --drawdown-line: #616161;
+  /* Weave Patterner's colours (see theme.ts): blush pink and magenta, deep plum in dark mode. */
+  --wp-bg: #fff0f6;
+  --wp-panel: #fff8fb;
+  --wp-line: #f6d2e1;
+  --wp-hover: #ffe1ed;
+  --wp-seg: #fce1ec;
+  --wp-field: #f0bcd2;
+  --wp-field-hover: #e08aaf;
+  --wp-switch-off: #ebb9ce;
+  --wp-paper: #fffdfe;
+  --wp-ink: #2b1622;
+  --wp-muted: #85506b;
+  --wp-body: #5e2f48;
+  --wp-accent: #d6246e;
+  --wp-warn-bg: #faefd6;
+  --wp-warn-fg: #6b4600;
+  --wp-ok: #2f5b32;
+  --wp-shadow: rgba(160, 30, 90, 0.07);
+  --wp-shadow-soft: rgba(160, 30, 90, 0.05);
+  --grid-line: #f5cddd;
+  --grid-heavy: #d08aa9;
+  --grid-off: #fffdfe;
+  --grid-on: #3b1730;
+  --drawdown-line: #f5cddd;
 }
 :root.dark {
-  --grid-line: #1e1e1e;
-  --grid-off: #3a3a3a;
-  --grid-on: #f0f0f0;
-  --drawdown-line: #1e1e1e;
+  --wp-bg: #170b13;
+  --wp-panel: #21111c;
+  --wp-line: #3a2131;
+  --wp-hover: #3a1f31;
+  --wp-seg: #2e1828;
+  --wp-field: #5a3350;
+  --wp-field-hover: #8a4f75;
+  --wp-switch-off: #4d2c42;
+  --wp-paper: #28151f;
+  --wp-ink: #fce8f1;
+  --wp-muted: #c99bb3;
+  --wp-body: #e6c6d6;
+  --wp-accent: #e36a9c;
+  --wp-warn-bg: #3b2c0c;
+  --wp-warn-fg: #ffd27a;
+  --wp-ok: #8fd69a;
+  --wp-shadow: rgba(0, 0, 0, 0.35);
+  --wp-shadow-soft: rgba(0, 0, 0, 0.25);
+  --grid-line: #45263a;
+  --grid-heavy: #7e4b6b;
+  --grid-off: #28151f;
+  --grid-on: #ffb3d1;
+  --drawdown-line: #45263a;
 }
 
 .draft {
@@ -20,12 +59,23 @@
   user-select: none;
 }
 
+/* Grids: thin lines between boxes, heavier every 4 (counted from end 1, and from the top), and a heavier edge. */
 .grid {
+  --every: calc(4 * (var(--cell) + 1px));
+  --cols-from: to right;
   display: grid;
   gap: 1px;
   padding: 1px;
-  background: var(--grid-line);
+  background-color: var(--grid-line);
+  background-image:
+    repeating-linear-gradient(var(--cols-from), var(--grid-heavy) 0 1px, transparent 1px var(--every)),
+    repeating-linear-gradient(to bottom, var(--grid-heavy) 0 1px, transparent 1px var(--every));
+  outline: 1px solid var(--grid-heavy);
+  outline-offset: -1px;
   width: max-content;
+}
+.grid.from-right {
+  --cols-from: to left;
 }
 
 /* Editable grids: swipes scroll and taps are instant, unless drag-painting is on. */
@@ -47,15 +97,22 @@
   background: var(--grid-on);
 }
 
+@media (hover: hover) {
+  .paintable .cell:hover {
+    box-shadow: inset 0 0 0 2px var(--wp-accent);
+  }
+}
+
 .drawdown {
-  background: var(--drawdown-line);
+  background-color: var(--drawdown-line);
 }
 .drawdown .cell {
   cursor: default;
 }
 
 .strip {
-  background: var(--drawdown-line);
+  background-color: var(--grid-heavy);
+  background-image: none;
 }
 
 .swatch,
@@ -72,11 +129,13 @@
   height: var(--cell);
 }
 .picker {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--mui-palette-divider);
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 3px;
+  border-radius: 50%;
+  border: 1px solid var(--wp-field);
+  background: var(--wp-paper);
 }
 .swatch::-webkit-color-swatch-wrapper,
 .picker::-webkit-color-swatch-wrapper {
@@ -90,6 +149,12 @@
 .picker::-moz-color-swatch {
   border: none;
 }
+.picker::-webkit-color-swatch {
+  border-radius: 50%;
+}
+.picker::-moz-color-swatch {
+  border-radius: 50%;
+}
 
 /* Print: hide the editor and show only the framed draft. */
 .print-sheet {
@@ -100,7 +165,7 @@
   @page {
     margin: 12mm;
   }
-  .screen-only {
+  html .screen-only {
     display: none;
   }
   /* `html body` outranks the theme's body background without !important. */

@@ -35,10 +35,10 @@ test('adds and removes stripes and works on a weft range', async ({ page }) => {
   await dialog(page).getByLabel('From', { exact: true }).fill('5')
   await dialog(page).getByLabel('To', { exact: true }).fill('6')
   await dialog(page).getByRole('button', { name: 'Apply stripe to weft' }).click()
-  await expect(weft(page, 4)).toHaveValue('#ffffff')
+  await expect(weft(page, 4)).toHaveValue('#ffd3e4')
   await expect(weft(page, 5)).toHaveValue('#1a237e')
   await expect(weft(page, 6)).toHaveValue('#1a237e')
-  await expect(weft(page, 7)).toHaveValue('#ffffff')
+  await expect(weft(page, 7)).toHaveValue('#ffd3e4')
 })
 
 test('rejects an impossible range', async ({ page }) => {
@@ -62,6 +62,6 @@ test('a colour-and-weave preset replaces the draft and can be undone', async ({ 
   await expect(page.getByLabel('Treadles', { exact: true })).toHaveValue('2')
 
   await toolbarButton(page, 'Undo').click()
-  await expect(warp(page, 1)).toHaveValue('#8b0a0a')
+  await expect(warp(page, 1)).toHaveValue('#d6246e')
   await expect(page.getByLabel('Treadles', { exact: true })).toHaveValue('4')
 })

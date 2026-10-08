@@ -29,14 +29,14 @@ describe('encodePng', () => {
 
 describe('renderDraftPng', () => {
   it('draws the drawdown in the warp and weft colours', () => {
-    const d = defaultDraft() // pick 1, end 1 is warp-up (dark red); end 3 is weft-up (white)
+    const d = defaultDraft() // pick 1, end 1 is warp-up (magenta); end 3 is weft-up (pale pink)
     const cell = 6
     const { width, pixel } = decode(renderDraftPng(d, cell))
     expect(width).toBeGreaterThan(d.ends * (cell + 1))
     const pitch = cell + 1
     const yDraw = cell + pitch + 1 + cell + d.shafts * pitch + 1 + cell * 2 // matches renderDraftPng's layout
     const centre = (e: number, p: number) => pixel(cell + 1 + e * pitch + 2, yDraw + 1 + p * pitch + 2)
-    expect(centre(0, 0)).toEqual([0x8b, 0x0a, 0x0a])
-    expect(centre(2, 0)).toEqual([255, 255, 255])
+    expect(centre(0, 0)).toEqual([0xd6, 0x24, 0x6e])
+    expect(centre(2, 0)).toEqual([0xff, 0xd3, 0xe4])
   })
 })

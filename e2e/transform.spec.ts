@@ -6,8 +6,8 @@ const squareColor = (page: Page, end: number, pick: number) =>
   page
     .locator(`.drawdown [data-end="${end - 1}"][data-pick="${pick - 1}"]`)
     .evaluate((el) => getComputedStyle(el).backgroundColor)
-const RED = 'rgb(139, 10, 10)'
-const WHITE = 'rgb(255, 255, 255)'
+const WARP = 'rgb(214, 36, 110)'
+const WEFT = 'rgb(255, 211, 228)'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -18,17 +18,17 @@ test('turns the draft through 90°, swapping warp and weft, and undoes', async (
   await expect(toast(page)).toContainText('Turned the draft 90°')
   expect([await ends(page), await picks(page)]).toEqual(['16', '32'])
   // The red warp is now the weft, and the white weft the warp.
-  await expect(page.getByLabel('Weft 1', { exact: true })).toHaveValue('#8b0a0a')
-  await expect(page.getByLabel('Warp 1', { exact: true })).toHaveValue('#ffffff')
+  await expect(page.getByLabel('Weft 1', { exact: true })).toHaveValue('#d6246e')
+  await expect(page.getByLabel('Warp 1', { exact: true })).toHaveValue('#ffd3e4')
   await toolbarButton(page, 'Undo').click()
   expect([await ends(page), await picks(page)]).toEqual(['32', '16'])
 })
 
 test('swaps face and back, flips and moves the repeat', async ({ page }) => {
-  expect(await squareColor(page, 1, 1)).toBe(RED)
+  expect(await squareColor(page, 1, 1)).toBe(WARP)
   await openTool(page, /Transform draft/)
   await dialog(page).getByRole('button', { name: 'Swap face and back' }).click()
-  expect(await squareColor(page, 1, 1)).toBe(WHITE)
+  expect(await squareColor(page, 1, 1)).toBe(WEFT)
 
   await setField(page.getByLabel('Ends', { exact: true }), '6')
   expect(await threading(page)).toBe('123412')

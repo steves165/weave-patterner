@@ -17,6 +17,10 @@ export interface Draft {
   blocks?: EndBlock[]
 }
 
+/** A new pattern's colours: the accent magenta warp and a pale pink weft. */
+export const DEFAULT_WARP = '#d6246e'
+export const DEFAULT_WEFT = '#ffd3e4'
+
 /** Most shafts and treadles a draft can have: 128, as in WeavePoint, for large dobby and computer looms. */
 export const MAX_SHAFTS = 128
 export const MAX_TREADLES = 128
@@ -58,8 +62,8 @@ export function defaultDraft(): Draft {
     ends,
     picks,
     ...twillGrids(shafts, treadles, ends, picks),
-    warpColors: Array(ends).fill('#8b0a0a'),
-    weftColors: Array(picks).fill('#ffffff'),
+    warpColors: Array(ends).fill(DEFAULT_WARP),
+    weftColors: Array(picks).fill(DEFAULT_WEFT),
   }
 }
 
@@ -68,8 +72,8 @@ export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'trea
   const treadles = dims.treadles ?? d.treadles
   const ends = dims.ends ?? d.ends
   const picks = dims.picks ?? d.picks
-  const lastWarp = d.warpColors[d.warpColors.length - 1] ?? '#8b0a0a'
-  const lastWeft = d.weftColors[d.weftColors.length - 1] ?? '#ffffff'
+  const lastWarp = d.warpColors[d.warpColors.length - 1] ?? DEFAULT_WARP
+  const lastWeft = d.weftColors[d.weftColors.length - 1] ?? DEFAULT_WEFT
   const colors = {
     warpColors: resize(d.warpColors, ends, () => lastWarp),
     weftColors: resize(d.weftColors, picks, () => lastWeft),

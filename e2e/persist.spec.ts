@@ -40,7 +40,7 @@ test('restores the unsaved pattern being worked on', async ({ page }) => {
   expect(await ends(page)).toBe('12')
   expect(await threading(page)).toBe(before)
   // Reset still returns to how the pattern started.
-  await page.getByRole('button', { name: 'Reset' }).click()
+  await page.getByRole('button', { name: 'Reset', exact: true }).click()
   expect(await ends(page)).toBe('32')
 })
 

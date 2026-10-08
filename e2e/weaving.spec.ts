@@ -5,7 +5,7 @@ const pickNumber = (page: Page) => page.getByTestId('pick-number')
 const instruction = (page: Page) => page.getByTestId('instruction')
 
 async function openWeaving(page: Page) {
-  await toolbarButton(page, 'Weave').click()
+  await toolbarButton(page, 'Start weaving').click()
   await expect(page.getByRole('dialog', { name: /Weaving:/ })).toBeVisible()
 }
 
@@ -18,7 +18,7 @@ test('shows the first pick: treadle, weft colour and what comes next', async ({ 
   await expect(instruction(page)).toHaveText('Press treadle 1')
   await expect(page.getByRole('listitem', { name: 'treadle 1, use' })).toBeVisible()
   await expect(page.getByRole('listitem', { name: 'treadle 2', exact: true })).toBeVisible()
-  await expect(page.getByTestId('weft-colour')).toHaveText('Weft #ffffff')
+  await expect(page.getByTestId('weft-colour')).toHaveText('Weft #ffd3e4')
   await expect(page.getByTestId('upcoming')).toContainText('2')
 })
 
