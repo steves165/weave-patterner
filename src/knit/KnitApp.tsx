@@ -91,6 +91,7 @@ import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
 import { SAMPLES } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
+import { yarnNeeded } from './yarn'
 import './knit.css'
 
 /** Charts saved by name in this browser, like Weave Patterner's patterns but kept apart from them. */
@@ -244,7 +245,7 @@ export default function KnitApp() {
   const [selection, setSelection] = useState<Rect | null>(null)
   const [clip, setClip] = useState<Clip | null>(null)
   const [printImage, setPrintImage] = useState<string | null>(null)
-  const [target, setTarget] = useState({ width: '50', edges: '0' })
+  const [target, setTarget] = useState({ width: '50', edges: '0', length: '60', ball: '200' })
   const fileInput = useRef<HTMLInputElement>(null)
   const pictureInput = useRef<HTMLInputElement>(null)
   // Whether the current paint stroke has made a step in the history yet (later squares of the stroke join it).
@@ -1069,6 +1070,65 @@ export default function KnitApp() {
                       {extra > 0 ? ` + ${extra}` : ''}), about {((wanted * 10) / chart.gauge.stitches).toFixed(1)} cm.
                     </Typography>
                   </Stack>
+                </Panel>
+                <Panel title="Yarn needed" testId="knit-yarn" delay={90}>
+                  <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>
+                    <TextField
+                      size="small"
+                      type="number"
+                      label="Length (cm)"
+                      value={target.length}
+                      onChange={(e) => setTarget((t) => ({ ...t, length: e.target.value }))}
+                      sx={{ width: 130 }}
+                    />
+                    <TextField
+                      size="small"
+                      type="number"
+                      label="Metres per ball"
+                      value={target.ball}
+                      onChange={(e) => setTarget((t) => ({ ...t, ball: e.target.value }))}
+                      sx={{ width: 150 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      For a piece {number(target.width, 1, 1000, 50)} × {number(target.length, 1, 1000, 60)} cm at this
+                      gauge.
+                    </Typography>
+                  </Stack>
+                  <Box component="table" sx={{ borderCollapse: 'collapse', fontSize: 14, '& td': { py: 0.5, pr: 3 } }}>
+                    <tbody>
+                      {yarnNeeded(chart, number(target.width, 1, 1000, 50), number(target.length, 1, 1000, 60)).map(
+                        (y) => {
+                          const perBall = number(target.ball, 1, 10000, 200)
+                          return (
+                            <tr key={y.color} data-color={colorLetter(y.color)}>
+                              <td>
+                                <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+                                  <Box
+                                    sx={{
+                                      width: 16,
+                                      height: 16,
+                                      borderRadius: '50%',
+                                      bgcolor: chart.colors[y.color],
+                                      border: '1px solid #888',
+                                    }}
+                                  />
+                                  Colour {colorLetter(y.color)}
+                                </Stack>
+                              </td>
+                              <td style={{ fontFamily: MONO_FONT }}>{Math.ceil(y.metres)} m</td>
+                              <td>
+                                {Math.ceil(y.metres / perBall)} {Math.ceil(y.metres / perBall) === 1 ? 'ball' : 'balls'}
+                              </td>
+                            </tr>
+                          )
+                        },
+                      )}
+                    </tbody>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    An estimate from the gauge, the stitches and any stranded floats, with 10% extra. Knit and weigh a
+                    swatch for a closer figure.
+                  </Typography>
                 </Panel>
                 <Panel title="Knitted preview" delay={120}>
                   <FabricPreview chart={chart} repeats={view.repeats} />

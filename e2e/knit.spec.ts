@@ -250,3 +250,17 @@ test('select squares to copy, paste, flip and make the pattern repeat', async ({
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('selection-size')).toHaveCount(0)
 })
+
+test('estimates the yarn needed in each colour', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  const yarn = page.getByTestId('knit-yarn')
+  await expect(yarn.locator('tr')).toHaveCount(2)
+  const metres = async () => Number((await yarn.locator('tr[data-color="A"] td').nth(1).innerText()).replace(' m', ''))
+  const before = await metres()
+  expect(before).toBeGreaterThan(50)
+  await yarn.getByLabel('Length (cm)').fill('120')
+  await expect.poll(metres).toBeGreaterThan(before * 1.9)
+  await yarn.getByLabel('Metres per ball').fill('100000')
+  await expect(yarn.locator('tr[data-color="A"]')).toContainText('1 ball')
+})
