@@ -79,3 +79,13 @@ test('file actions are reachable on small screens', async ({ page }) => {
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
+
+test('tapping a drawdown square traces it, with the explanation on screen', async ({ page }) => {
+  await page.locator('.drawdown [data-end="0"][data-pick="0"]').tap()
+  const info = page.getByTestId('trace-info')
+  await expect(info).toContainText('End 1, pick 1: warp shows')
+  await expect(info).toBeInViewport()
+  await expect(page.locator('.draft [role=checkbox].traced')).toHaveCount(3)
+  await page.getByRole('button', { name: 'Stop tracing' }).tap()
+  await expect(info).toBeHidden()
+})

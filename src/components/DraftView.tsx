@@ -1,8 +1,10 @@
-import { Paper } from '@mui/material'
-import { useRef } from 'react'
+import CloseIcon from '@mui/icons-material/Close'
+import { Alert, IconButton, Paper } from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { useCompact, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
+import { traceCell } from '../trace'
 import type { Draft } from '../weave'
 import { Crosshair } from './Crosshair'
 import { ColorStrip, Grid } from './Grid'
@@ -49,6 +51,23 @@ export function DraftView(p: Props) {
   const ownScroll = compact || touch
 
   const sinking = view.sinkingShed
+
+  // Clicking a drawdown square traces it back to the threading, tie-up and treadling cells that decide it.
+  const [selected, setSelected] = useState<{ end: number; pick: number } | null>(null)
+  const trace =
+    selected && selected.end < ends && selected.pick < picks ? traceCell(draft, selected.end, selected.pick) : null
+  useEffect(() => {
+    if (!trace) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [trace])
+  const tracedThreading = (shaft: number, end: number) =>
+    trace !== null && end === trace.end && (trace.shaft < 0 || shaft === trace.shaft)
+  const tracedTieup = (shaft: number, treadle: number) =>
+    trace !== null && shaft === trace.shaft && trace.treadles.includes(treadle)
+  const tracedTreadling = (pick: number, treadle: number) =>
+    trace !== null && pick === trace.pick && (trace.treadles.length === 0 || trace.treadles.includes(treadle))
   const pad = (n: number) => Array.from({ length: n }, (_, i) => <div key={`pad${i}`} />)
   const cols = ruler ? 4 : 3
 
@@ -71,6 +90,7 @@ export function DraftView(p: Props) {
         colors={columns.map((e) => draft.warpColors[e])}
         onChange={(c, color) => p.onWarpColor(endAt(c), color)}
         labelAt={(c) => `Warp ${endAt(c) + 1}`}
+        traced={trace ? endAt(trace.end) : undefined}
       />
       {pad(cols - 1)}
     </>
@@ -86,6 +106,7 @@ export function DraftView(p: Props) {
         cellLabel={(r, c) => `End ${endAt(c) + 1}, shaft ${shaftAt(r) + 1}`}
         cellText={view.numbers ? (r) => String(shaftAt(r) + 1) : undefined}
         cellColor={view.colorBoxes ? (_, c) => draft.warpColors[endAt(c)] : undefined}
+        traced={(r, c) => tracedThreading(shaftAt(r), endAt(c))}
         touchPaint={p.touchPaint}
       />
       {/* Sinking shed shows the shafts that go down: the opposite of the (rising) tie-up that is stored. */}
@@ -95,6 +116,7 @@ export function DraftView(p: Props) {
         isOn={(r, t) => draft.tieup[shaftAt(r)][t] !== sinking}
         onPaint={(r, t, v, cont) => p.onTieup(shaftAt(r), t, v !== sinking, cont)}
         label={sinking ? 'Tie-up (sinking shed)' : 'Tie-up'}
+        traced={(r, t) => tracedTieup(shaftAt(r), t)}
         cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}${sinking ? ' sinks' : ''}`}
         touchPaint={p.touchPaint}
       />
@@ -103,18 +125,28 @@ export function DraftView(p: Props) {
   )
   const drawdownRow = (
     <>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: a pointer shortcut; the explanation is shown as text and the same cells are reachable by keyboard in the threading and treadling */}
       <div
         ref={drawdownRef}
         className={`grid drawdown${view.fabric ? ' fabric' : ''}`}
         role="img"
-        aria-label={`Woven pattern, ${ends} ends by ${picks} picks`}
+        aria-label={`Woven pattern, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
         style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}
+        onClick={(e) => {
+          const square = (e.target as HTMLElement).closest<HTMLElement>('[data-end]')
+          if (!square) return
+          const end = Number(square.dataset.end)
+          const pick = Number(square.dataset.pick)
+          setSelected(trace && trace.end === end && trace.pick === pick ? null : { end, pick })
+        }}
       >
         {drawdown.flatMap((row, pick) =>
           columns.map((end) => (
             <div
               key={`${pick}-${end}`}
-              className={`cell ${row[end] ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}`}
+              data-end={end}
+              data-pick={pick}
+              className={`cell ${row[end] ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}${trace?.end === end && trace.pick === pick ? ' traced' : ''}`}
               style={{ backgroundColor: row[end] ? draft.warpColors[end] : draft.weftColors[pick] }}
             />
           )),
@@ -129,9 +161,16 @@ export function DraftView(p: Props) {
         cellLabel={(pick, t) => `Pick ${pick + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
         cellText={view.numbers ? (_, t) => String(t + 1) : undefined}
         cellColor={view.colorBoxes ? (pick) => draft.weftColors[pick] : undefined}
+        traced={tracedTreadling}
         touchPaint={p.touchPaint}
       />
-      <ColorStrip vertical colors={draft.weftColors} onChange={p.onWeftColor} labelAt={(i) => `Weft ${i + 1}`} />
+      <ColorStrip
+        vertical
+        colors={draft.weftColors}
+        onChange={p.onWeftColor}
+        labelAt={(i) => `Weft ${i + 1}`}
+        traced={trace?.pick}
+      />
       {ruler && (
         <Ruler count={picks} every={view.ruler} cellSize={p.cellSize} orientation="vertical" label="Pick numbers" />
       )}
@@ -156,6 +195,29 @@ export function DraftView(p: Props) {
           : { p: 2, width: 'max-content', minWidth: '100%', boxSizing: 'border-box' }
       }
     >
+      {trace && (
+        <Alert
+          severity="info"
+          data-testid="trace-info"
+          sx={{
+            position: 'fixed',
+            zIndex: 1200,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+            width: 'max-content',
+            maxWidth: 'calc(100vw - 32px)',
+            boxShadow: 6,
+          }}
+          action={
+            <IconButton size="small" aria-label="Stop tracing" onClick={() => setSelected(null)}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          }
+        >
+          {trace.explanation}
+        </Alert>
+      )}
       <div
         ref={container}
         className="draft"

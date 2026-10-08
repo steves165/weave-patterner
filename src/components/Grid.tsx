@@ -20,6 +20,8 @@ interface GridProps {
   cellText?: (r: number, c: number) => string
   /** Colour of a filled cell (e.g. the thread it stands for); filled cells are plain black/white without it. */
   cellColor?: (r: number, c: number) => string
+  /** Cells to outline because they decide the drawdown square being traced. */
+  traced?: (r: number, c: number) => boolean
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -44,6 +46,7 @@ export function Grid({
   touchPaint = false,
   cellText,
   cellColor,
+  traced,
 }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
   const lastPointer = useRef('mouse')
@@ -91,7 +94,7 @@ export function Grid({
           aria-checked={on}
           aria-label={cellLabel(r, c)}
           tabIndex={r === fr && c === fc ? 0 : -1}
-          className={`cell${on ? ' on' : ''}${color ? ' colored' : ''}`}
+          className={`cell${on ? ' on' : ''}${color ? ' colored' : ''}${traced?.(r, c) ? ' traced' : ''}`}
           style={color ? { backgroundColor: color, color: textOn(color) } : undefined}
           onFocus={() => setFocus([r, c])}
           onKeyDown={(e) => onKeyDown(e, r, c, on)}
@@ -138,10 +141,12 @@ interface ColorStripProps {
   onChange: (i: number, color: string) => void
   /** Name of swatch i, e.g. "Warp 3". */
   labelAt: (i: number) => string
+  /** Swatch to outline, for the drawdown square being traced. */
+  traced?: number
 }
 
 /** A strip of colour swatches, each opening a colour picker when clicked. */
-export function ColorStrip({ colors, vertical, onChange, labelAt }: ColorStripProps) {
+export function ColorStrip({ colors, vertical, onChange, labelAt, traced }: ColorStripProps) {
   return (
     <div
       className="grid strip"
@@ -155,7 +160,7 @@ export function ColorStrip({ colors, vertical, onChange, labelAt }: ColorStripPr
         <input
           key={i}
           type="color"
-          className="swatch"
+          className={`swatch${i === traced ? ' traced' : ''}`}
           value={color}
           aria-label={labelAt(i)}
           title={`${labelAt(i)}: ${color}`}

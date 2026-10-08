@@ -235,6 +235,21 @@
   box-shadow: inset 0 0 0 max(1px, calc(var(--cell) / 10)) var(--grid-on);
 }
 
+/* Tracing a drawdown square: outline it and the threading, tie-up, treadling and colour cells behind it. */
+:root {
+  --trace: #00b0ff;
+}
+.grid .cell.traced,
+.swatch.traced {
+  outline: 3px solid var(--trace);
+  outline-offset: -1px;
+  position: relative;
+  z-index: 1;
+}
+.drawdown .cell {
+  cursor: pointer;
+}
+
 /* Hover crosshair over the draft. */
 .draft {
   position: relative;
