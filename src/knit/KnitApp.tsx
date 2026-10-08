@@ -18,6 +18,7 @@ import RedoIcon from '@mui/icons-material/Redo'
 import RemoveIcon from '@mui/icons-material/Remove'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
+import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import {
   AppBar,
   Box,
@@ -82,10 +83,12 @@ import {
   widthOf,
 } from './chart'
 import { type Clip, clear, copy, paste, type Rect } from './edit'
-import { castOnText, writtenPattern, writtenRows } from './instructions'
+import { castOnText, writtenPanels, writtenPattern, writtenRows } from './instructions'
 import { KnitLogo } from './KnitLogo'
 import { KnitThumb } from './KnitThumb'
 import { KnittingMode } from './KnittingMode'
+import { PanelsDialog } from './PanelsDialog'
+import { loadSavedPanels, type SavedPanel, storeSavedPanels } from './panels'
 import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
@@ -237,7 +240,14 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | null>(null)
+  // Panels saved to use again, and the panel the Panels dialog opens at.
+  const [panelStore, setPanelStoreState] = useState<SavedPanel[]>(loadSavedPanels)
+  const setPanelStore = (next: SavedPanel[]) => {
+    setPanelStoreState(next)
+    if (!storeSavedPanels(next)) setToast("Couldn't save the panel store on this device")
+  }
+  const [panelFocus, setPanelFocus] = useState<number | null>(null)
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   // Selecting squares instead of painting them, what's selected, and what's been copied.
@@ -585,6 +595,18 @@ export default function KnitApp() {
           >
             Clear
           </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="inherit"
+            startIcon={<ViewWeekIcon />}
+            onClick={() => {
+              setPanelFocus(null)
+              setDialog('panels')
+            }}
+          >
+            Panels…
+          </Button>
         </Stack>
         <Typography variant="body2" color="text.secondary">
           {touch
@@ -791,6 +813,16 @@ export default function KnitApp() {
           setDialog(null)
           setToast(`Saved "${n}"`)
         }}
+      />
+      <PanelsDialog
+        open={dialog === 'panels'}
+        chart={chart}
+        focus={panelFocus}
+        store={panelStore}
+        onStore={setPanelStore}
+        onChange={(next, merge) => update(next, merge)}
+        onMessage={setToast}
+        onClose={() => setDialog(null)}
       />
       <KnittingMode
         open={dialog === 'knitting'}
@@ -1039,6 +1071,10 @@ export default function KnitApp() {
                   selecting={selecting}
                   selection={selection}
                   onSelect={setSelection}
+                  onPanel={(i) => {
+                    setPanelFocus(i)
+                    setDialog('panels')
+                  }}
                 />
               </Paper>
               <Stack sx={{ gap: 2, flex: 1, minWidth: 0, width: { xs: '100%', xl: 'auto' } }}>
@@ -1171,6 +1207,24 @@ export default function KnitApp() {
                         </li>
                       ))}
                     </ol>
+                    {writtenPanels(chart).map((p) => (
+                      <Box key={p.title} sx={{ mt: 2 }} data-testid="knit-panel-written">
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {p.title}, {p.stitches}
+                        </Typography>
+                        <ol className="knit-written">
+                          {[...p.rows].reverse().map((r) => (
+                            <li key={r.row} data-panel-row={r.row}>
+                              <strong>
+                                {r.label}
+                                {r.side ? ` (${r.side})` : ''}:
+                              </strong>{' '}
+                              {r.text}.
+                            </li>
+                          ))}
+                        </ol>
+                      </Box>
+                    ))}
                   </Panel>
                 </Box>
               </Stack>

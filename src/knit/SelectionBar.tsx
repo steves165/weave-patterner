@@ -6,6 +6,7 @@ import CropFreeIcon from '@mui/icons-material/CropFree'
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep'
 import FlipIcon from '@mui/icons-material/Flip'
 import RepeatIcon from '@mui/icons-material/Repeat'
+import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import { Box, Button, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import type { KnitChart } from './chart'
@@ -26,6 +27,7 @@ import {
   repeatUp,
   setRepeat,
 } from './edit'
+import { addPanel } from './panels'
 
 interface Props {
   chart: KnitChart
@@ -146,6 +148,14 @@ export function SelectionBar({ chart, selection: s, clip, onChange, onClip, onDo
           icon={<RepeatIcon sx={{ transform: 'rotate(90deg)' }} />}
           hint="Repeat these squares up and down the whole chart"
           onClick={() => onChange(repeatUp(chart, s), 'Repeated up the chart')}
+        />
+        <Tool
+          label="Make a panel"
+          icon={<ViewWeekIcon />}
+          hint="Work these stitches as a chart of their own (Panel A, B…), written out separately"
+          onClick={() =>
+            onChange(addPanel(chart, s.c0, s.c1), 'Made a panel: click its label above the chart to name it')
+          }
         />
         <Tool
           label={isRepeat ? 'Remove repeat box' : 'Make the repeat'}

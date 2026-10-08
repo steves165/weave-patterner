@@ -2,6 +2,7 @@ import { type KeyboardEvent, memo, type PointerEvent, useEffect, useRef, useStat
 import { textOn } from '../colors'
 import { cablesIn, colorLetter, isRightSide, type KnitChart, rowsOf, widthOf } from './chart'
 import { type Rect, rectBetween } from './edit'
+import { panelLetter, panelTitle } from './panels'
 import { cablePaths, NO_STITCH, shade } from './render'
 import { STITCHES, type StitchId } from './stitches'
 
@@ -18,6 +19,8 @@ interface Props {
   selecting?: boolean
   selection?: Rect | null
   onSelect?: (s: Rect | null) => void
+  /** Opens panel i (to name it, save it or take it away). */
+  onPanel?: (i: number) => void
 }
 
 interface RowProps {
@@ -131,6 +134,7 @@ export function ChartView({
   selecting = false,
   selection = null,
   onSelect,
+  onPanel,
 }: Props) {
   const rows = rowsOf(chart)
   const w = widthOf(chart)
@@ -262,6 +266,30 @@ export function ChartView({
       onKeyDown={key}
       onFocus={() => setCursor((c) => c ?? { r: 0, c: w - 1 })}
     >
+      {chart.panels && (
+        <div className="knit-row knit-panel-row">
+          <span className="knit-side" />
+          <div className="knit-panels" style={{ width: w * cell }}>
+            {chart.panels.map((p, i) => (
+              <button
+                key={`${p.from}-${p.to}`}
+                type="button"
+                className="knit-panel"
+                data-panel={panelLetter(i)}
+                style={{ left: p.from * cell, width: (p.to - p.from + 1) * cell }}
+                title={panelTitle(chart, i)}
+                aria-label={`${panelTitle(chart, i)}, stitches ${w - p.to}–${w - p.from}`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onPanel?.(i)}
+              >
+                <strong>{panelLetter(i)}</strong>
+                {p.name && <span>{p.name}</span>}
+              </button>
+            ))}
+          </div>
+          <span className="knit-side" />
+        </div>
+      )}
       {Array.from({ length: rows }, (_, i) => rows - 1 - i).map((r) => (
         <ChartRow
           key={r}

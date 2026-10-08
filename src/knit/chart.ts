@@ -22,6 +22,35 @@ export interface KnitChart {
    * charts. They're worked as many times as the width needs, with the stitches either side worked once.
    */
   repeat?: { from: number; to: number }
+  /** Named panels (A, B, C…): stretches of stitches worked as charts of their own, such as a cable or an edging. */
+  panels?: Panel[]
+}
+
+/** A panel: stitches (columns, as drawn) `from` to `to`, named, worked as its own chart within the pattern. */
+export interface Panel {
+  from: number
+  to: number
+  name: string
+}
+
+/**
+ * Panels inside the chart and not overlapping (a later one gives way to an earlier one), in the order right-side
+ * rows meet them: from stitch 1 at the right. So Panel A is the first one worked.
+ */
+export function cleanPanels(panels: Panel[], width: number): Panel[] {
+  const sorted = panels
+    .map((p) => ({ ...p, to: Math.min(p.to, width - 1) }))
+    .filter((p) => Number.isInteger(p.from) && Number.isInteger(p.to) && p.from >= 0 && p.from <= p.to)
+    .sort((a, b) => b.from - a.from)
+  const out: Panel[] = []
+  for (const p of sorted) if (!out.length || p.to < out[out.length - 1].from) out.push(p)
+  return out
+}
+
+/** Panels kept within `width`, or none. */
+const panelsWithin = (panels: Panel[] | undefined, width: number) => {
+  const clean = panels ? cleanPanels(panels, width) : []
+  return clean.length ? clean : undefined
 }
 
 export const MAX_STITCHES = 120
@@ -52,6 +81,7 @@ export function resize(k: KnitChart, stitches: number, rows: number): KnitChart 
     stitch: Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => k.stitch[r]?.[c] ?? 'k')),
     color: Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => k.color[r]?.[c] ?? 0)),
     repeat: repeat && !(repeat.from === 0 && repeat.to === w - 1) ? repeat : undefined,
+    panels: panelsWithin(k.panels, w),
   }
 }
 
@@ -83,6 +113,10 @@ export function mirror(k: KnitChart): KnitChart {
     stitch: k.stitch.map((row) => [...row].reverse().map((s) => STITCHES[s].mirror ?? s)),
     color: k.color.map((row) => [...row].reverse()),
     repeat: k.repeat && { from: widthOf(k) - 1 - k.repeat.to, to: widthOf(k) - 1 - k.repeat.from },
+    panels: panelsWithin(
+      k.panels?.map((p) => ({ ...p, from: widthOf(k) - 1 - p.to, to: widthOf(k) - 1 - p.from })),
+      widthOf(k),
+    ),
   }
 }
 
@@ -156,6 +190,17 @@ export function problems(k: KnitChart): Problem[] {
         out.push({
           row: n,
           message: `${label(k, r)}: a ${STITCHES[cable.id].rs} cable needs ${STITCHES[cable.id].cable} squares.`,
+        })
+    }
+    for (const cable of cablesIn(row)) {
+      const end = cable.start + cable.width - 1
+      const cut = (k.panels ?? []).findIndex(
+        (p) => (cable.start < p.from && end >= p.from) || (cable.start <= p.to && end > p.to),
+      )
+      if (cut >= 0)
+        out.push({
+          row: n,
+          message: `${label(k, r)}: a ${STITCHES[cable.id].rs} cable crosses the edge of panel ${String.fromCharCode(65 + cut)}.`,
         })
     }
     if (!isRightSide(k, r) && cablesIn(row).length > 0)
@@ -271,6 +316,16 @@ export function parseChart(v: unknown): KnitChart | null {
     o.repeat.from <= o.repeat.to &&
     o.repeat.to < w
       ? { repeat: { from: o.repeat.from, to: o.repeat.to } }
+      : {}),
+    ...(Array.isArray(o.panels)
+      ? {
+          panels: panelsWithin(
+            o.panels
+              .filter((p) => p && typeof p === 'object')
+              .map((p) => ({ from: p.from, to: p.to, name: typeof p.name === 'string' ? p.name.slice(0, 60) : '' })),
+            w,
+          ),
+        }
       : {}),
   }
 }

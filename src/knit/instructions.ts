@@ -9,6 +9,7 @@ import {
   rowCounts,
   usedColors,
 } from './chart'
+import { panelChart, panelLetter, panelRows } from './panels'
 import { STITCHES, type StitchId } from './stitches'
 
 /** One stitch (or one cable crossing) as worked, in knitting order. */
@@ -138,8 +139,23 @@ export function writeRow(k: KnitChart, r: number, colored = usedColors(k).length
   return unworked ? `${text} (${unworked} ${unworked === 1 ? 'st' : 'sts'} left unworked)` : text
 }
 
+/** Each panel's stitches in a row as one step: "work Panel A". */
+function withPanels(k: KnitChart, tokens: Token[]): Token[] {
+  const panels = k.panels ?? []
+  if (!panels.length) return tokens
+  const out: Token[] = []
+  for (const t of tokens) {
+    const i = panels.findIndex((p) => t.c >= p.from && t.c <= p.to)
+    const last = out[out.length - 1]
+    if (i < 0) out.push(t)
+    else if (last?.text === `work Panel ${panelLetter(i)}`) last.uses += t.uses
+    else out.push({ text: `work Panel ${panelLetter(i)}`, color: null, counted: false, uses: t.uses, c: t.c })
+  }
+  return out
+}
+
 function writeWorked(k: KnitChart, r: number, colored: boolean): string {
-  const tokens = rowTokens(k, r, colored)
+  const tokens = withPanels(k, rowTokens(k, r, colored))
   if (tokens.length === 0) return 'no stitches'
   const box = k.repeat
   if (box) {
@@ -186,6 +202,31 @@ export function writtenRows(k: KnitChart): WrittenRow[] {
   })
 }
 
+export interface WrittenPanel {
+  title: string
+  /** Its stitches, numbered from the right as knitters count, and how many it works. */
+  stitches: string
+  rows: WrittenRow[]
+}
+
+/**
+ * Each panel written as a chart of its own, over the rows after which it repeats: "Panel A (Cable), stitches 3–6:
+ * Row 1 (RS): 2/2 RC…". The pattern's rows then say "work Panel A" where it comes.
+ */
+export function writtenPanels(k: KnitChart): WrittenPanel[] {
+  const w = k.stitch[0]?.length ?? 0
+  return (k.panels ?? []).map((p, i) => {
+    const sub = panelChart(k, p)
+    const n = panelRows(k, p)
+    const shown = { ...sub, stitch: sub.stitch.slice(0, n), color: sub.color.slice(0, n) }
+    return {
+      title: `Panel ${panelLetter(i)}${p.name ? ` (${p.name})` : ''}`,
+      stitches: `stitches ${w - p.to}–${w - p.from}, ${n} ${k.mode === 'round' ? 'round' : 'row'} repeat`,
+      rows: writtenRows(shown),
+    }
+  })
+}
+
 /** "Cast on 24 stitches." or, with a repeat box, "Cast on a multiple of 4 stitches plus 2 (6 for one repeat)." */
 export function castOnText(k: KnitChart): string {
   const rep = repeatStitches(k)
@@ -222,5 +263,9 @@ export function writtenPattern(k: KnitChart, title = 'Knit Patterner chart'): st
   // Repeating rows keeps right and wrong sides in step only with an even number of rows.
   if (last && rowCounts(last).makes === n && k.stitch.length > 1 && (k.mode === 'round' || k.stitch.length % 2 === 0))
     lines.push('', `Repeat ${k.mode === 'round' ? 'rounds' : 'rows'} 1–${k.stitch.length} for the pattern.`)
+  for (const p of writtenPanels(k)) {
+    lines.push('', `${p.title}, ${p.stitches}:`)
+    for (const w of p.rows) lines.push(`  ${w.label}${w.side ? ` (${w.side})` : ''}: ${w.text}.`)
+  }
   return lines.join('\n')
 }

@@ -264,3 +264,31 @@ test('estimates the yarn needed in each colour', async ({ page }) => {
   await yarn.getByLabel('Metres per ball').fill('100000')
   await expect(yarn.locator('tr[data-color="A"]')).toContainText('1 ball')
 })
+
+test('make a panel, name it, and save it to put into another chart', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Cable panel/ }).click()
+  // The cable sits in stitches 3–6.
+  await page.getByRole('button', { name: 'Select' }).click()
+  await knitSquare(page, 1, 6).hover()
+  await page.mouse.down()
+  await knitSquare(page, 1, 3).hover()
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Make a panel' }).click()
+  expect(await writtenRow(page, 1)).toMatch(/work Panel A/)
+  await page.locator('.knit-panel[data-panel="A"]').click()
+  const dialog = page.getByRole('dialog', { name: 'Panels' })
+  await dialog.getByLabel('Name of panel A').fill('Cable')
+  await dialog.getByRole('button', { name: 'Save to store' }).click()
+  await expect(dialog.getByTestId('panel-store')).toContainText('Cable')
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByTestId('knit-panel-written').first()).toContainText('Panel A (Cable), stitches 3–6')
+
+  // A new chart, with the saved cable put in at the right edge.
+  await newChart(page)
+  await page.getByRole('button', { name: 'Panels…' }).click()
+  await dialog.getByRole('button', { name: 'Put in Cable' }).click()
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByLabel('Stitches', { exact: true })).toHaveValue('28')
+  expect(await writtenRow(page, 1)).toMatch(/^work Panel A, k24/)
+})

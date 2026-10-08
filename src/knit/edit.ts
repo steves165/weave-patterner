@@ -153,6 +153,12 @@ function shiftSpan<T extends { from: number; to: number }>(
   return to >= from ? { ...span, from, to } : null
 }
 
+/** The chart's panels after columns are added or taken out. */
+function shiftPanels(k: KnitChart, edit: { at: number; added: number } | { c0: number; c1: number }) {
+  const moved = (k.panels ?? []).flatMap((p) => shiftSpan(p, edit) ?? [])
+  return moved.length ? moved : undefined
+}
+
 /** Adds `n` stitches of plain knitting before column `at` (0-based, as drawn; width(k) adds them at the left). */
 export function insertColumns(k: KnitChart, at: number, n = 1): KnitChart {
   const add = Math.max(0, Math.min(n, MAX_STITCHES - widthOf(k)))
@@ -163,6 +169,7 @@ export function insertColumns(k: KnitChart, at: number, n = 1): KnitChart {
     stitch: k.stitch.map((row) => [...row.slice(0, at), ...Array<StitchId>(add).fill('k'), ...row.slice(at)]),
     color: k.color.map((row) => [...row.slice(0, at), ...Array<number>(add).fill(0), ...row.slice(at)]),
     repeat: k.repeat ? (shiftSpan(k.repeat, edit) ?? undefined) : undefined,
+    panels: shiftPanels(k, edit),
   }
 }
 
@@ -174,6 +181,7 @@ export function deleteColumns(k: KnitChart, c0: number, c1: number): KnitChart {
     stitch: k.stitch.map((row) => row.filter((_, c) => c < c0 || c > c1)),
     color: k.color.map((row) => row.filter((_, c) => c < c0 || c > c1)),
     repeat: k.repeat ? (shiftSpan(k.repeat, { c0, c1 }) ?? undefined) : undefined,
+    panels: shiftPanels(k, { c0, c1 }),
   }
 }
 
