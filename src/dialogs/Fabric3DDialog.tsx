@@ -28,10 +28,10 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { track } from '../analytics'
 import { download, fileBase } from '../exportDraft'
 import { isMockup, tileSize, VIEWS_3D, type View3D } from '../mockups'
-import { type ClothShape, fabricModel } from '../sim3d'
+import { type ClothShape, fabricModel, shedFor } from '../sim3d'
 import { clothTextures, rug, sofa, tapestry } from '../three/mockups'
 import { clearGroup, yarnGeometry, yarnMaterial } from '../three/yarnMesh'
-import type { Draft } from '../weave'
+import { computeDrawdown, type Draft } from '../weave'
 import { clothLook, loadDensity } from '../yarnGeometry'
 import type { Yarn } from '../yarns'
 
@@ -48,8 +48,8 @@ interface Props {
 /** Most threads shown each way: more makes the preview slow on phones. */
 export const MAX_SHOWN = 80
 const DEFAULT_SHOWN = 32
-/** How long each pick takes in the weaving animation. */
-const PICK_MS = 120
+/** How long each pick takes in the weaving animation: the shed opens, the shuttle crosses, the pick settles. */
+const PICK_MS = 450
 
 interface Scene {
   renderer: THREE.WebGLRenderer
@@ -59,6 +59,8 @@ interface Scene {
   /** The threads, and what the cloth is shown on. */
   cloth: THREE.Group
   mockup: THREE.Group
+  /** The shed and shuttle during the weaving animation. */
+  loom: THREE.Group
   /** Catches the cloth's shadow behind the flat thread view. */
   catcher: THREE.Mesh
   key: THREE.DirectionalLight
@@ -146,6 +148,8 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
 
     renderer.toneMapping = THREE.NeutralToneMapping
     renderer.shadowMap.enabled = true
+    // The weaving animation cuts the cloth off at the fell.
+    renderer.localClippingEnabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     const scene = new THREE.Scene()
@@ -170,12 +174,13 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     const mockup = new THREE.Group()
     const catcher = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ opacity: 0.22 }))
     catcher.receiveShadow = true
-    scene.add(cloth, mockup, catcher)
+    const loom = new THREE.Group()
+    scene.add(cloth, mockup, catcher, loom)
 
     const render = () => renderer.render(scene, camera)
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.addEventListener('change', render)
-    const s: Scene = { renderer, scene, camera, controls, cloth, mockup, catcher, key, render }
+    const s: Scene = { renderer, scene, camera, controls, cloth, mockup, loom, catcher, key, render }
     setScene3d(s)
 
     const resize = () => {
@@ -194,6 +199,7 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
       controls.dispose()
       clearGroup(cloth)
       clearGroup(mockup)
+      clearGroup(loom)
       catcher.geometry.dispose()
       ;(catcher.material as THREE.Material).dispose()
       scene.environment?.dispose()
@@ -266,15 +272,83 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     }
     scene3d.render()
   }, [scene3d, woven, weftOrder])
+  // Each pick: the shed opens, the shuttle crosses it, then the pick joins the cloth. Flat cloth only; for a shaped
+  // one the picks just appear in turn.
+  const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   useEffect(() => {
-    if (woven === null) return
+    const s = scene3d
+    if (woven === null || !s) return
     if (woven >= weftOrder.length) {
       const done = setTimeout(() => setWoven(null), 600)
       return () => clearTimeout(done)
     }
-    const next = setTimeout(() => setWoven(woven + 1), PICK_MS)
-    return () => clearTimeout(next)
-  }, [woven, weftOrder.length])
+    if (shape !== 'flat') {
+      const next = setTimeout(() => setWoven(woven + 1), PICK_MS / 3)
+      return () => clearTimeout(next)
+    }
+    const shed = shedFor(model, drawdown, weftOrder[woven], woven, 0)
+    // Hide the cloth below the fell: only what's woven shows, with the open warp beyond it.
+    const fell = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(shed.fellY - 0.6))
+    // Shadows ignore the cut-off, so the shadow behind would show the whole cloth: hide it while weaving.
+    s.catcher.visible = false
+    s.cloth.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined
+      if (m) m.clippingPlanes = [fell]
+    })
+    // The warp behind the fell as thin threads in their own colours, and a wooden shuttle.
+    const materials = new Map<string, THREE.Material>()
+    const ends = shed.lines.map((l) => {
+      let m = materials.get(l.color)
+      if (!m) {
+        m = new THREE.MeshStandardMaterial({ color: l.color, roughness: 0.8 })
+        materials.set(l.color, m)
+      }
+      // A unit-long thread along +y from its base, stretched and pointed each frame.
+      const thread = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1, 6).translate(0, 0.5, 0), m)
+      s.loom.add(thread)
+      return thread
+    })
+    const shuttle = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.45, 4, 4, 10).rotateZ(Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0x8d6e4b, roughness: 0.5 }),
+    )
+    shuttle.castShadow = true
+    s.loom.add(shuttle)
+    const start = performance.now()
+    let frame = 0
+    const up = new THREE.Vector3(0, 1, 0)
+    const dir = new THREE.Vector3()
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / PICK_MS)
+      // Open over the first fifth, cross in the middle, close over the last fifth.
+      const opening = Math.max(0, Math.min(1, t / 0.2, (1 - t) / 0.2))
+      const current = shedFor(model, drawdown, weftOrder[woven], woven, opening)
+      current.lines.forEach((l, i) => {
+        dir.set(l.to[0] - l.from[0], l.to[1] - l.from[1], l.to[2] - l.from[2])
+        const length = dir.length()
+        ends[i].position.set(...l.from)
+        ends[i].quaternion.setFromUnitVectors(up, dir.normalize())
+        ends[i].scale.set(1, length, 1)
+      })
+      const across = Math.min(1, Math.max(0, (t - 0.15) / 0.7))
+      const { fromX, toX, y, z } = current.shuttle
+      shuttle.position.set(fromX + (toX - fromX) * across, y, z)
+      s.render()
+      if (t < 1) frame = requestAnimationFrame(step)
+      else setWoven(woven + 1)
+    }
+    frame = requestAnimationFrame(step)
+    return () => {
+      cancelAnimationFrame(frame)
+      clearGroup(s.loom)
+      s.cloth.traverse((o) => {
+        const m = (o as THREE.Mesh).material as THREE.Material | undefined
+        if (m) m.clippingPlanes = null
+      })
+      s.catcher.visible = true
+      s.render()
+    }
+  }, [scene3d, woven, weftOrder, shape, model, drawdown])
 
   // Frame the cloth when it opens, when the area changes, and when it's turned over.
   useEffect(() => {

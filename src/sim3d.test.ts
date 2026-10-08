@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { doubleCloth } from './doublecloth'
-import { fabricModel, shapePoint, THREAD } from './sim3d'
+import { fabricModel, SHED, shapePoint, shedFor, THREAD } from './sim3d'
 import { computeDrawdown, defaultDraft } from './weave'
 
 const { bend, layerGap } = THREAD
@@ -102,5 +102,33 @@ describe('shapePoint', () => {
     // The very end hasn't come all the way round to overlap the cloth.
     const end = shapePoint('rolled', [0, -H, 0], W, H)
     expect(end[2]).toBeGreaterThan(0.5)
+  })
+})
+
+describe('shedFor', () => {
+  it('parts the warp: ends lifted for the pick rise, the others drop, as the shed opens', () => {
+    const d = defaultDraft()
+    const dd = computeDrawdown(d)
+    const m = fabricModel(d, 8, 8)
+    const shut = shedFor(m, dd, 0, 0, 0)
+    expect(shut.lines.every((l) => l.to[2] === 0)).toBe(true)
+    const open = shedFor(m, dd, 0, 0, 1)
+    open.lines.forEach((l, e) => {
+      expect(l.to[2] > 0).toBe(dd[0][e])
+      expect(l.to[1]).toBe(l.from[1] - SHED.depth) // behind the fell, where the cloth hasn't been woven yet
+    })
+    expect(open.lines[0].color).toBe(d.warpColors[0])
+  })
+
+  it('sends the shuttle back and forth', () => {
+    const d = defaultDraft()
+    const m = fabricModel(d, 8, 8)
+    const dd = computeDrawdown(d)
+    const first = shedFor(m, dd, 0, 0, 1).shuttle
+    const second = shedFor(m, dd, 1, 1, 1).shuttle
+    expect(first.fromX).toBeLessThan(first.toX)
+    expect(second.fromX).toBeGreaterThan(second.toX)
+    expect(second.y).toBeLessThan(first.y) // the next pick is further down the cloth
+    expect(shedFor(m, dd, 0, 0, 1).fellY).toBeGreaterThan(first.y)
   })
 })

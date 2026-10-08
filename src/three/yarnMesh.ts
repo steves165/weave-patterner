@@ -199,8 +199,9 @@ export function yarnGeometry(path: ThreadPath, o: YarnOptions): THREE.TubeGeomet
 export function clearGroup(group: THREE.Group) {
   const materials = new Set<THREE.Material>()
   group.traverse((child) => {
+    // Meshes and lines both own a geometry and material.
     const mesh = child as THREE.Mesh
-    if (mesh.isMesh) {
+    if (mesh.isMesh || (child as THREE.Line).isLine) {
       mesh.geometry.dispose()
       for (const m of [mesh.material].flat()) materials.add(m)
     }

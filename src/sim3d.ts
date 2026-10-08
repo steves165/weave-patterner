@@ -139,3 +139,47 @@ export function shapePoint(shape: ClothShape, [x, y, z]: Point, halfW: number, h
     }
   }
 }
+
+/**
+ * The open shed for one pick of the weaving animation: warp ends parting below the fell (the cloth grows downwards
+ * here, pick 1 at the top), and the shuttle's path.
+ */
+export interface Shed {
+  /** Where the newest pick lies. */
+  fellY: number
+  /** Each warp end from the fell back towards the loom, raised or lowered by how far the shed is open. */
+  lines: { from: Point; to: Point; color: string }[]
+  /** Where the shuttle runs: across the shed, just behind the fell. */
+  shuttle: { y: number; z: number; fromX: number; toX: number }
+}
+
+/** How far behind the fell the shed is drawn, and how far it opens up and down. */
+export const SHED = { depth: 7, open: 1.6 }
+
+/**
+ * The shed for weaving pick `pick` (0-based, as in the draft): ends that lift for it rise behind the fell, the
+ * rest drop, `opening` of the way (0–1). The shuttle crosses from the left on even-numbered picks of the order
+ * and from the right on odd ones, as it goes back and forth.
+ */
+export function shedFor(model: FabricModel, drawdown: boolean[][], pick: number, order: number, opening: number): Shed {
+  const weft = model.paths.find((p) => p.kind === 'weft' && p.index === pick)
+  const y = weft ? weft.points[1][1] : 0
+  const warps = model.paths.filter((p) => p.kind === 'warp')
+  const lines = warps.map((w) => {
+    const x = w.points[1][0]
+    const lift = drawdown[pick]?.[w.index] ? 1 : -1
+    return {
+      from: [x, y, 0] as Point,
+      to: [x, y - SHED.depth, lift * SHED.open * opening] as Point,
+      color: w.color,
+    }
+  })
+  const xs = warps.map((w) => w.points[1][0])
+  const [left, right] = [Math.min(...xs, 0) - 3, Math.max(...xs, 0) + 3]
+  const fromLeft = order % 2 === 0
+  return {
+    fellY: y,
+    lines,
+    shuttle: { y: y - 1.2, z: 0, fromX: fromLeft ? left : right, toX: fromLeft ? right : left },
+  }
+}
