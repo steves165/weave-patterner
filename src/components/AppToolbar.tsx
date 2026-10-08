@@ -16,8 +16,6 @@ import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import {
   AppBar,
   Box,
-  Button,
-  ButtonBase,
   Divider,
   IconButton,
   ListItemIcon,
@@ -29,9 +27,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { type MouseEvent, type ReactNode, useState } from 'react'
+import { type MouseEvent, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
 import { useMidWidth, useNarrow } from '../layout'
+import { Action, NavTab, PhoneNav, Rule } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -102,73 +101,6 @@ const EXPORTS: { format: ExportFormat; primary: string; secondary: string }[] = 
     secondary: 'Shafts lifted per pick, for computer-dobby looms',
   },
 ]
-
-/** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
-function Action(props: {
-  compact: boolean
-  icon: ReactNode
-  label: string
-  onClick: (e: MouseEvent<HTMLElement>) => void
-  disabled?: boolean
-  iconOnly?: boolean
-  /** Outlined or filled pills stand out from the plain text buttons. */
-  variant?: 'text' | 'outlined' | 'contained'
-}) {
-  const { compact, icon, label, onClick, disabled, iconOnly, variant = 'text' } = props
-  return compact || iconOnly ? (
-    <Tooltip title={label} describeChild>
-      {/* span keeps the tooltip working while the button is disabled */}
-      <span>
-        <IconButton color="inherit" aria-label={label} onClick={onClick} disabled={disabled}>
-          {icon}
-        </IconButton>
-      </span>
-    </Tooltip>
-  ) : (
-    <Button
-      color={variant === 'contained' ? 'primary' : 'inherit'}
-      variant={variant}
-      disableElevation
-      startIcon={icon}
-      onClick={onClick}
-      disabled={disabled}
-      sx={{ height: 40, px: 1.5, fontWeight: variant === 'text' ? 500 : 600, flex: 'none' }}
-    >
-      {label}
-    </Button>
-  )
-}
-
-/** A thin upright line between groups of toolbar buttons. */
-const Rule = () => <Box aria-hidden sx={{ width: '1px', height: 28, bgcolor: 'divider', flex: 'none' }} />
-
-/** A tab of the phone's bottom navigation bar. */
-function NavTab(props: {
-  icon: ReactNode
-  label: string
-  current?: boolean
-  onClick: (e: MouseEvent<HTMLElement>) => void
-}) {
-  return (
-    <ButtonBase
-      aria-current={props.current ? 'page' : undefined}
-      onClick={props.onClick}
-      sx={{
-        minHeight: 52,
-        borderRadius: 3,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '3px',
-        fontSize: 11,
-        fontWeight: props.current ? 700 : 600,
-        color: props.current ? 'primary.main' : 'text.secondary',
-      }}
-    >
-      {props.icon}
-      {props.label}
-    </ButtonBase>
-  )
-}
 
 export function AppToolbar(p: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
@@ -489,33 +421,17 @@ export function AppToolbar(p: Props) {
         </Toolbar>
       </AppBar>
       {p.phone && (
-        <Box
-          component="nav"
-          aria-label="Main"
-          sx={{
-            position: 'fixed',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: (t) => t.zIndex.appBar,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-            px: 0.75,
-            pt: 0.75,
-            pb: 'calc(10px + env(safe-area-inset-bottom, 0px))',
-            bgcolor: 'background.paper',
-            borderTop: 1,
-            borderColor: 'divider',
-          }}
-        >
-          <NavTab current icon={<GridOnIcon />} label="Draft" onClick={p.onDraft} />
-          <NavTab icon={<ViewInArIcon />} label="3D cloth" onClick={p.on3d} />
-          <NavTab icon={<HandymanIcon />} label="Tools" onClick={openTools} />
-          <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
+        <>
+          <PhoneNav>
+            <NavTab current icon={<GridOnIcon />} label="Draft" onClick={p.onDraft} />
+            <NavTab icon={<ViewInArIcon />} label="3D cloth" onClick={p.on3d} />
+            <NavTab icon={<HandymanIcon />} label="Tools" onClick={openTools} />
+            <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
+          </PhoneNav>
           <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={close}>
             {fileItems}
           </Menu>
-        </Box>
+        </>
       )}
     </>
   )

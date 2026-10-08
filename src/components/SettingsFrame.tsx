@@ -1,9 +1,8 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-import GitHubIcon from '@mui/icons-material/GitHub'
 import TuneIcon from '@mui/icons-material/Tune'
-import { Box, ButtonBase, Drawer, IconButton, Link, Stack, Typography } from '@mui/material'
+import { Box, ButtonBase, Drawer, IconButton, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 
 /** The app bar's height: the sidebar stays in view just below it. */
@@ -108,14 +107,15 @@ export function SettingsSidebar({
 
 /**
  * Phones and portrait tablets: a bar at the bottom of the screen with the loom size, which brings the pattern
- * settings up in a sheet. On phones the sheet also has the links that sit in the status bar on wider screens.
+ * settings up in a sheet, which can also hold the links that sit in the status bar on wider screens.
  */
 export function SettingsSheet(props: {
   open: boolean
   onOpen: (open: boolean) => void
   summary: string
   phone: boolean
-  analytics?: () => void
+  /** Phone: the links that sit in the status bar on wider screens. */
+  links?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -184,28 +184,14 @@ export function SettingsSheet(props: {
         </Stack>
         <Box sx={{ px: 2.5, pb: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
           {props.children}
-          {props.phone && (
+          {props.links && (
             <Stack
               component="nav"
               aria-label="More"
               direction="row"
-              sx={{ gap: 2.5, flexWrap: 'wrap', alignItems: 'center', mt: 3, fontSize: 14 }}
+              sx={{ gap: 2.5, flexWrap: 'wrap', alignItems: 'center', mt: 3 }}
             >
-              <Link href="./knit/">Knit Patterner</Link>
-              {props.analytics && (
-                <Link component="button" onClick={props.analytics} sx={{ fontSize: 14 }}>
-                  Analytics
-                </Link>
-              )}
-              <Link
-                href="https://github.com/steves165/weave-patterner"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
-              >
-                <GitHubIcon sx={{ fontSize: 16 }} />
-                Made by steves165
-              </Link>
+              {props.links}
             </Stack>
           )}
         </Box>

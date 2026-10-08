@@ -1,10 +1,10 @@
 import CheckIcon from '@mui/icons-material/Check'
-import GitHubIcon from '@mui/icons-material/GitHub'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import { Box, Link, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import type { Miss } from '../selvedge'
 import { MONO_FONT } from '../theme'
+import { FooterLinks } from './FooterLinks'
 
 interface Props {
   draft: { picks: number }
@@ -34,7 +34,7 @@ const listThreads = (indices: number[], max = 6) =>
     : indices.map((i) => i + 1).join(', ')
 
 /** A warning pill: amber, with an icon. */
-function Warning({ children, testId }: { children: ReactNode; testId: string }) {
+export function Warning({ children, testId }: { children: ReactNode; testId: string }) {
   return (
     <Stack
       direction="row"
@@ -57,12 +57,17 @@ function Warning({ children, testId }: { children: ReactNode; testId: string }) 
 }
 
 /**
- * The bar along the bottom of the editor: the longest floats, threads that never weave in, and whether the weft
- * catches the edge ends, then the links.
+ * The bar along the bottom of an app: what it reports, then (except on phones) the links, pushed to the right.
  */
-export function StatusBar(p: Props) {
-  const longest = Math.max(p.floats.warp, p.floats.weft)
-  const num = { fontFamily: MONO_FONT, fontWeight: 500, color: 'text.primary' }
+export function StatusFrame(p: {
+  /** Stays in view at the bottom of the screen (wide screens; narrow ones have the settings bar there). */
+  sticky: boolean
+  /** The window's width, when the page can scroll sideways: the bar stays that wide and in view. */
+  width?: number
+  /** The links at the right; left out on phones, where they're in the settings sheet. */
+  links?: ReactNode
+  children: ReactNode
+}) {
   return (
     <Box
       component="footer"
@@ -86,6 +91,39 @@ export function StatusBar(p: Props) {
         fontSize: 13,
         color: 'var(--wp-body)',
       }}
+    >
+      {p.children}
+      {p.links && (
+        <>
+          <Box sx={{ flex: '1 1 0px' }} />
+          <Stack
+            component="nav"
+            aria-label="More"
+            direction="row"
+            sx={{ gap: 2, flexWrap: 'wrap', alignItems: 'center' }}
+          >
+            {p.links}
+          </Stack>
+        </>
+      )}
+    </Box>
+  )
+}
+
+/**
+ * The bar along the bottom of the editor: the longest floats, threads that never weave in, and whether the weft
+ * catches the edge ends, then the links.
+ */
+export function StatusBar(p: Props) {
+  const longest = Math.max(p.floats.warp, p.floats.weft)
+  const num = { fontFamily: MONO_FONT, fontWeight: 500, color: 'text.primary' }
+  return (
+    <StatusFrame
+      sticky={p.sticky}
+      width={p.width}
+      links={
+        !p.phone && <FooterLinks other={{ href: './knit/', label: 'Knit Patterner' }} onAnalytics={p.onAnalytics} />
+      }
     >
       <Typography
         component="span"
@@ -127,36 +165,6 @@ export function StatusBar(p: Props) {
           Edges catch on every turn
         </Stack>
       )}
-      {!p.phone && (
-        <>
-          <Box sx={{ flex: '1 1 0px' }} />
-          <Stack
-            component="nav"
-            aria-label="More"
-            direction="row"
-            sx={{ gap: 2, flexWrap: 'wrap', alignItems: 'center' }}
-          >
-            <Link href="./knit/" color="primary">
-              Knit Patterner
-            </Link>
-            {p.onAnalytics && (
-              <Link component="button" onClick={p.onAnalytics} color="primary" sx={{ fontSize: 13 }}>
-                Analytics
-              </Link>
-            )}
-            <Link
-              href="https://github.com/steves165/weave-patterner"
-              target="_blank"
-              rel="noopener noreferrer"
-              color="primary"
-              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
-            >
-              <GitHubIcon sx={{ fontSize: 16 }} />
-              Made by steves165
-            </Link>
-          </Stack>
-        </>
-      )}
-    </Box>
+    </StatusFrame>
   )
 }

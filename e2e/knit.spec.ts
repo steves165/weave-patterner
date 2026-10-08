@@ -12,8 +12,8 @@ const newChart = async (page: import('@playwright/test').Page) => {
 test('has its own name, logo, page title and a link back to Weave Patterner', async ({ page }) => {
   await expect(page).toHaveTitle(/Knit Patterner/)
   await expect(page.getByRole('link', { name: 'Knit Patterner' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Weave Patterner' })).toHaveAttribute('href', '../')
-  await page.getByRole('link', { name: 'Weave Patterner' }).click()
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Weave Patterner' })).toHaveAttribute('href', '../')
+  await page.getByRole('banner').getByRole('link', { name: 'Weave Patterner' }).click()
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
 })
 

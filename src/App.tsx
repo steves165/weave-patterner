@@ -5,6 +5,7 @@ import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnal
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
+import { FooterLinks } from './components/FooterLinks'
 import { PrintSheet } from './components/PrintSheet'
 import { SettingsSheet, SettingsSidebar } from './components/SettingsFrame'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -440,7 +441,15 @@ export default function App() {
             onOpen={setSheetOpen}
             summary={summary}
             phone={phone}
-            analytics={analyticsChoice}
+            links={
+              phone && (
+                <FooterLinks
+                  other={{ href: './knit/', label: 'Knit Patterner' }}
+                  onAnalytics={analyticsChoice}
+                  fontSize={14}
+                />
+              )
+            }
           >
             {settingsPanel}
           </SettingsSheet>

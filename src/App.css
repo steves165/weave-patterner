@@ -18,6 +18,8 @@
   --wp-ok: #2f5b32;
   --wp-shadow: rgba(160, 30, 90, 0.07);
   --wp-shadow-soft: rgba(160, 30, 90, 0.05);
+  --wp-shadow-strong: rgba(160, 30, 90, 0.3);
+  --wp-accent-glow: rgba(214, 36, 110, 0.35);
   --grid-line: #f5cddd;
   --grid-heavy: #d08aa9;
   --grid-off: #fffdfe;
@@ -43,11 +45,53 @@
   --wp-ok: #8fd69a;
   --wp-shadow: rgba(0, 0, 0, 0.35);
   --wp-shadow-soft: rgba(0, 0, 0, 0.25);
+  --wp-shadow-strong: rgba(0, 0, 0, 0.4);
+  --wp-accent-glow: rgba(255, 92, 157, 0.3);
   --grid-line: #45263a;
   --grid-heavy: #7e4b6b;
   --grid-off: #28151f;
   --grid-on: #ffb3d1;
   --drawdown-line: #45263a;
+}
+
+/* Knit Patterner: the same design in teal on mint, deep green in dark mode. */
+:root.knit {
+  --wp-bg: #eef8f6;
+  --wp-panel: #f7fcfb;
+  --wp-line: #cfe9e4;
+  --wp-hover: #ddf2ee;
+  --wp-seg: #dcefeb;
+  --wp-field: #a9d8cf;
+  --wp-field-hover: #6fbdb0;
+  --wp-switch-off: #b5dcd5;
+  --wp-paper: #fdfffe;
+  --wp-ink: #14282a;
+  --wp-muted: #4e6f6b;
+  --wp-body: #2f4d4a;
+  --wp-accent: #00796b;
+  --wp-shadow: rgba(0, 90, 80, 0.08);
+  --wp-shadow-soft: rgba(0, 90, 80, 0.05);
+  --wp-shadow-strong: rgba(0, 90, 80, 0.3);
+  --wp-accent-glow: rgba(0, 121, 107, 0.35);
+}
+:root.knit.dark {
+  --wp-bg: #0b1716;
+  --wp-panel: #112120;
+  --wp-line: #22403c;
+  --wp-hover: #1c3633;
+  --wp-seg: #183230;
+  --wp-field: #2f5752;
+  --wp-field-hover: #4f8a82;
+  --wp-switch-off: #2c4d49;
+  --wp-paper: #142624;
+  --wp-ink: #e6f5f2;
+  --wp-muted: #9cc3bc;
+  --wp-body: #c3dfda;
+  --wp-accent: #4db6ac;
+  --wp-shadow: rgba(0, 0, 0, 0.35);
+  --wp-shadow-soft: rgba(0, 0, 0, 0.25);
+  --wp-shadow-strong: rgba(0, 0, 0, 0.4);
+  --wp-accent-glow: rgba(77, 182, 172, 0.3);
 }
 
 .draft {

@@ -69,14 +69,14 @@ function knitChart(width: number, height: number, cell = 30) {
 
 const knitSocial = `<!doctype html><html><head><style>
   body { margin: 0; width: 1200px; height: 630px; display: flex; font-family: system-ui, sans-serif;
-         background: #f5f0e6; color: #1d2b2a; }
+         background: #eef8f6; color: #14282a; }
   .text { flex: 1; padding: 72px 56px 56px 72px; display: flex; flex-direction: column; }
   .brand { display: flex; align-items: center; gap: 20px; }
   .brand svg { width: 76px; height: 76px; }
-  h1 { font-size: 64px; margin: 0; color: #00695c; letter-spacing: -1px; }
+  h1 { font-size: 64px; margin: 0; color: #00796b; letter-spacing: -1px; }
   p { font-size: 32px; line-height: 1.3; margin: 36px 0 0; }
   ul { margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 12px; }
-  li { font-size: 21px; background: #00695c; color: #fff; padding: 8px 16px; border-radius: 999px; }
+  li { font-size: 21px; background: #00796b; color: #fff; padding: 8px 16px; border-radius: 999px; }
   .cloth { width: 470px; height: 630px; overflow: hidden; box-shadow: -8px 0 24px rgba(0,0,0,.18); }
 </style></head><body>
   <div class="text">

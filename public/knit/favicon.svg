@@ -1,15 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
   <title>Knit Patterner</title>
-  <rect width="32" height="32" rx="6" fill="#f5f0e6"/>
-  <!-- Two knitting needles -->
-  <g stroke="#6d4c33" stroke-width="1.8" stroke-linecap="round">
-    <path d="M8 4 L27 27M24 4 L5 27"/>
+  <rect width="30" height="30" rx="9" fill="#00796B"/>
+  <!-- Two columns of knit stitches -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 6.5 L11 11.5 L15 6.5"/><path d="M7 12.5 L11 17.5 L15 12.5"/><path d="M7 18.5 L11 23.5 L15 18.5"/>
+    <path d="M15 6.5 L19 11.5 L23 6.5"/><path d="M15 12.5 L19 17.5 L23 12.5"/><path d="M15 18.5 L19 23.5 L23 18.5"/>
   </g>
-  <g fill="#6d4c33"><circle cx="8" cy="4" r="2"/><circle cx="24" cy="4" r="2"/></g>
-  <!-- A ball of yarn -->
-  <circle cx="16" cy="19" r="9" fill="#00695c"/>
-  <g fill="none" stroke="#b2dfdb" stroke-width="1.1">
-    <path d="M8.5 15c4 2 11 2 15 0M7.5 19.5c5 2.5 12 2.5 17 0M9 24c4 2 10 2 14 0M12 11c-2 4-2 12 1 16"/>
-  </g>
-  <path d="M24 25c2 2 4 2 6 4" fill="none" stroke="#00695c" stroke-width="1.4" stroke-linecap="round"/>
 </svg>
