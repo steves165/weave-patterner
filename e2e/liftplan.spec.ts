@@ -74,3 +74,23 @@ test('no tie-up: works as a lift plan for looms without a tie-up', async ({ page
   await expect(page.getByLabel('No tie-up (lift plan)')).not.toBeChecked()
   await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
 })
+
+test('no tie-up: a pick can lift several shafts, whichever draw tool is chosen', async ({ page }) => {
+  await page.getByLabel('No tie-up (lift plan)').check()
+  await expect(page.getByRole('group', { name: 'Lift plan' })).toBeVisible()
+  for (const tool of ['Click', 'Straight draw', 'Point draw']) {
+    await page.getByRole('button', { name: tool }).click()
+    const box = (s: number) => page.getByRole('checkbox', { name: `Pick 3, shaft ${s}`, exact: true })
+    for (const s of [1, 2, 3, 4]) if ((await box(s).getAttribute('aria-checked')) === 'true') await box(s).click()
+    await box(1).click()
+    await box(3).click()
+    await box(4).click()
+    for (const [s, on] of [
+      [1, 'true'],
+      [2, 'false'],
+      [3, 'true'],
+      [4, 'true'],
+    ] as const)
+      await expect(box(s), `${tool}: shaft ${s}`).toHaveAttribute('aria-checked', on)
+  }
+})

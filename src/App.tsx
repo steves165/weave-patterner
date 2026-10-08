@@ -346,17 +346,19 @@ export default function App() {
                 { merge: continuing },
               )
             }
-            onTreadling={(pick, t, value, continuing) =>
-              view.drawTool !== 'click'
-                ? drawStroke('treadling', pick, t, continuing)
-                : update(
-                    (d) => ({
-                      ...d,
-                      treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
-                    }),
-                    { merge: continuing },
-                  )
-            }
+            onTreadling={(pick, t, value, continuing) => {
+              // A pick can use several treadles (or lift several shafts), so pressing a box always toggles it, adding
+              // to the pick; with a draw tool, dragging on from there draws a run with one treadle per pick.
+              if (view.drawTool !== 'click' && continuing) return drawStroke('treadling', pick, t, continuing)
+              if (view.drawTool !== 'click') stroke.current = { base: draft, from: pick, start: t, direction: 1 }
+              update(
+                (d) => ({
+                  ...d,
+                  treadling: d.treadling.map((r, p) => (p === pick ? r.map((v, i) => (i === t ? value : v)) : r)),
+                }),
+                { merge: continuing },
+              )
+            }}
             onWarpColor={(i, c) =>
               update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), { key: `warp:${i}` })
             }

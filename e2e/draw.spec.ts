@@ -53,3 +53,22 @@ test('draws on the treadling too, and Click goes back to one box at a time', asy
   await page.reload()
   await expect(page.getByRole('button', { name: 'Point draw' })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('a pick can use several treadles, in every draw mode', async ({ page }) => {
+  const checked = (name: string) => expect(cell(page, name)).toHaveAttribute('aria-checked', 'true')
+  for (const tool of ['Click', 'Straight draw', 'Point draw']) {
+    await page.getByRole('button', { name: 'Clear grids' }).click()
+    await page.getByRole('button', { name: tool }).click()
+    await cell(page, 'Pick 2, treadle 1').click()
+    await cell(page, 'Pick 2, treadle 3').click()
+    await checked('Pick 2, treadle 1')
+    await checked('Pick 2, treadle 3')
+    // Pressing a pressed treadle again lets it go.
+    await cell(page, 'Pick 2, treadle 1').click()
+    await expect(cell(page, 'Pick 2, treadle 1')).toHaveAttribute('aria-checked', 'false')
+    await checked('Pick 2, treadle 3')
+  }
+  // Dragging with a draw tool still draws one treadle per pick.
+  await drag(page, 'Pick 4, treadle 1', 'Pick 7, treadle 1')
+  expect((await treadling(page)).slice(3, 7)).toBe('1234')
+})
