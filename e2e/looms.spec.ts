@@ -145,3 +145,35 @@ test('tablet weaving: cards can turn against the pack, or be flipped on one row'
   expect(await band()).toBe(opposite)
   await expect(dialog).toContainText('An S-threaded card turned forward makes a Z twist, leaning /')
 })
+
+test.describe('drawloom', () => {
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Drawloom' })
+
+  test('designs in units, with the setup, ground treadling and drawing sequence', async ({ page }) => {
+    await openTool(page, /Drawloom/)
+    await expect(dialog(page).getByTestId('drawloom-setup')).toContainText(
+      'Pattern harness: 24 draw cords, each lifting 5 ends. Ground harness: 5 shafts',
+    )
+    await expect(dialog(page).getByTestId('drawloom-ground')).toContainText('1, 3, 5, 2, 4')
+    const sequence = dialog(page).getByTestId('drawloom-sequence').getByRole('listitem')
+    await expect(sequence.first()).toHaveText('No cords: ground only')
+    await expect(sequence.nth(5)).toHaveText('Draw cords 12–13')
+
+    // Paint a unit in the first row: now it draws that cord.
+    await dialog(page).getByRole('checkbox', { name: 'Unit row 1, draw cord 3', exact: true }).click()
+    await expect(sequence.first()).toHaveText('Draw cords 3')
+    await dialog(page).getByLabel('Unit size (ends)').fill('10')
+    await expect(dialog(page)).toContainText('The cloth (240 ends × 240 picks)')
+    await dialog(page).getByRole('combobox', { name: 'Ground weave' }).click()
+    await page.getByRole('option', { name: '8-end satin damask' }).click()
+    await expect(dialog(page).getByTestId('drawloom-setup')).toContainText('Ground harness: 8 shafts')
+  })
+
+  test('turns the design into a shaft draft when it fits', async ({ page }) => {
+    await openTool(page, /Drawloom/)
+    await dialog(page).getByRole('button', { name: 'Make a shaft draft' }).click()
+    await expect(toast(page)).toContainText('Drawloom design as a shaft draft')
+    await expect(page.getByLabel('Ends', { exact: true })).toHaveValue('120')
+    expect(Number(await page.getByLabel('Shafts', { exact: true }).inputValue())).toBeLessThanOrEqual(128)
+  })
+})

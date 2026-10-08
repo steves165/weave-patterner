@@ -69,8 +69,12 @@ Bugs and feature ideas are tracked in [GitHub issues](https://github.com/steves1
 - **Smallest repeat**: found automatically, with a button to trim the draft to it
 - **Cloth report**: warp and weft faces, how much the threads interlace, float lengths and firmness
 - **Save treadles**: a skeleton tie-up that presses two treadles at once to use fewer
-- **Rigid heddle**: instructions for weaving a draft with a rigid heddle and pick-up stick, or why it can't be
-- **Tablet weaving**: a card-weaving designer with hole colours, S/Z threading, turning and a band preview
+- **Rigid heddle**: instructions for weaving a draft with a rigid heddle, pick-up stick and heddle rod, or why it
+  can't be
+- **Tablet weaving**: a card-weaving designer with hole colours, S/Z threading, turning (whole pack, opposite cards or
+  single stitches) and a band preview
+- **Drawloom**: damask and turned-twill designs drawn in units, with the drawing sequence, ground treadling and a
+  shaft draft when it fits
 - **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost

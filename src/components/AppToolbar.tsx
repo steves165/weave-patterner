@@ -73,6 +73,7 @@ interface Props {
   onReport: () => void
   onRigidHeddle: () => void
   onTablet: () => void
+  onDrawloom: () => void
   onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
@@ -299,6 +300,9 @@ export function AppToolbar(p: Props) {
           <ListSubheader disableSticky>Other looms</ListSubheader>
           <MenuItem onClick={then(p.onRigidHeddle)}>
             <ListItemText primary="Rigid heddle…" secondary="Weave this draft with a rigid heddle and pick-up stick" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onDrawloom)}>
+            <ListItemText primary="Drawloom…" secondary="Damask and other pattern-harness designs, drawn in units" />
           </MenuItem>
           <MenuItem onClick={then(p.onTablet)}>
             <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />

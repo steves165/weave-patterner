@@ -17,6 +17,7 @@ import { findRepeat } from './repeat'
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
 const TabletDialog = lazy(() => import('./dialogs/TabletDialog'))
+const DrawloomDialog = lazy(() => import('./dialogs/DrawloomDialog'))
 
 /** A dialog loaded the first time it's needed, keeping the main download small. */
 // biome-ignore lint/suspicious/noExplicitAny: React.lazy takes any component; each dialog keeps its own prop types
@@ -75,6 +76,7 @@ type DialogName =
   | 'report'
   | 'rigid'
   | 'tablet'
+  | 'drawloom'
   | 'yarns'
 
 export default function App() {
@@ -253,6 +255,7 @@ export default function App() {
           onReport={() => setDialog('report')}
           onRigidHeddle={() => setDialog('rigid')}
           onTablet={() => setDialog('tablet')}
+          onDrawloom={() => setDialog('drawloom')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -447,6 +450,11 @@ export default function App() {
         {seen.has('rigid') && (
           <Suspense fallback={null}>
             <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
+        {dialog === 'drawloom' && (
+          <Suspense fallback={null}>
+            <DrawloomDialog open onClose={() => setDialog(null)} onApply={applyFromDialog} />
           </Suspense>
         )}
         {dialog === 'tablet' && (
