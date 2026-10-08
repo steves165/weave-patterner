@@ -19,6 +19,7 @@ import RedoIcon from '@mui/icons-material/Redo'
 import RemoveIcon from '@mui/icons-material/Remove'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
+import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import {
   AppBar,
@@ -44,7 +45,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
 import { Action, NavTab, PhoneNav, Rule } from '../components/AppBarParts'
 import { ConsentBanner } from '../components/ConsentBanner'
@@ -101,6 +102,9 @@ import { SAMPLES } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import { yarnNeeded } from './yarn'
 import './knit.css'
+
+// three.js is large, so the 3D preview loads only when it's first opened.
+const Knit3DDialog = lazy(() => import('./Knit3DDialog'))
 
 /** Charts saved by name in this browser, like Weave Patterner's patterns but kept apart from them. */
 const knitStore = patternStore<KnitChart>('knit-patterner')
@@ -245,7 +249,7 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | '3d' | null>(null)
   // Panels saved to use again, and the panel the Panels dialog opens at.
   const [panelStore, setPanelStoreState] = useState<SavedPanel[]>(loadSavedPanels)
   const setPanelStore = (next: SavedPanel[]) => {
@@ -780,6 +784,15 @@ export default function KnitApp() {
           )}
           {!compact && <Rule />}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? '2px' : 1, flex: 'none' }}>
+            {!phone && (
+              <Action
+                compact={narrow}
+                variant="outlined"
+                icon={<ViewInArIcon />}
+                label="3D"
+                onClick={() => setDialog('3d')}
+              />
+            )}
             {compact ? (
               <Tooltip title="Start knitting" describeChild>
                 <IconButton
@@ -826,6 +839,7 @@ export default function KnitApp() {
             />
             <NavTab icon={<LibraryBooksIcon />} label="Samples" onClick={(e) => setSamplesAnchor(e.currentTarget)} />
             <NavTab icon={<NotesIcon />} label="Pattern" onClick={() => scrollTo('knit-written-pattern')} />
+            <NavTab icon={<ViewInArIcon />} label="3D" onClick={() => setDialog('3d')} />
             <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
           </PhoneNav>
           <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={() => setFileAnchor(null)}>
@@ -845,6 +859,11 @@ export default function KnitApp() {
           setToast(`Saved "${n}"`)
         }}
       />
+      {dialog === '3d' && (
+        <Suspense fallback={null}>
+          <Knit3DDialog open name={name.trim() || 'Knitting'} chart={chart} onClose={() => setDialog(null)} />
+        </Suspense>
+      )}
       <MosaicDialog
         open={dialog === 'mosaic'}
         chart={chart}

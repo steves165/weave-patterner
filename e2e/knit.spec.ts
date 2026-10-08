@@ -338,3 +338,27 @@ test('sizes: cast-on, rows and yarn for each, and increases or decreases spread 
   await sizes.getByRole('button', { name: 'Increase' }).click()
   await expect(sizes.getByTestId('spread-evenly')).toHaveText('(k10, m1) 5 times. (55 sts)')
 })
+
+test('shows the knitting made up in 3D as a sweater, hat, coat or skirt', { tag: '@3d' }, async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('button', { name: '3D', exact: true }).click()
+  const view = page.getByTestId('knit-3d')
+  await expect(page.getByRole('img', { name: '3D preview of the knitting' })).toBeVisible({ timeout: 20_000 })
+  for (const [label, value] of [
+    ['A hat', 'hat'],
+    ['A coat', 'coat'],
+    ['A skirt', 'skirt'],
+    ['A sweater', 'sweater'],
+  ]) {
+    await page.getByRole('combobox', { name: 'Made up as' }).click()
+    await page.getByRole('option', { name: label }).click()
+    await expect(view).toHaveAttribute('data-garment', value)
+  }
+  const size = page.getByRole('slider', { name: /Pattern size/ })
+  await size.focus()
+  await size.press('End')
+  await expect(page.getByText('Pattern size: 6× real size')).toBeVisible()
+  await page.getByRole('button', { name: 'Close 3D preview' }).click()
+  await expect(view).toHaveCount(0)
+})

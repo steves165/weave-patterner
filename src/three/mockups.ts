@@ -522,3 +522,130 @@ export function skirt(tex: ClothTextures, tile: { width: number; height: number 
     shadowReach: 110,
   }
 }
+
+/** A crew-neck sweater in the cloth, with long sleeves and ribbed hems, on a dress form. */
+export function sweater(tex: ClothTextures, tile: { width: number; height: number }): Mockup {
+  const g = new THREE.Group()
+  const neck = 152
+  g.add(dressForm(neck))
+  const cloth = fabricCm(tex, tile)
+  // Easy fitting, to the hips, gathered a little into the hem band.
+  g.add(
+    new THREE.Mesh(
+      garmentGeometry(
+        [
+          { y: neck - 4, rx: 7.2, rz: 6.8 },
+          { y: neck - 9, rx: 14, rz: 10 },
+          { y: neck - 15, rx: 19.5, rz: 12.5 },
+          { y: neck - 32, rx: 19, rz: 13.5, fold: 0.2 },
+          { y: neck - 55, rx: 18.4, rz: 13.4, fold: 0.5 },
+          { y: neck - 68, rx: 18.6, rz: 13.6, fold: 0.4 },
+        ],
+        8,
+        4,
+      ),
+      cloth,
+    ),
+  )
+  const hem = new THREE.Mesh(
+    garmentGeometry([
+      { y: neck - 68, rx: 18.4, rz: 13.4 },
+      { y: neck - 76, rx: 17.8, rz: 13 },
+    ]),
+    cloth,
+  )
+  g.add(hem)
+  for (const side of [-1, 1]) {
+    const top = new THREE.Vector3(side * 17.5, neck - 14, 0)
+    const cuff = new THREE.Vector3(side * 23.5, neck - 78, 4)
+    g.add(sleeve(cloth, top, cuff, 7.6, 5.4))
+    const shoulder = new THREE.Mesh(
+      uvInCm(new THREE.SphereGeometry(7.6, 32, 16), 2 * Math.PI * 7.6, Math.PI * 7.6),
+      cloth,
+    )
+    shoulder.position.copy(top)
+    g.add(shoulder)
+    const band = new THREE.Mesh(
+      uvInCm(new THREE.CylinderGeometry(5.1, 5.3, 6, 32, 1, true), 2 * Math.PI * 5.2, 6),
+      cloth,
+    )
+    band.position.copy(cuff).add(new THREE.Vector3(side * 0.2, 2.5, 0.2))
+    band.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), top.clone().sub(cuff).normalize())
+    g.add(band)
+  }
+  // A crew neck: a rolled band round the neck.
+  const collar = new THREE.Mesh(
+    uvInCm(new THREE.TorusGeometry(7.4, 1.5, 12, 40), 2 * Math.PI * 7.4, 2 * Math.PI * 1.5),
+    cloth,
+  )
+  collar.rotation.x = Math.PI / 2
+  collar.position.set(0, neck - 3.5, 0)
+  collar.scale.set(1, 0.92, 1)
+  g.add(collar)
+  g.add(floor(0xd8cfc4, 600))
+  return {
+    group: shadowed(g),
+    camera: new THREE.Vector3(80, 120, 220),
+    target: new THREE.Vector3(0, 110, 0),
+    shadowReach: 110,
+  }
+}
+
+/** A beanie in the cloth, with a folded brim and a pompom, on a head form. */
+export function hat(tex: ClothTextures, tile: { width: number; height: number }, pompom: string): Mockup {
+  const g = new THREE.Group()
+  const top = 60
+  // The head form: a head and neck on a stand.
+  const head = new THREE.Mesh(new THREE.SphereGeometry(9, 48, 32), formMaterial())
+  head.scale.set(1, 1.18, 1.08)
+  head.position.y = top - 11
+  g.add(head)
+  const neckForm = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 5.4, 12, 32), formMaterial())
+  neckForm.position.y = top - 25
+  g.add(neckForm)
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, top - 31, 12), wood())
+  pole.position.y = (top - 31) / 2
+  g.add(pole)
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(9, 10, 2.4, 32), wood())
+  base.position.y = 1.2
+  g.add(base)
+  const cloth = fabricCm(tex, tile)
+  // The crown, gathered to the top, easing over the head to the brim.
+  g.add(
+    new THREE.Mesh(
+      garmentGeometry(
+        [
+          { y: top + 1.6, rx: 0.6, rz: 0.6 },
+          { y: top + 0.8, rx: 4.6, rz: 4.9, fold: 0.3 },
+          { y: top - 3, rx: 8.6, rz: 9.3, fold: 0.2 },
+          { y: top - 9, rx: 9.5, rz: 10.3 },
+          { y: top - 13, rx: 9.4, rz: 10.2 },
+        ],
+        6,
+        6,
+      ),
+      cloth,
+    ),
+  )
+  const brim = new THREE.Mesh(
+    garmentGeometry([
+      { y: top - 9.5, rx: 9.9, rz: 10.7 },
+      { y: top - 15, rx: 9.8, rz: 10.6 },
+    ]),
+    cloth,
+  )
+  g.add(brim)
+  const pom = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(3.6, 3),
+    new THREE.MeshStandardMaterial({ color: pompom, roughness: 1, flatShading: true }),
+  )
+  pom.position.y = top + 4.4
+  g.add(pom)
+  g.add(floor(0xd8cfc4, 300))
+  return {
+    group: shadowed(g),
+    camera: new THREE.Vector3(30, 66, 62),
+    target: new THREE.Vector3(0, 52, 0),
+    shadowReach: 40,
+  }
+}
