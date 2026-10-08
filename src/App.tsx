@@ -1,25 +1,30 @@
 import { Box, Snackbar } from '@mui/material'
 import { useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { AppToolbar } from './components/AppToolbar'
 import { DraftView } from './components/DraftView'
 import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
 import { CELL_DEFAULT, SettingsPanel } from './components/SettingsPanel'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
+import { ColorsDialog } from './dialogs/ColorsDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
-import { download, exportDraft } from './exportDraft'
+import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
 import { useSharedPatternLink } from './hooks/useSharedPatternLink'
+import { useViewOptions } from './hooks/useViewOptions'
+import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useTouch } from './layout'
-import { trompAsWrit } from './tools'
+import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
+import { type Clip, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
 
-type DialogName = 'save' | 'load' | 'import' | 'tools' | 'calculator' | 'weave'
+type DialogName = 'save' | 'load' | 'import' | 'tools' | 'calculator' | 'weave' | 'colors'
 
 export default function App() {
   const phone = usePhone()
@@ -34,6 +39,11 @@ export default function App() {
   const [floatLimit, setFloatLimit] = useState(7)
   const [dialog, setDialog] = useState<DialogName | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [view, setView] = useViewOptions()
+  // Ends or picks copied in the sequence tools, kept until replaced.
+  const [clip, setClip] = useState<Clip | null>(null)
+  // Whether the next print includes the written-instructions page.
+  const [printInstructions, setPrintInstructions] = useState(false)
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
@@ -82,8 +92,31 @@ export default function App() {
             download(fileName, content, type)
             setToast(`Exported ${fileName}`)
           }}
+          onExportImage={(format) => {
+            const fileName = `${fileBase(name)}.${format}`
+            const done = () => setToast(`Exported ${fileName}`)
+            const fail = (e: unknown) => setToast(`Couldn't export the image: ${e instanceof Error ? e.message : e}`)
+            if (format === 'svg') {
+              try {
+                download(fileName, draftSvg(1), 'image/svg+xml')
+                done()
+              } catch (e) {
+                fail(e)
+              }
+            } else
+              draftPng(2)
+                .then((png) => {
+                  download(fileName, png, 'image/png')
+                  done()
+                })
+                .catch(fail)
+          }}
           onImport={() => setDialog('import')}
-          onPrint={() => window.print()}
+          onPrint={(instructions) => {
+            // Render the print sheet with or without instructions before the print dialog snapshots the page.
+            flushSync(() => setPrintInstructions(instructions))
+            window.print()
+          }}
           onWeave={() => setDialog('weave')}
           onSequenceTools={() => setDialog('tools')}
           onTrompAsWrit={() => {
@@ -97,6 +130,21 @@ export default function App() {
             )
           }}
           onCalculator={() => setDialog('calculator')}
+          onColors={() => setDialog('colors')}
+          isLiftplan={isDirectTieup(draft)}
+          onToLiftplan={() => {
+            update(toLiftplan)
+            setToast('Converted to a lift plan: the right-hand grid now shows the shafts lifted on each pick')
+          }}
+          onToTreadling={() => {
+            try {
+              const next = toTreadling(draft)
+              update(() => next)
+              setToast(`Converted to tie-up and treadling with ${next.treadles} treadles`)
+            } catch (e) {
+              setToast(e instanceof Error ? e.message : String(e))
+            }
+          }}
         />
 
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
@@ -115,6 +163,8 @@ export default function App() {
             onHighlightFloats={setHighlightFloats}
             floatLimit={floatLimit}
             onFloatLimit={setFloatLimit}
+            view={view}
+            onView={setView}
             onClear={() =>
               update((d) => ({
                 ...d,
@@ -133,6 +183,7 @@ export default function App() {
             drawdown={drawdown}
             floatMask={floatMask}
             cellSize={cellSize}
+            view={view}
             touchPaint={touchPaint}
             onThreading={(row, end, value, continuing) =>
               update(
@@ -204,6 +255,18 @@ export default function App() {
             setDialog(null)
             setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
           }}
+          clip={clip}
+          onCopy={setClip}
+        />
+        <ColorsDialog
+          open={dialog === 'colors'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={(d, message) => {
+            update(() => d)
+            setDialog(null)
+            setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
+          }}
         />
         <CalculatorDialog open={dialog === 'calculator'} draft={draft} onClose={() => setDialog(null)} />
         <WeavingMode
@@ -221,7 +284,12 @@ export default function App() {
         />
         <Footer />
       </Box>
-      <PrintSheet name={name ?? 'Untitled pattern'} draft={draft} />
+      <PrintSheet
+        name={name ?? 'Untitled pattern'}
+        draft={draft}
+        endOneRight={view.endOneRight}
+        instructions={printInstructions}
+      />
     </>
   )
 }

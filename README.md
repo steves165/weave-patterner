@@ -20,11 +20,17 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner
   pedal friendly, remembering where you stopped
 - **Sequence tools**: fill ranges with straight, point, advancing-twill or custom draws; repeat, mirror, reverse,
-  insert or delete ends and picks; **tromp as writ**
+  insert, delete, **copy and paste** ends and picks (including threading into treadling); **tromp as writ**
+- **Lift plans**: convert to a lift plan for dobby looms and back to a tie-up and treadling
+- **Colours**: stripe sequences for warp and weft; colour-and-weave presets (houndstooth, log cabin, gingham,
+  broken-twill check)
+- **Display options**: end 1 on the right, numbers in boxes, rulers every N threads, hover crosshair
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost
-- Save up to 200 patterns in the browser; export/import `.weave.json` and WIF (including lift plans for dobby looms)
-- Print the draft in the classic layout, light and dark themes, phone and tablet friendly
+- Save up to 200 patterns in the browser; export/import `.weave.json` and WIF (including lift plans for dobby looms);
+  export PNG and SVG images
+- Print the draft in the classic layout, optionally with written threading/treadling instructions; light and dark
+  themes; phone and tablet friendly
 
 ## Code layout
 

@@ -4,7 +4,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import HandymanIcon from '@mui/icons-material/Handyman'
+import ImageIcon from '@mui/icons-material/Image'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
+import PaletteIcon from '@mui/icons-material/Palette'
 import PlayCircleIcon from '@mui/icons-material/PlayCircle'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
@@ -25,7 +27,7 @@ import {
   Typography,
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useState } from 'react'
-import type { ExportFormat } from '../exportDraft'
+import type { ExportFormat, ImageFormat } from '../exportDraft'
 import { ThemeToggle } from './ThemeToggle'
 
 interface Props {
@@ -45,12 +47,19 @@ interface Props {
   onSave: () => void
   onLoad: () => void
   onExport: (format: ExportFormat) => void
+  onExportImage: (format: ImageFormat) => void
   onImport: () => void
-  onPrint: () => void
+  /** Print the draft, optionally with a page of written instructions. */
+  onPrint: (instructions: boolean) => void
   onWeave: () => void
   onSequenceTools: () => void
   onTrompAsWrit: () => void
   onCalculator: () => void
+  onColors: () => void
+  onToLiftplan: () => void
+  onToTreadling: () => void
+  /** The draft is a lift plan (straight tie-up), so offer converting back rather than to a lift plan. */
+  isLiftplan: boolean
 }
 
 const EXPORTS: { format: ExportFormat; primary: string; secondary: string }[] = [
@@ -97,20 +106,43 @@ export function AppToolbar(p: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null)
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null)
+  const [printAnchor, setPrintAnchor] = useState<HTMLElement | null>(null)
   const close = () => {
     setExportAnchor(null)
     setToolsAnchor(null)
     setMoreAnchor(null)
+    setPrintAnchor(null)
   }
   const then = (fn: () => void) => () => {
     close()
     fn()
   }
-  const exportItems = EXPORTS.map((x) => (
-    <MenuItem key={x.format} onClick={then(() => p.onExport(x.format))}>
-      <ListItemText primary={x.primary} secondary={x.secondary} />
-    </MenuItem>
-  ))
+  const exportItems = [
+    ...EXPORTS.map((x) => (
+      <MenuItem key={x.format} onClick={then(() => p.onExport(x.format))}>
+        <ListItemText primary={x.primary} secondary={x.secondary} />
+      </MenuItem>
+    )),
+    ...(['png', 'svg'] as const).map((f) => (
+      <MenuItem key={f} onClick={then(() => p.onExportImage(f))}>
+        <ListItemIcon>
+          <ImageIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText
+          primary={`Image (${f.toUpperCase()})`}
+          secondary={f === 'png' ? 'Picture of the draft to share' : 'Scalable picture for printing or editing'}
+        />
+      </MenuItem>
+    )),
+  ]
+  const printItems = [
+    <MenuItem key="draft" onClick={then(() => p.onPrint(false))}>
+      <ListItemText primary="Print draft" />
+    </MenuItem>,
+    <MenuItem key="instructions" onClick={then(() => p.onPrint(true))}>
+      <ListItemText primary="Print draft and written instructions" secondary="Adds threading and treadling lists" />
+    </MenuItem>,
+  ]
 
   return (
     <AppBar position="sticky">
@@ -177,6 +209,27 @@ export function AppToolbar(p: Props) {
               secondary="Treadle as drawn in: copy the threading to the treadling"
             />
           </MenuItem>
+          <MenuItem onClick={then(p.onColors)}>
+            <ListItemIcon>
+              <PaletteIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Colours and presets…"
+              secondary="Stripe sequences; houndstooth, log cabin and more"
+            />
+          </MenuItem>
+          {p.isLiftplan ? (
+            <MenuItem onClick={then(p.onToTreadling)}>
+              <ListItemText
+                primary="Convert to tie-up and treadling"
+                secondary="One treadle for each different shed, for floor looms"
+              />
+            </MenuItem>
+          ) : (
+            <MenuItem onClick={then(p.onToLiftplan)}>
+              <ListItemText primary="Convert to lift plan" secondary="Shafts per pick, for dobby looms" />
+            </MenuItem>
+          )}
           <MenuItem onClick={then(p.onCalculator)}>
             <ListItemIcon>
               <CalculateIcon fontSize="small" />
@@ -207,12 +260,9 @@ export function AppToolbar(p: Props) {
                 </ListItemIcon>
                 Import
               </MenuItem>
-              <MenuItem onClick={then(p.onPrint)}>
-                <ListItemIcon>
-                  <PrintIcon fontSize="small" />
-                </ListItemIcon>
-                Print
-              </MenuItem>
+              <Divider />
+              <ListSubheader>Print</ListSubheader>
+              {printItems}
               <Divider />
               <ListSubheader>Export</ListSubheader>
               {exportItems}
@@ -232,7 +282,15 @@ export function AppToolbar(p: Props) {
               {exportItems}
             </Menu>
             <Action compact={p.compact} icon={<FileUploadIcon />} label="Import" onClick={p.onImport} />
-            <Action compact={p.compact} icon={<PrintIcon />} label="Print" onClick={p.onPrint} />
+            <Action
+              compact={p.compact}
+              icon={<PrintIcon />}
+              label="Print"
+              onClick={(e) => setPrintAnchor(e.currentTarget)}
+            />
+            <Menu anchorEl={printAnchor} open={printAnchor !== null} onClose={close}>
+              {printItems}
+            </Menu>
           </>
         )}
         <ThemeToggle />

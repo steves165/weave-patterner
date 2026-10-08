@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { ascii } from './testUtils'
-import { advancing, applyRangeOp, MAX_THREADS, parseSequence, point, straight, trompAsWrit } from './tools'
-import { defaultDraft } from './weave'
+import {
+  advancing,
+  applyRangeOp,
+  copyRange,
+  MAX_THREADS,
+  parseSequence,
+  pasteClip,
+  point,
+  straight,
+  trompAsWrit,
+} from './tools'
+import { defaultDraft, resizeDraft } from './weave'
 
 const shafts = (d: { threading: number[] }) => d.threading.map((s) => s + 1).join('')
 const treadles = (d: { treadling: boolean[][] }) => d.treadling.map((r) => r.indexOf(true) + 1).join('')
@@ -109,5 +119,83 @@ describe('trompAsWrit', () => {
     const d = defaultDraft()
     d.threading[0] = -1
     expect(trompAsWrit(d).skipped).toBe(1)
+  })
+})
+
+describe('copy and paste', () => {
+  const coloured = () => {
+    const d = defaultDraft()
+    d.warpColors = d.warpColors.map((_, i) => (i < 4 ? `#00000${i}` : d.warpColors[i]))
+    return d
+  }
+
+  it('copies ends with their shafts and colours', () => {
+    const clip = copyRange(coloured(), 'threading', 2, 3)
+    expect(clip).toEqual({
+      source: 'threading',
+      items: [
+        { nums: [2], color: '#000001' },
+        { nums: [3], color: '#000002' },
+      ],
+    })
+  })
+
+  it('pastes over threads, growing the draft past the end', () => {
+    const d = coloured()
+    const clip = copyRange(d, 'threading', 1, 4)
+    const over = pasteClip(d, 'threading', 3, clip, 'overwrite')
+    expect([over.ends, shafts(over).slice(0, 8)]).toEqual([32, '12123434'])
+    expect(over.warpColors.slice(2, 6)).toEqual(['#000000', '#000001', '#000002', '#000003'])
+    const tail = pasteClip(d, 'threading', 31, clip, 'overwrite')
+    expect([tail.ends, shafts(tail).slice(28)]).toEqual([34, '121234']) // ends 29-30, then the pasted 4
+  })
+
+  it('inserts, optionally keeping the existing colours', () => {
+    const d = coloured()
+    const ins = pasteClip(d, 'threading', 1, copyRange(d, 'threading', 3, 4), 'insert', false)
+    expect([ins.ends, shafts(ins).slice(0, 6)]).toEqual([34, '341234'])
+    expect(ins.warpColors.slice(0, 2)).toEqual(['#000000', '#000001'])
+  })
+
+  it('pastes threading into the treadling and treadling into the threading', () => {
+    const d = applyRangeOp(defaultDraft(), 'threading', 1, 32, { kind: 'fill', sequence: point(4) })
+    const t = pasteClip(d, 'treadling', 1, copyRange(d, 'threading', 1, 6), 'overwrite')
+    expect(treadles(t).slice(0, 6)).toBe('123432')
+    const back = pasteClip(defaultDraft(), 'threading', 1, copyRange(t, 'treadling', 1, 6), 'overwrite')
+    expect(shafts(back).slice(0, 6)).toBe('123432')
+  })
+
+  it('keeps several treadles on a pick and empty ends as empty', () => {
+    const d = defaultDraft()
+    d.treadling[0] = [true, false, true, false]
+    d.threading[1] = -1
+    const t = pasteClip(d, 'treadling', 5, copyRange(d, 'treadling', 1, 1), 'overwrite')
+    expect(t.treadling[4]).toEqual([true, false, true, false])
+    const e = pasteClip(d, 'threading', 5, copyRange(d, 'threading', 2, 2), 'overwrite')
+    expect(e.threading[4]).toBe(-1)
+  })
+
+  it.each([
+    [() => copyRange(defaultDraft(), 'threading', 0, 2), /between 1 and 32/],
+    [
+      () => pasteClip(defaultDraft(), 'threading', 34, copyRange(defaultDraft(), 'threading', 1, 2), 'insert'),
+      /between 1 and 33/,
+    ],
+    [
+      () => {
+        const wide = resizeDraft(defaultDraft(), { shafts: 8 })
+        return pasteClip(defaultDraft(), 'threading', 1, copyRange(wide, 'threading', 1, 8), 'overwrite')
+      },
+      /use shaft 5; this draft has 4 shafts/,
+    ],
+  ])('reports problems %#', (fn, message) => {
+    expect(fn).toThrow(message)
+  })
+
+  it(`refuses to grow past ${MAX_THREADS} threads`, () => {
+    let d = defaultDraft()
+    const clip = copyRange(d, 'threading', 1, 32)
+    for (let i = 0; i < 11; i++) d = pasteClip(d, 'threading', 1, clip, 'insert')
+    expect(() => pasteClip(d, 'threading', 1, clip, 'insert')).toThrow(/limit is 400/)
   })
 })

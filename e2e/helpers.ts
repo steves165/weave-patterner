@@ -16,7 +16,7 @@ export const toolbarButton = (page: Page, label: string) =>
 
 export const cell = (page: Page, name: string) => page.getByRole('checkbox', { name, exact: true })
 
-/** The shaft (1-based, 0 for none) each end is threaded on, as a string like "1234". */
+/** The shaft (1-based, 0 for none) of each threading column as drawn left to right, as a string like "1234". */
 export function threading(page: Page): Promise<string> {
   return page.getByRole('group', { name: 'Threading' }).evaluate((grid) => {
     const cells = [...grid.querySelectorAll<HTMLElement>('[data-cell]')]

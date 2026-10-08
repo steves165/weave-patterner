@@ -120,3 +120,37 @@ test('tromp as writ copies the threading into the treadling', async ({ page }) =
   expect(await picks(page)).toBe('32')
   await expect(toast(page)).toContainText('Treadling now follows the threading (32 picks)')
 })
+
+test('copies and pastes ends, over existing ends or as new ones', async ({ page }) => {
+  // Make ends 1-4 a recognisable point: 1 2 3 2 after filling 1-4 with point draw (1 2 3 4 3 2 cut short).
+  await sequenceTools(page, 1, 4)
+  await dialog(page).getByRole('button', { name: 'Reverse' }).click()
+  expect((await threading(page)).slice(0, 8)).toBe('43211234')
+
+  await sequenceTools(page, 1, 4)
+  await expect(page.getByTestId('clipboard')).toHaveText('Clipboard is empty')
+  await dialog(page).getByRole('button', { name: 'Copy ends 1–4' }).click()
+  await expect(page.getByTestId('clipboard')).toHaveText('Copied ends 1–4')
+  await dialog(page).getByLabel('Paste at').fill('9')
+  await dialog(page).getByRole('button', { name: 'Paste over' }).click()
+  expect((await threading(page)).slice(8, 12)).toBe('4321')
+  expect(await ends(page)).toBe('32')
+
+  // The clipboard survives closing the dialog.
+  await sequenceTools(page)
+  await expect(page.getByTestId('clipboard')).toHaveText('Clipboard: 4 ends')
+  await dialog(page).getByLabel('Paste at').fill('1')
+  await dialog(page).getByRole('button', { name: 'Paste as new ends' }).click()
+  expect(await ends(page)).toBe('36')
+  expect((await threading(page)).slice(0, 8)).toBe('43214321')
+})
+
+test('pastes copied threading into the treadling', async ({ page }) => {
+  await sequenceTools(page, 1, 4)
+  await dialog(page).getByRole('button', { name: 'Reverse' }).click()
+  await sequenceTools(page, 1, 4)
+  await dialog(page).getByRole('button', { name: 'Copy ends 1–4' }).click()
+  await dialog(page).getByRole('button', { name: 'Treadling (picks)' }).click()
+  await dialog(page).getByRole('button', { name: 'Paste over' }).click()
+  expect((await treadling(page)).slice(0, 4)).toBe('4321')
+})

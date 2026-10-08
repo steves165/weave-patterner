@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { isDirectTieup } from '../liftplan'
 import { computeDrawdown, type Draft } from '../weave'
 import { loadProgress, type Progress, pickInfo, saveProgress, step } from '../weaving'
 
@@ -72,6 +73,12 @@ export function WeavingMode({ open, name, draft, onClose }: Props) {
   useEffect(() => {
     if (open) setProgress(loadProgress(name, draft.picks))
   }, [open, name, draft.picks])
+
+  // A lift plan's treadles are just its shafts, so start in the shafts view for those.
+  const liftplan = isDirectTieup(draft)
+  useEffect(() => {
+    if (open) setView(liftplan ? 'shafts' : 'treadles')
+  }, [open, liftplan])
 
   const move = (delta: 1 | -1) =>
     setProgress((p) => {

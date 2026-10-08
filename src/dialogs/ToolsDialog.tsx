@@ -1,11 +1,13 @@
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   MenuItem,
   Stack,
   TextField,
@@ -15,7 +17,18 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { usePhone } from '../layout'
-import { advancing, applyRangeOp, parseSequence, point, type RangeOp, straight, type Target } from '../tools'
+import {
+  advancing,
+  applyRangeOp,
+  type Clip,
+  copyRange,
+  parseSequence,
+  pasteClip,
+  point,
+  type RangeOp,
+  straight,
+  type Target,
+} from '../tools'
 import type { Draft } from '../weave'
 
 interface Props {
@@ -24,6 +37,9 @@ interface Props {
   onClose: () => void
   /** Called with the changed draft and a short description of what was done. */
   onApply: (draft: Draft, message: string) => void
+  /** Copied ends or picks, kept by the app so they can be pasted again later. */
+  clip: Clip | null
+  onCopy: (clip: Clip) => void
 }
 
 type Generator = 'straight' | 'point' | 'advancing' | 'custom'
@@ -31,7 +47,7 @@ type Generator = 'straight' | 'point' | 'advancing' | 'custom'
 const NUMBER_FIELD = { size: 'small' as const, type: 'number', sx: { width: 96 } }
 
 /** Fill, repeat, mirror, reverse, insert and delete runs of ends (threading) or picks (treadling). */
-export function ToolsDialog({ open, draft, onClose, onApply }: Props) {
+export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Props) {
   const phone = usePhone()
   const [target, setTarget] = useState<Target>('threading')
   const length = target === 'threading' ? draft.ends : draft.picks
@@ -45,10 +61,14 @@ export function ToolsDialog({ open, draft, onClose, onApply }: Props) {
   const [times, setTimes] = useState('1')
   const [count, setCount] = useState('1')
   const [error, setError] = useState<string | null>(null)
+  const [pasteAt, setPasteAt] = useState('1')
+  const [pasteColors, setPasteColors] = useState(true)
+  const [copied, setCopied] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     setError(null)
+    setCopied(null)
     setFrom('1')
     setTo(String(target === 'threading' ? draft.ends : draft.picks))
   }, [open, target, draft.ends, draft.picks])
@@ -216,6 +236,64 @@ export function ToolsDialog({ open, draft, onClose, onApply }: Props) {
             >
               Insert empty {unit}s at {from}
             </Button>
+          </Stack>
+
+          <Divider textAlign="left">Copy &amp; paste</Divider>
+          <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              onClick={guarded(() => {
+                const c = copyRange(draft, target, Number(from), Number(to))
+                onCopy(c)
+                setCopied(`Copied ${range}`)
+              })}
+            >
+              Copy {range}
+            </Button>
+            <Typography variant="body2" color="text.secondary" data-testid="clipboard" aria-live="polite">
+              {copied ??
+                (clip
+                  ? `Clipboard: ${clip.items.length} ${clip.source === 'threading' ? 'end' : 'pick'}${clip.items.length > 1 ? 's' : ''}`
+                  : 'Clipboard is empty')}
+            </Typography>
+          </Stack>
+          <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField
+              {...NUMBER_FIELD}
+              label="Paste at"
+              value={pasteAt}
+              onChange={(e) => setPasteAt(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              disabled={!clip}
+              onClick={guarded(() => {
+                if (!clip) return
+                onApply(
+                  pasteClip(draft, target, Number(pasteAt), clip, 'overwrite', pasteColors),
+                  `Pasted ${clip.items.length} over ${unit}s from ${pasteAt}`,
+                )
+              })}
+            >
+              Paste over
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={!clip}
+              onClick={guarded(() => {
+                if (!clip) return
+                onApply(
+                  pasteClip(draft, target, Number(pasteAt), clip, 'insert', pasteColors),
+                  `Inserted ${clip.items.length} ${unit}${clip.items.length > 1 ? 's' : ''} at ${pasteAt}`,
+                )
+              })}
+            >
+              Paste as new {unit}s
+            </Button>
+            <FormControlLabel
+              control={<Checkbox checked={pasteColors} onChange={(e) => setPasteColors(e.target.checked)} />}
+              label="With colours"
+            />
           </Stack>
 
           {error && <Alert severity="error">{error}</Alert>}

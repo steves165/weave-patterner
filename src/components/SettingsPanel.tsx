@@ -18,6 +18,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
+import type { ViewOptions } from '../hooks/useViewOptions'
 import { MAX_THREADS } from '../tools'
 import type { Draft } from '../weave'
 
@@ -82,6 +83,8 @@ interface Props {
   onHighlightFloats: (on: boolean) => void
   floatLimit: number
   onFloatLimit: (n: number) => void
+  view: ViewOptions
+  onView: (patch: Partial<ViewOptions>) => void
   onClear: () => void
   canReset: boolean
   onReset: () => void
@@ -171,6 +174,25 @@ export function SettingsPanel(p: Props) {
           >
             Longest floats: warp {p.floats.warp}, weft {p.floats.weft}
           </Typography>
+          <Divider orientation="vertical" flexItem />
+          <FormControlLabel
+            control={
+              <Switch checked={p.view.endOneRight} onChange={(e) => p.onView({ endOneRight: e.target.checked })} />
+            }
+            label="End 1 on the right"
+          />
+          <FormControlLabel
+            control={<Switch checked={p.view.numbers} onChange={(e) => p.onView({ numbers: e.target.checked })} />}
+            label="Numbers in boxes"
+          />
+          <CommitField
+            label="Ruler every"
+            value={p.view.ruler}
+            min={0}
+            max={50}
+            onCommit={(n) => p.onView({ ruler: n })}
+            width={110}
+          />
           <Divider orientation="vertical" flexItem />
           <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
             <Button size="small" startIcon={<ClearAllIcon />} onClick={p.onClear}>

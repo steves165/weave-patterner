@@ -15,6 +15,8 @@ interface GridProps {
   cellLabel: (r: number, c: number) => string
   /** Let a finger drag-paint like a mouse. When off, touch swipes scroll and a tap toggles one cell. */
   touchPaint?: boolean
+  /** Text shown in filled cells (e.g. the shaft number), when numbers are switched on. */
+  cellText?: (r: number, c: number) => string
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -29,7 +31,7 @@ const ARROWS: Record<string, [number, number]> = {
  * Touch: tap toggles and swipes scroll the page, or drag-paints when `touchPaint` is on.
  * Keyboard: Tab reaches the grid once, arrow keys move, Space/Enter toggles.
  */
-export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint = false }: GridProps) {
+export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint = false, cellText }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
   const lastPointer = useRef('mouse')
   const container = useRef<HTMLDivElement>(null)
@@ -94,7 +96,9 @@ export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint =
             // Browsers only send a click for a tap that didn't turn into a scroll.
             if (lastPointer.current === 'touch' && !touchPaint) onPaint(r, c, !on, false)
           }}
-        />,
+        >
+          {on && cellText ? cellText(r, c) : null}
+        </div>,
       )
     }
   }
@@ -117,10 +121,12 @@ interface ColorStripProps {
   colors: string[]
   vertical?: boolean
   onChange: (i: number, color: string) => void
+  /** Name of swatch i, e.g. "Warp 3". */
+  labelAt: (i: number) => string
 }
 
 /** A strip of colour swatches, each opening a colour picker when clicked. */
-export function ColorStrip({ colors, vertical, onChange }: ColorStripProps) {
+export function ColorStrip({ colors, vertical, onChange, labelAt }: ColorStripProps) {
   return (
     <div
       className="grid strip"
@@ -136,7 +142,8 @@ export function ColorStrip({ colors, vertical, onChange }: ColorStripProps) {
           type="color"
           className="swatch"
           value={color}
-          title={`${vertical ? 'Weft' : 'Warp'} ${i + 1}: ${color}`}
+          aria-label={labelAt(i)}
+          title={`${labelAt(i)}: ${color}`}
           onChange={(e) => onChange(i, e.target.value)}
         />
       ))}
