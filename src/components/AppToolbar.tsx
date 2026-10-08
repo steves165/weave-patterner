@@ -214,7 +214,7 @@ export function AppToolbar(p: Props) {
           onClick={(e) => setToolsAnchor(e.currentTarget)}
         />
         <Menu anchorEl={toolsAnchor} open={toolsAnchor !== null} onClose={close}>
-          <ListSubheader>Edit</ListSubheader>
+          <ListSubheader disableSticky>Edit</ListSubheader>
           <MenuItem onClick={then(p.onSequenceTools)}>
             <ListItemText
               primary="Sequence tools…"
@@ -227,7 +227,7 @@ export function AppToolbar(p: Props) {
               secondary="Treadle as drawn in: copy the threading to the treadling"
             />
           </MenuItem>
-          <ListSubheader>Design</ListSubheader>
+          <ListSubheader disableSticky>Design</ListSubheader>
           <MenuItem onClick={then(p.onColors)}>
             <ListItemIcon>
               <PaletteIcon fontSize="small" />
@@ -264,7 +264,7 @@ export function AppToolbar(p: Props) {
           <MenuItem onClick={then(p.onColorways)}>
             <ListItemText primary="Colourways…" secondary="The same cloth in other colours, side by side" />
           </MenuItem>
-          <ListSubheader>Change the whole draft</ListSubheader>
+          <ListSubheader disableSticky>Change the whole draft</ListSubheader>
           <MenuItem onClick={then(p.onTransform)}>
             <ListItemText primary="Transform draft…" secondary="Turn 90°, swap face and back, flip, move the repeat" />
           </MenuItem>
@@ -283,7 +283,7 @@ export function AppToolbar(p: Props) {
           <MenuItem onClick={then(p.onReport)}>
             <ListItemText primary="Cloth report…" secondary="Warp and weft faces, interlacing, floats, firmness" />
           </MenuItem>
-          <ListSubheader>Plan the warp</ListSubheader>
+          <ListSubheader disableSticky>Plan the warp</ListSubheader>
           <MenuItem onClick={then(p.onWarpPlan)}>
             <ListItemText primary="Warp winding plan…" secondary="Colour order for the warping board, in bouts" />
           </MenuItem>
@@ -296,7 +296,7 @@ export function AppToolbar(p: Props) {
           <MenuItem onClick={then(p.onYarns)}>
             <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
           </MenuItem>
-          <ListSubheader>Other looms</ListSubheader>
+          <ListSubheader disableSticky>Other looms</ListSubheader>
           <MenuItem onClick={then(p.onRigidHeddle)}>
             <ListItemText primary="Rigid heddle…" secondary="Weave this draft with a rigid heddle and pick-up stick" />
           </MenuItem>

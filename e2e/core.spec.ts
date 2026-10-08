@@ -143,3 +143,17 @@ test('New starts with completely empty grids', async ({ page }) => {
   // A new pattern is a fresh start: there's nothing to undo.
   await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled()
 })
+
+test('Tools menu headings scroll with the menu instead of covering items', async ({ page }) => {
+  await toolbarButton(page, 'Tools').click()
+  // Scroll the menu down, then every heading still sits in the flow, not stuck over an item.
+  await page.getByRole('menuitem', { name: /Tablet weaving/ }).scrollIntoViewIfNeeded()
+  const stuck = await page
+    .locator('.MuiMenu-list .MuiListSubheader-root')
+    .evaluateAll((els) => els.filter((el) => getComputedStyle(el).position === 'sticky').length)
+  expect(stuck).toBe(0)
+  const item = page.getByRole('menuitem', { name: /Double cloth/ })
+  await item.scrollIntoViewIfNeeded()
+  await item.click()
+  await expect(page.getByRole('dialog', { name: 'Double cloth' })).toBeVisible()
+})
