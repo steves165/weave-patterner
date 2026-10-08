@@ -122,3 +122,26 @@ test('rigid heddle: a second set of picked-up ends goes on a heddle rod', async 
   await expect(steps.getByRole('listitem').nth(2)).toHaveText('Pick 3: Heddle neutral, pick-up stick on edge')
   await expect(steps.getByRole('listitem').nth(3)).toHaveText('Pick 4: Heddle neutral, heddle rod lifted')
 })
+
+test('tablet weaving: cards can turn against the pack, or be flipped on one row', async ({ page }) => {
+  await openTool(page, /Tablet weaving/)
+  const dialog = page.getByRole('dialog', { name: 'Tablet weaving' })
+  const band = () => dialog.getByRole('img', { name: 'Woven band' }).evaluate((c: HTMLCanvasElement) => c.toDataURL())
+  const before = await band()
+  await dialog.getByRole('button', { name: 'Card 1 turns with the pack' }).click()
+  await expect(dialog.getByRole('button', { name: 'Card 1 turns opposite to the pack' })).toBeVisible()
+  const opposite = await band()
+  expect(opposite).not.toBe(before)
+
+  // Click the stitch for card 2 on row 3 to flip it, then again to put it back.
+  const canvas = dialog.getByRole('img', { name: 'Woven band' })
+  const cell = Number(await canvas.getAttribute('data-cell'))
+  const box = await canvas.boundingBox()
+  const scale = (box?.width ?? 1) / (await canvas.evaluate((c: HTMLCanvasElement) => c.width))
+  await canvas.click({ position: { x: (1 * cell + cell / 2) * scale, y: (2 * cell + cell / 2) * scale } })
+  const flipped = await band()
+  expect(flipped).not.toBe(opposite)
+  await canvas.click({ position: { x: (1 * cell + cell / 2) * scale, y: (2 * cell + cell / 2) * scale } })
+  expect(await band()).toBe(opposite)
+  await expect(dialog).toContainText('An S-threaded card turned forward makes a Z twist, leaning /')
+})

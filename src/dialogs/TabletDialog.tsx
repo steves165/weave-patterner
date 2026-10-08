@@ -24,6 +24,7 @@ import {
   TABLET_PRESETS,
   type TabletDesign,
   tabletWarpCounts,
+  toggleFlip,
 } from '../tablet'
 
 interface Props {
@@ -46,7 +47,16 @@ function load(): { design: TabletDesign; palette: string[] } {
 }
 
 /** The band as woven: each stitch a short slanted stroke in its colour. */
-function BandPreview({ rows }: { rows: ReturnType<typeof simulate> }) {
+function BandPreview({
+  rows,
+  flipped,
+  onFlip,
+}: {
+  rows: ReturnType<typeof simulate>
+  /** "row,card" keys of stitches turned the other way, marked with a dot. */
+  flipped: string[]
+  onFlip: (row: number, card: number) => void
+}) {
   const ref = useRef<HTMLCanvasElement>(null)
   const cell = 14
   useEffect(() => {
@@ -71,11 +81,30 @@ function BandPreview({ rows }: { rows: ReturnType<typeof simulate> }) {
           ctx.lineTo(x + cell * 0.75, y + cell * 0.85)
         }
         ctx.stroke()
+        if (flipped.includes(`${r},${c}`)) {
+          ctx.fillStyle = '#ff6d00'
+          ctx.beginPath()
+          ctx.arc(x + cell - 3, y + 3, 2.2, 0, Math.PI * 2)
+          ctx.fill()
+        }
       })
     })
-  }, [rows])
+  }, [rows, flipped])
   return (
-    <canvas ref={ref} role="img" aria-label="Woven band" style={{ maxWidth: '100%', imageRendering: 'pixelated' }} />
+    <canvas
+      ref={ref}
+      role="img"
+      aria-label="Woven band"
+      data-cell={cell}
+      onClick={(e) => {
+        const box = e.currentTarget.getBoundingClientRect()
+        const scale = e.currentTarget.width / box.width
+        const card = Math.floor(((e.clientX - box.left) * scale) / cell)
+        const row = Math.floor(((e.clientY - box.top) * scale) / cell)
+        if (row >= 0 && row < rows.length && card >= 0 && card < (rows[0]?.length ?? 0)) onFlip(row, card)
+      }}
+      style={{ maxWidth: '100%', imageRendering: 'pixelated', cursor: 'pointer' }}
+    />
   )
 }
 
@@ -256,6 +285,22 @@ export default function TabletDialog({ open, onClose }: Props) {
                 {card.threading}
               </Button>
             ))}
+            <Typography variant="caption" sx={{ alignSelf: 'center' }}>
+              Turns
+            </Typography>
+            {design.cards.map((card, c) => (
+              <Button
+                key={c}
+                size="small"
+                variant={card.opposite ? 'contained' : 'outlined'}
+                aria-label={`Card ${c + 1} turns ${card.opposite ? 'opposite to' : 'with'} the pack`}
+                title={card.opposite ? 'Turns against the pack' : 'Turns with the pack'}
+                onClick={() => setCard(c, { ...card, opposite: !card.opposite })}
+                sx={{ minWidth: 0, width: 28, height: 28, p: 0 }}
+              >
+                {card.opposite ? '⇅' : '·'}
+              </Button>
+            ))}
           </Box>
         </Box>
 
@@ -301,7 +346,15 @@ export default function TabletDialog({ open, onClose }: Props) {
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               The band ({rows.length} rows)
             </Typography>
-            <BandPreview rows={rows} />
+            <BandPreview
+              rows={rows}
+              flipped={design.flipped ?? []}
+              onFlip={(row, card) => setDesign(toggleFlip(design, row, card))}
+            />
+            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1, maxWidth: 360 }}>
+              Click a stitch to turn that card the other way on that row (marked with a dot). An S-threaded card turned
+              forward makes a Z twist, leaning /; Z-threaded, it leans \.
+            </Typography>
           </Box>
           <Box>
             <Typography variant="subtitle2">Warp</Typography>

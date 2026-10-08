@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { type Card, formatTurns, parseTurns, simulate, TABLET_PRESETS, tabletWarpCounts } from './tablet'
+import {
+  type Card,
+  cardTurn,
+  formatTurns,
+  parseTurns,
+  simulate,
+  TABLET_PRESETS,
+  tabletWarpCounts,
+  toggleFlip,
+} from './tablet'
 
 const card = (holes: string, threading: 'S' | 'Z' = 'S'): Card => ({
   holes: holes.split('') as Card['holes'],
@@ -42,5 +51,33 @@ describe('tablet weaving', () => {
     // Diagonals: each row shifts the pattern one card along.
     const rows = simulate(TABLET_PRESETS[0].build('d', 'l', 4))
     expect(rows.slice(0, 2).map((r) => r.map((s) => s.color).join(''))).toEqual(['ddll', 'dlld'])
+  })
+})
+
+describe('turning cards individually', () => {
+  it('turns an opposite card against the pack on every row', () => {
+    const cards = [card('abcd'), { ...card('abcd'), opposite: true }]
+    const rows = simulate({ cards, turns: parseTurns('3F') })
+    expect(rows.map((r) => r.map((s) => s.color).join(''))).toEqual(['ad', 'bc', 'cb'])
+    expect(cardTurn({ cards, turns: ['F'] }, 0, 1)).toBe('B')
+  })
+
+  it('flips a single card on a single row, and back again', () => {
+    const d = { cards: [card('abcd'), card('abcd')], turns: parseTurns('3F') }
+    const flipped = toggleFlip(d, 1, 0)
+    expect(cardTurn(flipped, 1, 0)).toBe('B')
+    expect(cardTurn(flipped, 1, 1)).toBe('F')
+    // Card 1 goes a, then back to a (turned back on row 2), then a again.
+    expect(
+      simulate(flipped)
+        .map((r) => r[0].color)
+        .join(''),
+    ).toBe('aaa')
+    expect(toggleFlip(flipped, 1, 0).flipped).toEqual([])
+  })
+
+  it('matches the usual convention: S threaded and turned forward makes a Z twist, leaning /', () => {
+    expect(simulate({ cards: [card('aaaa', 'S')], turns: ['F'] })[0][0].slant).toBe('/')
+    expect(simulate({ cards: [card('aaaa', 'Z')], turns: ['F'] })[0][0].slant).toBe('\\')
   })
 })

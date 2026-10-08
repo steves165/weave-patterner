@@ -2,6 +2,8 @@
 export interface Card {
   holes: [string, string, string, string]
   threading: 'S' | 'Z'
+  /** Turns the opposite way to the pack on every row (to make mirror-image motifs, for example). */
+  opposite?: boolean
 }
 
 export type Turn = 'F' | 'B'
@@ -10,6 +12,24 @@ export interface TabletDesign {
   cards: Card[]
   /** The pack's turn for each row: forward or back, all cards together. */
   turns: Turn[]
+  /** Single cards turned the other way on single rows, as "row,card" (0-based). */
+  flipped?: string[]
+}
+
+/** How one card turns on one row: the pack's turn, reversed for an opposite card, and reversed again if flipped. */
+export function cardTurn(design: TabletDesign, row: number, card: number): Turn {
+  const reverse = (t: Turn): Turn => (t === 'F' ? 'B' : 'F')
+  let turn = design.turns[row]
+  if (design.cards[card]?.opposite) turn = reverse(turn)
+  if (design.flipped?.includes(`${row},${card}`)) turn = reverse(turn)
+  return turn
+}
+
+/** Turns one card the other way on one row, or back again. */
+export function toggleFlip(design: TabletDesign, row: number, card: number): TabletDesign {
+  const key = `${row},${card}`
+  const flipped = design.flipped ?? []
+  return { ...design, flipped: flipped.includes(key) ? flipped.filter((k) => k !== key) : [...flipped, key] }
 }
 
 /** One stitch of the band as it shows on the face: its colour and which way it leans. */
@@ -58,12 +78,15 @@ export const formatTurns = (turns: Turn[]) =>
 /**
  * What the face of the band shows, row by row and card by card. Turning forward brings the next hole's thread to
  * the top (A, B, C, D, A …); turning back retraces them, so the pattern mirrors where the turning reverses. An
- * S-threaded card's stitches lean one way and a Z-threaded card's the other; turning back reverses the lean.
+ * S-threaded card turned forward twists its threads into a Z-twist cord, so its stitches lean like the middle of a
+ * Z (/); a Z-threaded card's lean the other way (\), and turning back reverses the lean. Each card follows the
+ * pack's turn unless it turns opposite, or is flipped on that row.
  */
 export function simulate(design: TabletDesign): Stitch[][] {
   const position = design.cards.map(() => 0)
-  return design.turns.map((turn) =>
+  return design.turns.map((_, row) =>
     design.cards.map((card, c) => {
+      const turn = cardTurn(design, row, c)
       let shown: number
       if (turn === 'F') {
         shown = position[c]
