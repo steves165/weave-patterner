@@ -89,8 +89,9 @@ interface Props {
 }
 
 /** On/off display options, in the order shown. */
-type ViewSwitch = 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
+type ViewSwitch = 'colorBoxes' | 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
+  ['colorBoxes', 'Thread colours in boxes'],
   ['endOneRight', 'End 1 on the right'],
   ['numbers', 'Numbers in boxes'],
   ['fabric', 'Fabric view'],

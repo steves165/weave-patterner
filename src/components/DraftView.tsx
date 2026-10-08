@@ -85,6 +85,7 @@ export function DraftView(p: Props) {
         label="Threading"
         cellLabel={(r, c) => `End ${endAt(c) + 1}, shaft ${shaftAt(r) + 1}`}
         cellText={view.numbers ? (r) => String(shaftAt(r) + 1) : undefined}
+        cellColor={view.colorBoxes ? (_, c) => draft.warpColors[endAt(c)] : undefined}
         touchPaint={p.touchPaint}
       />
       {/* Sinking shed shows the shafts that go down: the opposite of the (rising) tie-up that is stored. */}
@@ -127,6 +128,7 @@ export function DraftView(p: Props) {
         label={liftplan ? 'Lift plan' : 'Treadling'}
         cellLabel={(pick, t) => `Pick ${pick + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
         cellText={view.numbers ? (_, t) => String(t + 1) : undefined}
+        cellColor={view.colorBoxes ? (pick) => draft.weftColors[pick] : undefined}
         touchPaint={p.touchPaint}
       />
       <ColorStrip vertical colors={draft.weftColors} onChange={p.onWeftColor} labelAt={(i) => `Weft ${i + 1}`} />

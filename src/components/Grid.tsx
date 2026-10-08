@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { textOn } from '../colors'
 
 interface GridProps {
   rows: number
@@ -17,6 +18,8 @@ interface GridProps {
   touchPaint?: boolean
   /** Text shown in filled cells (e.g. the shaft number), when numbers are switched on. */
   cellText?: (r: number, c: number) => string
+  /** Colour of a filled cell (e.g. the thread it stands for); filled cells are plain black/white without it. */
+  cellColor?: (r: number, c: number) => string
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -31,7 +34,17 @@ const ARROWS: Record<string, [number, number]> = {
  * Touch: tap toggles and swipes scroll the page, or drag-paints when `touchPaint` is on.
  * Keyboard: Tab reaches the grid once, arrow keys move, Space/Enter toggles.
  */
-export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint = false, cellText }: GridProps) {
+export function Grid({
+  rows,
+  cols,
+  isOn,
+  onPaint,
+  label,
+  cellLabel,
+  touchPaint = false,
+  cellText,
+  cellColor,
+}: GridProps) {
   const paintValue = useRef<boolean | null>(null)
   const lastPointer = useRef('mouse')
   const container = useRef<HTMLDivElement>(null)
@@ -68,6 +81,7 @@ export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint =
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const on = isOn(r, c)
+      const color = on && cellColor ? cellColor(r, c) : undefined
       cells.push(
         // biome-ignore lint/a11y/useSemanticElements: a native checkbox toggles itself on click, which fights drag-painting; this is the ARIA checkbox pattern with a roving tab stop
         <div
@@ -77,7 +91,8 @@ export function Grid({ rows, cols, isOn, onPaint, label, cellLabel, touchPaint =
           aria-checked={on}
           aria-label={cellLabel(r, c)}
           tabIndex={r === fr && c === fc ? 0 : -1}
-          className={`cell${on ? ' on' : ''}`}
+          className={`cell${on ? ' on' : ''}${color ? ' colored' : ''}`}
+          style={color ? { backgroundColor: color, color: textOn(color) } : undefined}
           onFocus={() => setFocus([r, c])}
           onKeyDown={(e) => onKeyDown(e, r, c, on)}
           onPointerDown={(e) => {

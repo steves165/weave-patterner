@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyStripes, expandRuns, PRESETS, toRuns } from './colors'
+import { applyStripes, expandRuns, PRESETS, textOn, toRuns } from './colors'
 import { ascii } from './testUtils'
 
 describe('stripes', () => {
@@ -68,5 +68,18 @@ describe('colour-and-weave presets', () => {
 
   it('every preset builds a valid draft', () => {
     for (const p of PRESETS) expect(() => p.build('#123456', '#abcdef')).not.toThrow()
+  })
+})
+
+describe('textOn', () => {
+  it.each([
+    ['#ffffff', '#000000'],
+    ['#ffeb3b', '#000000'],
+    ['#8b0a0a', '#ffffff'],
+    ['#000000', '#ffffff'],
+    ['#1a237e', '#ffffff'],
+    ['#808080', '#000000'],
+  ])('puts readable text on %s', (bg, text) => {
+    expect(textOn(bg)).toBe(text)
   })
 })

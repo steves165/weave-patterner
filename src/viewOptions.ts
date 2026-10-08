@@ -2,6 +2,8 @@
 export interface ViewOptions {
   /** Number ends right to left, with end 1 on the right (common in US drafts). */
   endOneRight: boolean
+  /** Fill threading boxes in their warp colour and treadling boxes in their weft colour. */
+  colorBoxes: boolean
   /** Show shaft/treadle numbers in filled cells instead of plain black squares. */
   numbers: boolean
   /** Ruler tick every this many threads; 0 hides the rulers. */
@@ -27,6 +29,7 @@ export const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
 
 export const DEFAULT_VIEW: ViewOptions = {
   endOneRight: false,
+  colorBoxes: true,
   numbers: false,
   ruler: 4,
   fabric: false,
@@ -44,6 +47,7 @@ const intIn = (min: number, max: number) => (v: unknown) =>
 
 const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   endOneRight: isBool,
+  colorBoxes: isBool,
   numbers: isBool,
   ruler: intIn(0, 50),
   fabric: isBool,

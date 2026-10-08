@@ -12,6 +12,7 @@ describe('parseViewOptions', () => {
   it('restores every saved setting', () => {
     const saved = {
       endOneRight: true,
+      colorBoxes: false,
       numbers: true,
       ruler: 8,
       fabric: true,

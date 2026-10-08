@@ -229,6 +229,12 @@
   overflow: hidden;
 }
 
+/* Boxes filled in their thread colour: a ring in the "on" colour keeps light (or, in dark mode, dark) threads
+   distinct from empty boxes. */
+.grid .cell.colored {
+  box-shadow: inset 0 0 0 max(1px, calc(var(--cell) / 10)) var(--grid-on);
+}
+
 /* Hover crosshair over the draft. */
 .draft {
   position: relative;
