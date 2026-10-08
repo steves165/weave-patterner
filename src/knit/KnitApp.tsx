@@ -81,10 +81,12 @@ import {
   resize,
   rowsOf,
   size,
+  usedColors,
   widthOf,
 } from './chart'
 import { type Clip, clear, copy, paste, type Rect } from './edit'
 import { castOnText, writtenPanels, writtenPattern, writtenRows } from './instructions'
+import { areasText, intarsia } from './intarsia'
 import { KnitLogo } from './KnitLogo'
 import { KnitThumb } from './KnitThumb'
 import { KnittingMode } from './KnittingMode'
@@ -531,17 +533,34 @@ export default function KnitApp() {
         />
       </Section>
       <Section title="Colourwork">
-        <TextField
+        <ToggleButtonGroup
           size="small"
-          type="number"
-          label="Longest float"
-          value={chart.floatLimit}
-          onChange={(e) =>
-            update({ ...chart, floatLimit: Math.round(number(e.target.value, 1, 50, chart.floatLimit)) })
-          }
-          helperText="stitches, before the yarn behind needs catching"
-          fullWidth
-        />
+          exclusive
+          value={chart.colorwork ?? 'stranded'}
+          onChange={(_, v) => v && update({ ...chart, colorwork: v === 'intarsia' ? 'intarsia' : undefined })}
+          aria-label="Colourwork"
+          sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
+        >
+          <ToggleButton value="stranded">Stranded</ToggleButton>
+          <ToggleButton value="intarsia">Intarsia</ToggleButton>
+        </ToggleButtonGroup>
+        {chart.colorwork === 'intarsia' ? (
+          <Typography variant="body2" color="text.secondary">
+            A separate bobbin for each area of colour, the yarns twisted at each change: no floats behind.
+          </Typography>
+        ) : (
+          <TextField
+            size="small"
+            type="number"
+            label="Longest float"
+            value={chart.floatLimit}
+            onChange={(e) =>
+              update({ ...chart, floatLimit: Math.round(number(e.target.value, 1, 50, chart.floatLimit)) })
+            }
+            helperText="stitches, before the yarn behind needs catching"
+            fullWidth
+          />
+        )}
       </Section>
       <Section title="View">
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5, minHeight: 40 }}>
@@ -1187,6 +1206,32 @@ export default function KnitApp() {
                     swatch for a closer figure.
                   </Typography>
                 </Panel>
+                {chart.colorwork === 'intarsia' && usedColors(chart).length > 1 && (
+                  <Panel title="Intarsia" testId="knit-intarsia" delay={100}>
+                    {(() => {
+                      const plan = intarsia(chart)
+                      return (
+                        <>
+                          <Typography variant="body2" sx={{ mb: 1 }} data-testid="knit-bobbins">
+                            {plan.total} bobbins:{' '}
+                            {plan.bobbins.map((b) => `${colorLetter(b.color)} ×${b.count}`).join(', ')}. Wind one for
+                            each area of colour, and twist the yarns at each change.
+                          </Typography>
+                          <Box sx={{ maxHeight: 260, overflow: 'auto' }}>
+                            <ol className="knit-written">
+                              {[...plan.rows].reverse().map((r) => (
+                                <li key={r.row} data-intarsia-row={r.row}>
+                                  <strong>{rows[r.row - 1].label}:</strong> {areasText(r)}
+                                  {r.twists > 0 && ` · ${r.twists} ${r.twists === 1 ? 'twist' : 'twists'}`}
+                                </li>
+                              ))}
+                            </ol>
+                          </Box>
+                        </>
+                      )
+                    })()}
+                  </Panel>
+                )}
                 <Panel title="Knitted preview" delay={120}>
                   <FabricPreview chart={chart} repeats={view.repeats} />
                   <FormControlLabel

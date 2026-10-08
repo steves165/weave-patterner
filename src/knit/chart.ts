@@ -18,6 +18,11 @@ export interface KnitChart {
   /** Longest stranded float (in stitches) before it should be caught. */
   floatLimit: number
   /**
+   * How colours are worked: stranded (the yarns not in use carried behind, as floats) or intarsia (a separate
+   * bobbin for each area of colour). Stranded unless set.
+   */
+  colorwork?: 'stranded' | 'intarsia'
+  /**
    * The pattern repeat: stitches (columns, as drawn, 0-based) `from` to `to`, outlined in red as in published
    * charts. They're worked as many times as the width needs, with the stitches either side worked once.
    */
@@ -245,6 +250,8 @@ export interface Float {
  */
 export function longFloats(k: KnitChart): Float[] {
   const out: Float[] = []
+  // In intarsia nothing is carried behind.
+  if (k.colorwork === 'intarsia') return out
   const w = widthOf(k)
   k.stitch.forEach((row, r) => {
     // Slipped stitches aren't worked, so no yarn is used there (the yarn carried past is counted as a float).
@@ -310,6 +317,7 @@ export function parseChart(v: unknown): KnitChart | null {
     mode: o.mode === 'round' ? 'round' : 'flat',
     gauge: { stitches: num(g?.stitches, 22), rows: num(g?.rows, 30) },
     floatLimit: Math.round(num(o.floatLimit, 5)),
+    ...(o.colorwork === 'intarsia' ? { colorwork: 'intarsia' as const } : {}),
     ...(o.repeat &&
     Number.isInteger(o.repeat.from) &&
     Number.isInteger(o.repeat.to) &&

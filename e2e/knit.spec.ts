@@ -308,3 +308,14 @@ test('turns a two-colour design into mosaic knitting', async ({ page }) => {
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(page.getByLabel('Rows', { exact: true })).toHaveValue(String(rows))
 })
+
+test('intarsia counts bobbins and twists instead of checking floats', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByLabel('Longest float').fill('2')
+  await expect(page.getByTestId('knit-problems')).toContainText('floats behind')
+  await page.getByRole('button', { name: 'Intarsia', exact: true }).click()
+  await expect(page.getByTestId('knit-problems')).toHaveCount(0)
+  await expect(page.getByTestId('knit-bobbins')).toContainText(/\d+ bobbins: A ×\d+, B ×\d+/)
+  await expect(page.getByTestId('knit-intarsia').locator('li[data-intarsia-row="1"]')).toContainText('twist')
+})

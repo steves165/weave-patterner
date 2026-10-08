@@ -9,6 +9,7 @@ import {
   rowCounts,
   usedColors,
 } from './chart'
+import { intarsia } from './intarsia'
 import { panelChart, panelLetter, panelRows } from './panels'
 import { STITCHES, type StitchId } from './stitches'
 
@@ -249,6 +250,13 @@ export function writtenPattern(k: KnitChart, title = 'Knit Patterner chart'): st
   if (colors.length > 1) {
     lines.push('', 'Colours:')
     for (const c of colors) lines.push(`  ${colorLetter(c)}: ${k.colors[c]}`)
+    if (k.colorwork === 'intarsia') {
+      const { bobbins, total } = intarsia(k)
+      lines.push(
+        '',
+        `Intarsia: wind a separate bobbin for each area of colour, ${total} in all (${bobbins.map((b) => `${colorLetter(b.color)} ×${b.count}`).join(', ')}). At each colour change, drop the old colour and bring the new one up from under it, twisting the yarns so no hole forms.`,
+      )
+    } else lines.push('', 'Stranded colourwork: carry the colour not in use loosely across the back.')
   }
   const used = new Set<StitchId>(k.stitch.flat())
   lines.push('', 'Abbreviations:')

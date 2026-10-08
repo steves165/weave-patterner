@@ -44,7 +44,7 @@ export const ALLOWANCE = 0.1
  * A stitch's loop takes about 2.2 × (its width + its height) of yarn, the usual rule of thumb for stockinette; other
  * stitches take more or less (a bobble about six stitches' worth, a yarn over less). Slipped stitches take only the
  * yarn carried past them. In rows knitted in two or more colours, each colour is carried behind the stitches of the
- * others, between its first and last stitch in the row (a stranded float). Includes 10% extra.
+ * others, between its first and last stitch in the row (a stranded float); in intarsia nothing is carried. Includes 10% extra.
  */
 export function yarnNeeded(k: KnitChart, widthCm: number, lengthCm: number): { color: number; metres: number }[] {
   const w = 10 / k.gauge.stitches
@@ -62,7 +62,7 @@ export function yarnNeeded(k: KnitChart, widthCm: number, lengthCm: number): { c
     })
     // Stranded floats: each colour runs behind the others' stitches between its first and last stitch.
     const used = [...new Set(colors)]
-    if (used.length > 1)
+    if (used.length > 1 && k.colorwork !== 'intarsia')
       for (const color of used) {
         const first = colors.indexOf(color)
         const last = colors.lastIndexOf(color)
