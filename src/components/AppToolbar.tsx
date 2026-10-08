@@ -66,6 +66,8 @@ interface Props {
   onWarpPlan: () => void
   onColorways: () => void
   onVariations: () => void
+  onEcho: () => void
+  onPicture: () => void
   onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
@@ -246,6 +248,12 @@ export function AppToolbar(p: Props) {
           </MenuItem>
           <MenuItem onClick={then(p.onDoubleCloth)}>
             <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onPicture)}>
+            <ListItemText primary="Picture to draft…" secondary="Turn a picture into blocks and a draft" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onEcho)}>
+            <ListItemText primary="Echo weave…" secondary="A design line threaded with its echo, in two colours" />
           </MenuItem>
           <MenuItem onClick={then(p.onVariations)}>
             <ListItemText primary="Variations…" secondary="Same threading, other tie-ups and treadlings" />

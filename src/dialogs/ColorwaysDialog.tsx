@@ -1,6 +1,8 @@
-import { Box, Button, Stack, Typography } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
-import { colorways, draftColors, recolor } from '../colorways'
+import { Alert, Box, Button, Stack, Typography } from '@mui/material'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { colorways, draftColors, mapByLightness, recolor } from '../colorways'
+import { mainColors } from '../image'
+import { readImagePixels } from '../imageFile'
 import type { Draft } from '../weave'
 import { GalleryDialog } from './GalleryDialog'
 
@@ -24,6 +26,20 @@ export function ColorwaysDialog({ open, draft, onClose, onApply }: Props) {
   const colors = useMemo(() => draftColors(draft), [draft])
   const ways = useMemo(() => (open ? colorways(draft) : []), [open, draft])
   const [own, setOwn] = useState<Record<string, string>>({})
+  // Colours taken from a photo, dark to light.
+  const [photo, setPhoto] = useState<string[] | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const photoInput = useRef<HTMLInputElement>(null)
+  const loadPhoto = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      setPhotoError(null)
+      setPhoto(mainColors(await readImagePixels(file, 160), colors.length))
+    } catch (e) {
+      setPhotoError(e instanceof Error ? e.message : String(e))
+    }
+  }
+  const photoMapping = photo ? mapByLightness(colors, photo) : null
   useEffect(() => {
     if (open) setOwn(Object.fromEntries(colors.map((c) => [c, c])))
   }, [open, colors])
@@ -43,10 +59,40 @@ export function ColorwaysDialog({ open, draft, onClose, onApply }: Props) {
             extra: <Swatches colors={colors.map((c) => w.mapping[c] ?? c)} />,
           })),
         },
+        {
+          title: 'From a photo',
+          empty: 'Choose a photo below to take its main colours.',
+          items: photoMapping
+            ? [
+                {
+                  name: 'Colours from your photo',
+                  draft: recolor(draft, photoMapping),
+                  extra: <Swatches colors={colors.map((c) => photoMapping[c] ?? c)} />,
+                },
+              ]
+            : [],
+        },
       ]}
       onClose={onClose}
       onUse={(item) => onApply(item.draft, `Recoloured: ${item.name.toLowerCase()}`)}
     >
+      <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Button variant="outlined" onClick={() => photoInput.current?.click()}>
+          Choose a photo
+        </Button>
+        <Typography variant="body2" color="text.secondary">
+          Its {colors.length} main colours replace the draft's, darkest for darkest.
+        </Typography>
+        <input
+          ref={photoInput}
+          type="file"
+          accept="image/*"
+          hidden
+          aria-label="Photo for colours"
+          onChange={(e) => loadPhoto(e.target.files?.[0])}
+        />
+      </Stack>
+      {photoError && <Alert severity="error">{photoError}</Alert>}
       <Stack component="section" aria-label="Your own colours" sx={{ gap: 1 }}>
         <Typography variant="subtitle1">Your own colours</Typography>
         <Stack direction="row" sx={{ gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>

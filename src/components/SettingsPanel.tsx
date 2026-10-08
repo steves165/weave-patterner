@@ -81,6 +81,9 @@ interface Props {
   unwoven: { ends: number[]; picks: number[] }
   /** Turns where the weft won't catch the edge end (shuttle starting from the left). */
   selvedge: Miss[]
+  /** The smallest repeat of the cloth. */
+  repeat: { ends: number; picks: number }
+  onTrimToRepeat: () => void
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   floatLimit: number
@@ -261,6 +264,20 @@ export function SettingsPanel(p: Props) {
           </Section>
 
           <Section title="Pattern">
+            <Typography variant="body2" data-testid="repeat">
+              Repeat: {p.repeat.ends} ends × {p.repeat.picks} picks
+            </Typography>
+            <Tooltip title="Cut the draft down to one repeat, ready to weave as many times as you like" describeChild>
+              <span>
+                <Button
+                  size="small"
+                  disabled={p.repeat.ends === draft.ends && p.repeat.picks === draft.picks}
+                  onClick={p.onTrimToRepeat}
+                >
+                  Trim to one repeat
+                </Button>
+              </span>
+            </Tooltip>
             <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
               <Button size="small" startIcon={<ClearAllIcon />} onClick={p.onClear}>
                 Clear grids

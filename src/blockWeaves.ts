@@ -11,16 +11,36 @@ import { type Draft, MAX_SHAFTS, MAX_TREADLES, parseDraft } from './weave'
  * - ms-os: M's and O's, 2 blocks on 4 shafts (1-2-1-2-3-4-3-4 and 1-3-1-3-2-4-2-4), ribbed and plain blocks.
  * - damask: turned 5-end satin, 5 shafts per block: pattern blocks warp-faced, the ground weft-faced, as drawloom
  *   damask is woven (each profile unit, its découpure, is 5 ends and 5 picks).
+ * - shadow: Powell's shadow weave, 4 blocks on 4 shafts (A dark 1 light 2, B dark 3 light 4, C dark 4 light 3,
+ *   D dark 2 light 1), dark and light ends and picks alternating, plain-weave sheds treadled as drawn in. Weaving a
+ *   block gives horizontal lines (pattern) in two blocks and vertical lines in the other two.
+ * - taquete: taqueté, a weft-faced compound tabby on a summer and winter threading without tabby: two wefts, each
+ *   pass woven with a tie-down shaft and the pattern shafts where that weft is to stay at the back.
+ * - rep: warp-faced rep weave, 2 shafts per block with dark and light ends alternating; thick and thin picks
+ *   alternate, and each block shows its dark or light ends on the thick picks.
  */
-export type BlockWeave = 'overshot' | 'crackle' | 'summer-winter' | 'bronson' | 'ms-os' | 'damask'
+export type BlockWeave =
+  | 'overshot'
+  | 'crackle'
+  | 'summer-winter'
+  | 'bronson'
+  | 'ms-os'
+  | 'damask'
+  | 'shadow'
+  | 'taquete'
+  | 'rep'
 
 export interface BlockColors {
   warp: string
-  /** Pattern weft (the only weft for M's and O's). */
+  /** Second warp colour (light ends in shadow and rep weave). */
+  warp2: string
+  /** Pattern weft (the only weft for M's and O's; dark weft in shadow weave; weft A in taqueté; thick in rep). */
   pattern: string
-  /** Tabby (ground) weft, between pattern picks. */
+  /** Second weft: tabby (ground), light weft in shadow weave, weft B in taqueté, thin in rep. */
   tabby: string
 }
+
+export type ColorKey = keyof BlockColors
 
 interface Spec {
   name: string
@@ -28,19 +48,72 @@ interface Spec {
   maxBlocks: number
   /** Unit weaves can use any profile tie-up; block weaves weave each block on its own block treadle. */
   freeTieup: boolean
-  tabby: boolean
+  /** The colours this structure uses, with their labels. */
+  colors: [ColorKey, string][]
 }
+
+const WARP_PATTERN_TABBY: [ColorKey, string][] = [
+  ['warp', 'Warp'],
+  ['pattern', 'Pattern weft'],
+  ['tabby', 'Tabby weft'],
+]
 
 export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
-  overshot: { name: 'Overshot', maxBlocks: 4, freeTieup: false, tabby: true },
-  crackle: { name: 'Crackle', maxBlocks: 4, freeTieup: false, tabby: true },
-  'summer-winter': { name: 'Summer and winter', maxBlocks: 10, freeTieup: true, tabby: true },
-  bronson: { name: 'Bronson lace', maxBlocks: 10, freeTieup: true, tabby: true },
-  'ms-os': { name: "M's and O's", maxBlocks: 2, freeTieup: false, tabby: false },
-  damask: { name: 'Damask', maxBlocks: 4, freeTieup: true, tabby: false },
+  overshot: { name: 'Overshot', maxBlocks: 4, freeTieup: false, colors: WARP_PATTERN_TABBY },
+  crackle: { name: 'Crackle', maxBlocks: 4, freeTieup: false, colors: WARP_PATTERN_TABBY },
+  'summer-winter': { name: 'Summer and winter', maxBlocks: 10, freeTieup: true, colors: WARP_PATTERN_TABBY },
+  bronson: { name: 'Bronson lace', maxBlocks: 10, freeTieup: true, colors: WARP_PATTERN_TABBY },
+  'ms-os': {
+    name: "M's and O's",
+    maxBlocks: 2,
+    freeTieup: false,
+    colors: [
+      ['warp', 'Warp'],
+      ['pattern', 'Weft'],
+    ],
+  },
+  damask: {
+    name: 'Damask',
+    maxBlocks: 4,
+    freeTieup: true,
+    colors: [
+      ['warp', 'Warp'],
+      ['pattern', 'Weft'],
+    ],
+  },
+  shadow: {
+    name: 'Shadow weave',
+    maxBlocks: 4,
+    freeTieup: false,
+    colors: [
+      ['warp', 'Dark'],
+      ['warp2', 'Light'],
+    ],
+  },
+  taquete: {
+    name: 'Taqueté',
+    maxBlocks: 10,
+    freeTieup: true,
+    colors: [
+      ['warp', 'Warp'],
+      ['pattern', 'Weft A'],
+      ['tabby', 'Weft B'],
+    ],
+  },
+  rep: {
+    name: 'Rep weave',
+    maxBlocks: 12,
+    freeTieup: true,
+    colors: [
+      ['warp', 'Dark warp'],
+      ['warp2', 'Light warp'],
+      ['pattern', 'Thick weft'],
+      ['tabby', 'Thin weft'],
+    ],
+  },
 }
 
-/** One pick: the 0-based shafts it lifts, and whether it's a tabby pick. */
+/** One pick: the 0-based shafts it lifts, and whether it uses the second weft (tabby, light, B or thin). */
 interface Pick {
   lift: number[]
   tabby: boolean
@@ -107,6 +180,8 @@ export function blockWeave(weave: BlockWeave, profile: Profile, colors: BlockCol
 
   let shafts: number
   let threading: number[]
+  // Which ends use the second warp colour (light ends in shadow and rep weave).
+  let secondWarp: (e: number) => boolean = () => false
   const all = (n: number) => Array.from({ length: n }, (_, i) => i)
   const tabbyA: Pick = { lift: [], tabby: true }
   const tabbyB: Pick = { lift: [], tabby: true }
@@ -181,6 +256,67 @@ export function blockWeave(weave: BlockWeave, profile: Profile, colors: BlockCol
       unitPicks = (k) => [0, 1, 0, 1].map((i) => ({ lift: lifts[k][i], tabby: false }))
       break
     }
+    case 'shadow': {
+      shafts = 4
+      const pairs = [
+        [0, 1],
+        [2, 3],
+        [3, 2],
+        [1, 0],
+      ]
+      // Each unit: dark, light, dark, light.
+      threading = profile.threading.flatMap((b) => [...pairs[b - 1], ...pairs[b - 1]])
+      secondWarp = (e) => e % 2 === 1
+      // Plain-weave sheds, treadled as drawn in: a shaft's pick lifts it and the shaft two along.
+      const shed = (s: number): number[] => (s % 2 === 0 ? [0, 2] : [1, 3])
+      unitPicks = (k) => {
+        const [dark, light] = pairs[k]
+        return [
+          { lift: shed(dark), tabby: false },
+          { lift: shed(light), tabby: true },
+          { lift: shed(dark), tabby: false },
+          { lift: shed(light), tabby: true },
+        ]
+      }
+      break
+    }
+    case 'taquete': {
+      shafts = 2 + blocks
+      threading = profile.threading.flatMap((b) => [0, b + 1, 1, b + 1])
+      // Weft A shows where the profile tie-up is filled; each weft lifts the pattern ends of the blocks where it
+      // stays at the back, so the other weft covers them.
+      const hideA = (k: number) =>
+        all(blocks)
+          .filter((b) => !pattern(b, k))
+          .map((b) => b + 2)
+      const hideB = (k: number) =>
+        all(blocks)
+          .filter((b) => pattern(b, k))
+          .map((b) => b + 2)
+      unitPicks = (k) => [
+        { lift: [0, ...hideA(k)], tabby: false },
+        { lift: [0, ...hideB(k)], tabby: true },
+        { lift: [1, ...hideA(k)], tabby: false },
+        { lift: [1, ...hideB(k)], tabby: true },
+      ]
+      break
+    }
+    case 'rep': {
+      shafts = 2 * blocks
+      // Block b: dark end on shaft 2b, light on 2b+1, two of each per unit.
+      threading = profile.threading.flatMap((b) => [2 * (b - 1), 2 * (b - 1) + 1, 2 * (b - 1), 2 * (b - 1) + 1])
+      secondWarp = (e) => e % 2 === 1
+      // Thick picks lift the dark ends where the block shows dark, the light ends elsewhere; thin picks the rest.
+      const thick = (k: number) => all(blocks).map((b) => 2 * b + (pattern(b, k) ? 0 : 1))
+      const thin = (k: number) => all(blocks).map((b) => 2 * b + (pattern(b, k) ? 1 : 0))
+      unitPicks = (k) => [
+        { lift: thick(k), tabby: false },
+        { lift: thin(k), tabby: true },
+        { lift: thick(k), tabby: false },
+        { lift: thin(k), tabby: true },
+      ]
+      break
+    }
     case 'damask': {
       const satin = 5
       shafts = satin * blocks
@@ -227,7 +363,17 @@ export function blockWeave(weave: BlockWeave, profile: Profile, colors: BlockCol
     threading,
     tieup: all(shafts).map((s) => sheds.map((shed) => shed.pick.lift.includes(s))),
     treadling: picks.map((p) => all(treadles).map((t) => t === treadleOf(p))),
-    warpColors: threading.map(() => colors.warp.toLowerCase()),
-    weftColors: picks.map((p) => (p.tabby ? colors.tabby : colors.pattern).toLowerCase()),
+    warpColors: threading.map((_, e) => (secondWarp(e) ? colors.warp2 : colors.warp).toLowerCase()),
+    // Shadow weave's wefts are the same dark and light as its warp.
+    weftColors: picks.map((p) =>
+      (weave === 'shadow'
+        ? p.tabby
+          ? colors.warp2
+          : colors.warp
+        : p.tabby
+          ? colors.tabby
+          : colors.pattern
+      ).toLowerCase(),
+    ),
   })
 }

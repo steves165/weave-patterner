@@ -26,7 +26,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
   pedal friendly, remembering where you stopped, with a chime when the weft colour changes; and an end-by-end
   threading guide (shaft and heddle for each end, from either side)
 - **Variations** and **colourways**: galleries of the same threading with other tie-ups and treadlings, and the same
-  cloth in other colours
+  cloth in other colours (including colours taken from a photo)
 - **Warp winding plan**: colour runs for the warping board, in bouts, with tick boxes and totals
 - **Checks**: long floats, threads that never interlace, and edges the weft won't catch (floating selvedge needed)
 - **Transform draft**: turn 90° (swap warp and weft), swap face and back, flip, move the repeat, and insert or
@@ -41,7 +41,11 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - **Network and parallel threadings** from a pattern line or base sequence
 - **Design by drawing the cloth**: works out the smallest threading, tie-up and treadling for a drawn cloth
 - **Block profiles**: design in blocks and substitute turned twill, overshot, crackle, summer and winter, Bronson
-  lace, M's and O's or damask (turned 5-end satin)
+  lace, M's and O's, damask (turned 5-end satin), shadow weave, taqueté or rep weave
+- **Picture to draft**: turn a picture into blocks for summer and winter, taqueté, rep, turned twill, double cloth
+  or damask
+- **Echo weave**: a design line threaded with its echo in two colours
+- **Smallest repeat**: found automatically, with a button to trim the draft to it
 - **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost

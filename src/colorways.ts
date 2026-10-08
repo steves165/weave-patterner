@@ -41,6 +41,22 @@ export const shiftHue = (hex: string, degrees: number) => {
   return toHex((((h + degrees) % 360) + 360) % 360, s, l)
 }
 
+/** Colours sorted dark to light. */
+export const byLightness = (colors: string[]) => [...colors].sort((a, b) => toHsl(a)[2] - toHsl(b)[2])
+
+/**
+ * Maps the draft's colours onto a palette by lightness: darkest to darkest, lightest to lightest, spreading them
+ * out when the counts differ.
+ */
+export function mapByLightness(colors: string[], palette: string[]): Record<string, string> {
+  const from = byLightness(colors)
+  const to = byLightness(palette)
+  if (to.length === 0) return {}
+  return Object.fromEntries(
+    from.map((c, i) => [c, to[Math.round((i * (to.length - 1)) / Math.max(1, from.length - 1))]]),
+  )
+}
+
 /** The same colour in grey, keeping its lightness. */
 export const toGrey = (hex: string) => {
   const [, , l] = toHsl(hex)
@@ -67,7 +83,6 @@ const PALETTES: [string, string[]][] = [
  */
 export function colorways(d: Draft): Colorway[] {
   const colors = draftColors(d)
-  const byLightness = [...colors].sort((a, b) => toHsl(a)[2] - toHsl(b)[2])
   const ways: Colorway[] = []
   if (colors.length >= 2) {
     // Each colour takes the next one's place.
@@ -80,18 +95,6 @@ export function colorways(d: Draft): Colorway[] {
     ways.push({ name: `Hue turned ${deg}°`, mapping: Object.fromEntries(colors.map((c) => [c, shiftHue(c, deg)])) })
   }
   ways.push({ name: 'Greys', mapping: Object.fromEntries(colors.map((c) => [c, toGrey(c)])) })
-  for (const [name, palette] of PALETTES) {
-    // Palettes run dark to light; match colours by lightness.
-    const ordered = [...palette].sort((a, b) => toHsl(a)[2] - toHsl(b)[2])
-    ways.push({
-      name,
-      mapping: Object.fromEntries(
-        byLightness.map((c, i) => [
-          c,
-          ordered[Math.round((i * (ordered.length - 1)) / Math.max(1, byLightness.length - 1))],
-        ]),
-      ),
-    })
-  }
+  for (const [name, palette] of PALETTES) ways.push({ name, mapping: mapByLightness(colors, palette) })
   return ways
 }

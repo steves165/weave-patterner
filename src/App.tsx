@@ -12,8 +12,10 @@ import { ClothDialog } from './dialogs/ClothDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
 import { ColorwaysDialog } from './dialogs/ColorwaysDialog'
 import { DoubleClothDialog } from './dialogs/DoubleClothDialog'
+import { EchoDialog } from './dialogs/EchoDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
+import { PictureDialog } from './dialogs/PictureDialog'
 import { ProfileDialog } from './dialogs/ProfileDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
@@ -21,6 +23,7 @@ import { TransformDialog } from './dialogs/TransformDialog'
 import { VariationsDialog } from './dialogs/VariationsDialog'
 import { WarpPlanDialog } from './dialogs/WarpPlanDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
+import { findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
@@ -56,6 +59,8 @@ type DialogName =
   | 'warpplan'
   | 'colorways'
   | 'variations'
+  | 'echo'
+  | 'picture'
   | 'yarns'
 
 export default function App() {
@@ -86,6 +91,7 @@ export default function App() {
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
+  const repeat = useMemo(() => findRepeat(draft, drawdown), [draft, drawdown])
   const selvedge = useMemo(() => selvedgeMisses(draft, 'left', drawdown), [draft, drawdown])
   const floatMask = useMemo(
     () => (highlightFloats ? longFloatMask(draft, floatLimit, drawdown) : null),
@@ -183,6 +189,8 @@ export default function App() {
           onWarpPlan={() => setDialog('warpplan')}
           onColorways={() => setDialog('colorways')}
           onVariations={() => setDialog('variations')}
+          onEcho={() => setDialog('echo')}
+          onPicture={() => setDialog('picture')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -214,6 +222,8 @@ export default function App() {
             floats={floats}
             unwoven={unwoven}
             selvedge={selvedge}
+            repeat={repeat}
+            onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
             highlightFloats={highlightFloats}
             onHighlightFloats={(on) => setView({ highlightFloats: on })}
             floatLimit={floatLimit}
@@ -329,6 +339,8 @@ export default function App() {
           onClose={() => setDialog(null)}
           onApply={applyFromDialog}
         />
+        <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
+        <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
         <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
         <ColorwaysDialog
           open={dialog === 'colorways'}

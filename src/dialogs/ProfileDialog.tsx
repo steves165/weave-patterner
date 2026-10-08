@@ -60,6 +60,21 @@ const STRUCTURES: [Structure, string, string][] = [
   ],
   ['ms-os', "M's and O's", 'Two blocks on four shafts. The block being woven is ribbed and the other plain; no tabby.'],
   [
+    'shadow',
+    'Shadow weave',
+    "Powell's shadow weave: dark and light ends and picks alternate in plain weave. Weaving a block gives horizontal lines in it and its partner block, vertical lines in the other two.",
+  ],
+  [
+    'taquete',
+    'Taqueté',
+    'A weft-faced compound tabby on a summer and winter threading: two wefts, A showing where the profile is filled and B elsewhere. Beat firmly; no tabby.',
+  ],
+  [
+    'rep',
+    'Rep weave',
+    'Warp-faced: dark and light ends alternate on two shafts per block, and thick and thin wefts alternate. Each block shows its dark or light ends.',
+  ],
+  [
     'damask',
     'Damask',
     'Turned 5-end satin, as woven on a drawloom: pattern blocks warp-faced, the ground weft-faced. Each unit (découpure) is 5 ends and 5 picks, on 5 shafts per block.',
@@ -82,7 +97,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
   const phone = usePhone()
   const [structure, setStructure] = useState<Structure>('turned-twill')
   const [profile, setProfile] = useState(defaultProfileInput)
-  const [colors, setColors] = useState({ warp: '#f5f0e6', pattern: '#1a237e', tabby: '#f5f0e6' })
+  const [colors, setColors] = useState({ warp: '#f5f0e6', warp2: '#1a237e', pattern: '#1a237e', tabby: '#f5f0e6' })
   const spec = structure === 'turned-twill' ? null : BLOCK_WEAVES[structure]
 
   const result = useMemo(() => {
@@ -100,13 +115,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
   }, [structure, profile, colors, draft.warpColors, draft.weftColors])
 
   const name = STRUCTURES.find(([s]) => s === structure)?.[1] ?? ''
-  const colorFields = spec
-    ? ([
-        ['warp', 'Warp'],
-        ['pattern', spec.tabby ? 'Pattern weft' : 'Weft'],
-        ...(spec.tabby ? [['tabby', 'Tabby weft'] as const] : []),
-      ] as const)
-    : []
+  const colorFields = spec ? spec.colors : []
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">

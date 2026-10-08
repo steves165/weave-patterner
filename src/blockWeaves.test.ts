@@ -4,7 +4,7 @@ import { BLOCK_WEAVES, type BlockWeave, blockWeave, crackleThreading } from './b
 import { longestFloats } from './floats'
 import { computeDrawdown, type Draft } from './weave'
 
-const COLORS = { warp: '#eeeeee', pattern: '#1a237e', tabby: '#cccccc' }
+const COLORS = { warp: '#eeeeee', warp2: '#333333', pattern: '#1a237e', tabby: '#cccccc' }
 const twoBlocks: Profile = {
   threading: [1, 1, 2, 2],
   treadling: [1, 1, 2, 2],
@@ -109,6 +109,60 @@ describe('blockWeave', () => {
     expect(share(b, b)).toBe(0.8)
     expect(longestFloats(d).warp).toBeLessThanOrEqual(5)
     expect(longestFloats(d).weft).toBeLessThanOrEqual(5)
+  })
+
+  it('shadow weave (Powell): plain-weave sheds, and each woven block gives two blocks of lines each way', () => {
+    const fourUnits: Profile = {
+      ...fourBlocks,
+      threading: [1, 1, 2, 2, 3, 3, 4, 4],
+      treadling: [1, 1, 2, 2, 3, 3, 4, 4],
+    }
+    const d = blockWeave('shadow', fourUnits, COLORS)
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 2, 32, 32])
+    expect(d.threading.slice(0, 4).map((s) => s + 1)).toEqual([1, 2, 1, 2])
+    expect(d.warpColors.slice(0, 2)).toEqual([COLORS.warp, COLORS.warp2])
+    expect(d.weftColors.slice(0, 2)).toEqual([COLORS.warp, COLORS.warp2])
+    const dd = computeDrawdown(d)
+    const colour = (p: number, e: number) => (dd[p][e] ? d.warpColors[e] : d.weftColors[p])
+    /** 'H' if every row of the region's middle is one colour, 'V' if every column is. */
+    const lines = (rb: number, cb: number) => {
+      const rows = [1, 2, 3, 4, 5, 6].map((i) => rb * 8 + i)
+      const cols = [1, 2, 3, 4, 5, 6].map((i) => cb * 8 + i)
+      if (rows.every((p) => cols.every((e) => colour(p, e) === colour(p, cols[0])))) return 'H'
+      if (cols.every((e) => rows.every((p) => colour(p, e) === colour(rows[0], e)))) return 'V'
+      return '?'
+    }
+    const grid = [0, 1, 2, 3].map((r) => [0, 1, 2, 3].map((c) => lines(r, c)).join(''))
+    expect(grid).toEqual(['HHVV', 'HHVV', 'VVHH', 'VVHH'])
+  })
+
+  it('taqueté: weft A shows where the profile is filled, weft B elsewhere, with no tabby', () => {
+    const d = blockWeave('taquete', twoBlocks, { ...COLORS, pattern: '#aa0000', tabby: '#0000aa' })
+    expect([d.shafts, d.treadles]).toEqual([4, 4])
+    expect(d.threading.slice(0, 4).map((s) => s + 1)).toEqual([1, 3, 2, 3])
+    const dd = computeDrawdown(d)
+    const shows = (picks: number[], ends: number[], weft: string) =>
+      picks.flatMap((p) => ends.map((e) => (dd[p][e] ? null : d.weftColors[p]))).filter((c) => c === weft).length
+    const blockA = [0, 1, 2, 3, 4, 5, 6, 7]
+    const blockB = [8, 9, 10, 11, 12, 13, 14, 15]
+    const firstRows = [0, 1, 2, 3, 4, 5, 6, 7] // block treadle 1: A in block A, B in block B
+    expect(shows(firstRows, blockA, '#aa0000')).toBeGreaterThan(shows(firstRows, blockA, '#0000aa'))
+    expect(shows(firstRows, blockB, '#0000aa')).toBeGreaterThan(shows(firstRows, blockB, '#aa0000'))
+  })
+
+  it('rep weave: plain weave, with dark ends up on thick picks in dark blocks', () => {
+    const d = blockWeave('rep', twoBlocks, COLORS)
+    // Two blocks, each dark on one block treadle: the same two sheds serve both.
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 2, 16, 16])
+    const dd = computeDrawdown(d)
+    // Every pick is plain weave within each block.
+    for (let p = 0; p < 4; p++)
+      for (const start of [0, 8])
+        expect([0, 1, 2, 3].every((i) => i === 0 || dd[p][start + i] !== dd[p][start + i - 1])).toBe(true)
+    // Pick 1 (thick, block treadle 1): block A shows its dark ends, block B its light ends.
+    expect([0, 2, 4, 6].every((e) => dd[0][e])).toBe(true)
+    expect([9, 11, 13, 15].every((e) => dd[0][e])).toBe(true)
+    expect(d.weftColors.slice(0, 2)).toEqual([COLORS.pattern, COLORS.tabby])
   })
 
   it('block weaves weave each block on its own treadle; unit weaves follow the profile tie-up', () => {
