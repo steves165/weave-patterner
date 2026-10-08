@@ -137,12 +137,14 @@ test('shapes the cloth and animates the weaving', { tag: '@3d' }, async ({ page 
   await expect(page.getByRole('button', { name: 'Weave it' })).toBeVisible()
 })
 
-test('shows the cloth made up as a sofa, a rug and a tapestry', { tag: '@3d' }, async ({ page }) => {
+test('shows the cloth made up as a sofa, a rug, a tapestry, a coat and a skirt', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').click()
   for (const [label, value] of [
     ['On a sofa', 'sofa'],
     ['As a rug', 'rug'],
     ['As a tapestry', 'tapestry'],
+    ['As a coat', 'coat'],
+    ['As a skirt', 'skirt'],
   ]) {
     await page.getByRole('combobox', { name: 'Show as' }).click()
     await page.getByRole('option', { name: label }).click()

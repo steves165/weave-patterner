@@ -261,3 +261,264 @@ export function tapestry(tex: ClothTextures, tile: { width: number; height: numb
     shadowReach: 160,
   }
 }
+
+/**
+ * A fabric material whose texture coordinates are in cm (rather than 0–1 across the surface), for shapes built
+ * here: one repeat of the cloth every `tile` cm, whatever the shape's size.
+ */
+function fabricCm(tex: ClothTextures, tile: { width: number; height: number }) {
+  const m = fabric(tex, tile, 1, 1)
+  for (const t of [m.map, m.bumpMap]) t?.repeat.set(1 / tile.width, 1 / tile.height)
+  m.side = THREE.DoubleSide
+  return m
+}
+
+/** One ring of a garment's shape: its height and half-width and half-depth in cm, and how deep its folds are. */
+export interface Ring {
+  y: number
+  rx: number
+  rz: number
+  /** Depth in cm of the folds around the ring (for a skirt's fullness), 0 for smooth. */
+  fold?: number
+}
+
+/**
+ * A tube through `rings` (top to bottom), smoothly joined: an elliptical cross-section at each height, rippled into
+ * `folds` folds. It's made of `panels` panels, as a garment is cut, with the first seam at the centre back.
+ * Texture coordinates are in cm, across each panel from its centre line and down it, so the warp runs straight down
+ * the middle of every panel and the pattern meets itself at the seams as a sewn garment's does.
+ */
+export function garmentGeometry(rings: Ring[], folds = 0, panels = 1, around = 96, perSpan = 10): THREE.BufferGeometry {
+  // Rings between the given ones, eased so the outline curves rather than bending at each ring.
+  const rows: Ring[] = []
+  for (let i = 0; i < rings.length - 1; i++)
+    for (let k = 0; k < perSpan; k++) {
+      const t = k / perSpan
+      const e = (1 - Math.cos(Math.PI * t)) / 2
+      const [a, b] = [rings[i], rings[i + 1]]
+      rows.push({
+        y: a.y + (b.y - a.y) * t,
+        rx: a.rx + (b.rx - a.rx) * e,
+        rz: a.rz + (b.rz - a.rz) * e,
+        fold: (a.fold ?? 0) + ((b.fold ?? 0) - (a.fold ?? 0)) * t,
+      })
+    }
+  rows.push(rings[rings.length - 1])
+  // Each row's points all the way round, from the centre back, and how far down the garment each row is.
+  const points = rows.map((r) =>
+    Array.from({ length: around + 1 }, (_, j) => {
+      const a = Math.PI + (j / around) * Math.PI * 2
+      const ripple = (r.fold ?? 0) * Math.sin(a * folds)
+      return [Math.sin(a) * (r.rx + ripple), r.y, Math.cos(a) * (r.rz + ripple)]
+    }),
+  )
+  const downs = [0]
+  for (let i = 1; i < rows.length; i++) {
+    const [p, q] = [points[i - 1][around / 2], points[i][around / 2]]
+    downs.push(downs[i - 1] + Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]))
+  }
+  const positions: number[] = []
+  const uvs: number[] = []
+  const index: number[] = []
+  const per = around / panels
+  for (let k = 0; k < panels; k++) {
+    const [start, centre] = [k * per, k * per + per / 2]
+    const base = positions.length / 3
+    rows.forEach((_, i) => {
+      // Distance round the row from the panel's centre line, either way.
+      const arc = [0]
+      for (let j = start + 1; j <= start + per; j++) {
+        const [p, q] = [points[i][j - 1], points[i][j]]
+        arc.push(arc[arc.length - 1] + Math.hypot(q[0] - p[0], q[2] - p[2]))
+      }
+      for (let j = start; j <= start + per; j++) {
+        positions.push(...points[i][j])
+        uvs.push(arc[j - start] - arc[centre - start], -downs[i])
+      }
+    })
+    const w = per + 1
+    for (let i = 0; i < rows.length - 1; i++)
+      for (let j = 0; j < per; j++) {
+        const [a, b, c, d] = [
+          base + i * w + j,
+          base + i * w + j + 1,
+          base + (i + 1) * w + j,
+          base + (i + 1) * w + j + 1,
+        ]
+        index.push(a, c, b, b, c, d)
+      }
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setIndex(index)
+  g.computeVertexNormals()
+  return g
+}
+
+const formMaterial = () => new THREE.MeshStandardMaterial({ color: 0xe9e1d6, roughness: 0.75, metalness: 0 })
+
+/** A dress form: a padded torso from the neck to the hips, on a wooden stand and base. */
+function dressForm(neckTop: number) {
+  const g = new THREE.Group()
+  const torso = new THREE.Mesh(
+    garmentGeometry([
+      { y: neckTop, rx: 5.2, rz: 5 },
+      { y: neckTop - 6, rx: 6, rz: 5.6 },
+      { y: neckTop - 12, rx: 17, rz: 10 },
+      { y: neckTop - 30, rx: 16, rz: 11.5 },
+      { y: neckTop - 50, rx: 13, rz: 9.5 },
+      { y: neckTop - 72, rx: 17, rz: 12 },
+      { y: neckTop - 80, rx: 15, rz: 11 },
+    ]),
+    formMaterial(),
+  )
+  g.add(torso)
+  const cap = new THREE.Mesh(new THREE.CircleGeometry(5.2, 24), wood())
+  cap.rotation.x = -Math.PI / 2
+  cap.position.y = neckTop
+  g.add(cap)
+  const bottom = neckTop - 80
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, bottom - 4, 12), wood())
+  pole.position.y = (bottom - 4) / 2 + 4
+  g.add(pole)
+  for (const angle of [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(3, 2.4, 34), wood())
+    leg.position.set(Math.sin(angle) * 15, 2, Math.cos(angle) * 15)
+    leg.rotation.y = angle
+    g.add(leg)
+  }
+  return g
+}
+
+/** Stretches a shape's 0–1 texture coordinates to cm: `across` cm round it and `along` cm down it. */
+function uvInCm<T extends THREE.BufferGeometry>(g: T, across: number, along: number): T {
+  const uv = g.attributes.uv
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * across, uv.getY(i) * along)
+  return g
+}
+
+/** A tapered tube from `from` to `to` (a sleeve), radius `r1` at the top and `r2` at the cuff. */
+function sleeve(material: THREE.Material, from: THREE.Vector3, to: THREE.Vector3, r1: number, r2: number) {
+  const length = from.distanceTo(to)
+  const geometry = new THREE.CylinderGeometry(r2, r1, length, 32, 12, true)
+  // Texture coordinates in cm: round the sleeve, and down it.
+  const uv = geometry.attributes.uv
+  const pos = geometry.attributes.position
+  for (let i = 0; i < uv.count; i++) {
+    const r = r2 + (r1 - r2) * (pos.getY(i) / length + 0.5)
+    uv.setXY(i, uv.getX(i) * 2 * Math.PI * r, pos.getY(i))
+  }
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.position.copy(from).add(to).multiplyScalar(0.5)
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), from.clone().sub(to).normalize())
+  return mesh
+}
+
+/** A knee-length coat in the cloth, with sleeves, a collar and buttons, on a dress form. */
+export function coat(tex: ClothTextures, tile: { width: number; height: number }): Mockup {
+  const g = new THREE.Group()
+  const neck = 152
+  g.add(dressForm(neck))
+  const cloth = fabricCm(tex, tile)
+  // The coat stands a little proud of the form, easing out over the hips to a flared hem.
+  const body = new THREE.Mesh(
+    garmentGeometry(
+      [
+        { y: neck - 5, rx: 7.5, rz: 7 },
+        { y: neck - 11, rx: 19, rz: 11.5 },
+        { y: neck - 30, rx: 18.5, rz: 13 },
+        { y: neck - 50, rx: 16, rz: 12 },
+        { y: neck - 72, rx: 19.5, rz: 14 },
+        { y: neck - 95, rx: 22, rz: 16, fold: 0.4 },
+        { y: neck - 112, rx: 24, rz: 17.5, fold: 0.8 },
+      ],
+      6,
+    ),
+    cloth,
+  )
+  g.add(body)
+  for (const side of [-1, 1]) {
+    const top = new THREE.Vector3(side * 17.5, neck - 14, 0)
+    const cuff = new THREE.Vector3(side * 24.5, neck - 72, 5)
+    g.add(sleeve(cloth, top, cuff, 7.4, 6))
+    // Round the top of the sleeve into the shoulder, and turn back a cuff.
+    const shoulder = new THREE.Mesh(
+      uvInCm(new THREE.SphereGeometry(7.4, 32, 16), 2 * Math.PI * 7.4, Math.PI * 7.4),
+      cloth,
+    )
+    shoulder.position.copy(top)
+    g.add(shoulder)
+    const turnBack = new THREE.Mesh(
+      uvInCm(new THREE.TorusGeometry(6.2, 1.1, 10, 32), 2 * Math.PI * 6.2, 2 * Math.PI * 1.1),
+      cloth,
+    )
+    turnBack.position.copy(cuff)
+    turnBack.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), top.clone().sub(cuff).normalize())
+    g.add(turnBack)
+  }
+  const collar = new THREE.Mesh(
+    uvInCm(new THREE.TorusGeometry(8.2, 2.4, 12, 40), 2 * Math.PI * 8.2, 2 * Math.PI * 2.4),
+    cloth,
+  )
+  collar.rotation.x = Math.PI / 2 - 0.25
+  collar.position.set(0, neck - 4, -0.5)
+  collar.scale.set(1, 0.85, 1)
+  g.add(collar)
+  const buttonMaterial = new THREE.MeshStandardMaterial({ color: 0x2b211c, roughness: 0.35 })
+  for (let i = 0; i < 5; i++) {
+    const y = neck - 26 - i * 14
+    // On the surface of the coat's front at that height.
+    const button = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.8, 20), buttonMaterial)
+    button.rotation.x = Math.PI / 2
+    const front = i < 2 ? 13.3 : i < 3 ? 12.4 : 13.8 + (i - 3) * 0.9
+    button.position.set(0, y, front + 0.4)
+    g.add(button)
+  }
+  g.add(floor(0xd8cfc4, 600))
+  return {
+    group: shadowed(g),
+    camera: new THREE.Vector3(85, 125, 230),
+    target: new THREE.Vector3(0, 95, 0),
+    shadowReach: 120,
+  }
+}
+
+/** A full, knee-length skirt in the cloth, gathered into a waistband, on a dress form. */
+export function skirt(tex: ClothTextures, tile: { width: number; height: number }): Mockup {
+  const g = new THREE.Group()
+  const neck = 152
+  g.add(dressForm(neck))
+  const cloth = fabricCm(tex, tile)
+  const waist = neck - 50
+  // Fitted at the waist, easing over the hips, then flaring into soft folds that deepen towards the hem.
+  const body = new THREE.Mesh(
+    garmentGeometry(
+      [
+        { y: waist, rx: 13.8, rz: 10.3, fold: 0 },
+        { y: waist - 14, rx: 18, rz: 13, fold: 0.5 },
+        { y: waist - 24, rx: 21, rz: 16, fold: 1.4 },
+        { y: waist - 45, rx: 27, rz: 22, fold: 2.6 },
+        { y: waist - 62, rx: 31, rz: 26, fold: 3.4 },
+      ],
+      11,
+    ),
+    cloth,
+  )
+  g.add(body)
+  const band = new THREE.Mesh(
+    garmentGeometry([
+      { y: waist + 4, rx: 14, rz: 10.5 },
+      { y: waist, rx: 14.2, rz: 10.7 },
+    ]),
+    cloth,
+  )
+  g.add(band)
+  g.add(floor(0xd8cfc4, 600))
+  return {
+    group: shadowed(g),
+    camera: new THREE.Vector3(80, 110, 210),
+    target: new THREE.Vector3(0, 80, 0),
+    shadowReach: 110,
+  }
+}

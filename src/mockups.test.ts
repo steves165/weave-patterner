@@ -17,7 +17,13 @@ describe('mockups', () => {
   })
 
   it('tells thread views from made-up things', () => {
-    expect(VIEWS_3D.filter((v) => isMockup(v.value)).map((v) => v.value)).toEqual(['sofa', 'rug', 'tapestry'])
+    expect(VIEWS_3D.filter((v) => isMockup(v.value)).map((v) => v.value)).toEqual([
+      'sofa',
+      'rug',
+      'tapestry',
+      'coat',
+      'skirt',
+    ])
     expect(isMockup('draped')).toBe(false)
   })
 })

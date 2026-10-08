@@ -29,7 +29,7 @@ import { track } from '../analytics'
 import { download, fileBase } from '../exportDraft'
 import { isMockup, tileSize, VIEWS_3D, type View3D } from '../mockups'
 import { type ClothShape, fabricModel, shedFor } from '../sim3d'
-import { clothTextures, rug, sofa, tapestry } from '../three/mockups'
+import { clothTextures, coat, rug, skirt, sofa, tapestry } from '../three/mockups'
 import { clearGroup, yarnGeometry, yarnMaterial } from '../three/yarnMesh'
 import { computeDrawdown, type Draft } from '../weave'
 import { clothLook, loadDensity } from '../yarnGeometry'
@@ -235,7 +235,7 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     s.render()
   }, [scene3d, model, thickness, background, shape, halfW, halfH, mockupView])
 
-  // Make up the cloth into a sofa, rug or tapestry, at its real scale.
+  // Make up the cloth into a sofa, rug, tapestry, coat or skirt, at its real scale.
   useEffect(() => {
     const s = scene3d
     if (!s) return
@@ -249,7 +249,11 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         ? sofa(textures, tile)
         : view === 'rug'
           ? rug(textures, tile, draft.warpColors)
-          : tapestry(textures, tile)
+          : view === 'coat'
+            ? coat(textures, tile)
+            : view === 'skirt'
+              ? skirt(textures, tile)
+              : tapestry(textures, tile)
     textures.color.dispose()
     textures.bump.dispose()
     s.mockup.add(made.group)

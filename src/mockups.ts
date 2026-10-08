@@ -2,7 +2,7 @@ import type { Draft } from './weave'
 import type { Density } from './yarnGeometry'
 
 /** Ways to show the cloth in 3D: as threads (flat or shaped), or made up into something. */
-export type View3D = 'flat' | 'draped' | 'cushion' | 'rolled' | 'sofa' | 'rug' | 'tapestry'
+export type View3D = 'flat' | 'draped' | 'cushion' | 'rolled' | 'sofa' | 'rug' | 'tapestry' | 'coat' | 'skirt'
 
 export const VIEWS_3D: { value: View3D; label: string; mockup: boolean }[] = [
   { value: 'flat', label: 'Flat', mockup: false },
@@ -12,6 +12,8 @@ export const VIEWS_3D: { value: View3D; label: string; mockup: boolean }[] = [
   { value: 'sofa', label: 'On a sofa', mockup: true },
   { value: 'rug', label: 'As a rug', mockup: true },
   { value: 'tapestry', label: 'As a tapestry', mockup: true },
+  { value: 'coat', label: 'As a coat', mockup: true },
+  { value: 'skirt', label: 'As a skirt', mockup: true },
 ]
 
 export const isMockup = (v: View3D) => VIEWS_3D.find((x) => x.value === v)?.mockup ?? false
