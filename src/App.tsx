@@ -5,7 +5,8 @@ import { AppToolbar } from './components/AppToolbar'
 import { DraftView } from './components/DraftView'
 import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
-import { CELL_DEFAULT, SettingsPanel } from './components/SettingsPanel'
+import { SettingsPanel } from './components/SettingsPanel'
+import { loadCurrent } from './current'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
 import { ClothDialog } from './dialogs/ClothDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
@@ -19,6 +20,7 @@ import { YarnsDialog } from './dialogs/YarnsDialog'
 import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
+import { useRememberCurrent } from './hooks/useRememberCurrent'
 import { useSharedPatternLink } from './hooks/useSharedPatternLink'
 import { useViewOptions } from './hooks/useViewOptions'
 import { useYarns } from './hooks/useYarns'
@@ -44,16 +46,21 @@ export default function App() {
   const phone = usePhone()
   const compact = useCompact()
   const touch = useTouch()
-  const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(defaultDraft)
-  const [name, setName] = useState<string | null>(null)
-  const [cellSize, setCellSize] = useState(CELL_DEFAULT)
+  // The pattern from last time on this device, saved or not.
+  const [restored] = useState(loadCurrent)
+  const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(
+    () => restored?.draft ?? defaultDraft(),
+    restored?.baseline,
+  )
+  const [name, setName] = useState<string | null>(restored?.name ?? null)
+  useRememberCurrent({ name, draft, baseline })
   // Touch only: when on, a finger drag-paints the grids instead of scrolling.
   const [touchPaint, setTouchPaint] = useState(false)
-  const [highlightFloats, setHighlightFloats] = useState(false)
-  const [floatLimit, setFloatLimit] = useState(7)
   const [dialog, setDialog] = useState<DialogName | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  // Display settings (including cell size and float highlighting), remembered between visits.
   const [view, setView] = useViewOptions()
+  const { cellSize, highlightFloats, floatLimit } = view
   const [yarns, setYarns] = useYarns()
   // Ends or picks copied in the sequence tools, kept until replaced.
   const [clip, setClip] = useState<Clip | null>(null)
@@ -177,14 +184,14 @@ export default function App() {
             touch={touch}
             onResize={(dim, n) => update((d) => resizeDraft(d, { [dim]: n }))}
             cellSize={cellSize}
-            onCellSize={setCellSize}
+            onCellSize={(n) => setView({ cellSize: n })}
             onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
             onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
             floats={floats}
             highlightFloats={highlightFloats}
-            onHighlightFloats={setHighlightFloats}
+            onHighlightFloats={(on) => setView({ highlightFloats: on })}
             floatLimit={floatLimit}
-            onFloatLimit={setFloatLimit}
+            onFloatLimit={(n) => setView({ floatLimit: n })}
             view={view}
             onView={setView}
             onClear={() =>

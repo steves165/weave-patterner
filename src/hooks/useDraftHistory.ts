@@ -13,9 +13,9 @@ export interface UpdateOptions {
  * The current draft with undo/redo, plus the "baseline" Reset returns to (the draft as last started, loaded or
  * saved). Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z or Ctrl+Y redoes, except while typing in a text field.
  */
-export function useDraftHistory(initial: () => Draft) {
+export function useDraftHistory(initial: () => Draft, initialBaseline?: Draft) {
   const [hist, setHist] = useState(() => createHistory(initial()))
-  const [baseline, setBaseline] = useState(hist.present)
+  const [baseline, setBaseline] = useState(initialBaseline ?? hist.present)
   const lastKey = useRef<string | null>(null)
 
   const update = useCallback((fn: (d: Draft) => Draft, opts: UpdateOptions = {}) => {

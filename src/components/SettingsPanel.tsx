@@ -20,6 +20,7 @@ import {
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { MAX_THREADS } from '../tools'
+import { CELL_MAX, CELL_MIN } from '../viewOptions'
 import { type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
 
 export const LIMITS = {
@@ -30,10 +31,6 @@ export const LIMITS = {
 } as const
 export type Dim = keyof typeof LIMITS
 const DIM_LABEL: Record<Dim, string> = { shafts: 'Shafts', treadles: 'Treadles', ends: 'Ends', picks: 'Picks' }
-
-export const CELL_MIN = 6
-export const CELL_MAX = 24
-export const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
 
 /** Number input that only commits (clamped) on blur or Enter, so typing "16" doesn't clamp at "1". */
 function CommitField(props: {
@@ -92,7 +89,8 @@ interface Props {
 }
 
 /** On/off display options, in the order shown. */
-const VIEW_SWITCHES: [keyof Omit<ViewOptions, 'ruler'>, string][] = [
+type ViewSwitch = 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
+const VIEW_SWITCHES: [ViewSwitch, string][] = [
   ['endOneRight', 'End 1 on the right'],
   ['numbers', 'Numbers in boxes'],
   ['fabric', 'Fabric view'],
@@ -122,7 +120,13 @@ export function SettingsPanel(p: Props) {
   const longest = Math.max(p.floats.warp, p.floats.weft)
 
   return (
-    <Accordion variant="outlined" disableGutters defaultExpanded={!p.compact} sx={{ mb: { xs: 1, sm: 2 } }}>
+    <Accordion
+      variant="outlined"
+      disableGutters
+      expanded={p.view.settingsOpen ?? !p.compact}
+      onChange={(_, open) => p.onView({ settingsOpen: open })}
+      sx={{ mb: { xs: 1, sm: 2 } }}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="subtitle2">
           Pattern settings

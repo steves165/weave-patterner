@@ -16,6 +16,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 ## Features
 
 - Up to 24 shafts and 24 treadles, and up to 400 ends and picks
+- Remembers your settings and the pattern you were working on (saved or not) on this device
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
 - Per-thread warp and weft colours
 - **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner
