@@ -23,7 +23,7 @@ const colourCount = (page: Page) =>
 
 test.beforeEach(async ({ page }) => openApp(page))
 
-test('renders the cloth in 3D, with controls for the area, thickness and side', async ({ page }) => {
+test('renders the cloth in 3D, with controls for the area, thickness and side', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').click()
   await expect(page.getByRole('dialog', { name: /3D preview/ })).toBeVisible()
   await expect(canvas(page)).toBeVisible()
@@ -53,7 +53,7 @@ test('renders the cloth in 3D, with controls for the area, thickness and side', 
   await expect(page.getByRole('dialog', { name: /3D preview/ })).toBeHidden()
 })
 
-test('shows double cloth as two layers', async ({ page }) => {
+test('shows double cloth as two layers', { tag: '@3d' }, async ({ page }) => {
   await openTool(page, /Double cloth/)
   await page.getByRole('dialog', { name: 'Double cloth' }).getByRole('button', { name: 'Create draft' }).click()
   await toolbarButton(page, '3D').click()
@@ -61,7 +61,7 @@ test('shows double cloth as two layers', async ({ page }) => {
   await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 })
 
-test('explains when WebGL is not available', async ({ page }) => {
+test('explains when WebGL is not available', { tag: '@3d' }, async ({ page }) => {
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext
     HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
@@ -74,7 +74,7 @@ test('explains when WebGL is not available', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Save image' })).toBeDisabled()
 })
 
-test('sizes threads from the yarn library and spaces them by the sett', async ({ page }) => {
+test('sizes threads from the yarn library and spaces them by the sett', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').click()
   await expect(page.getByTestId('look-info')).toHaveText(
     '8 ends and 8 picks per cm (from the warp calculator). Add a grist to yarns in the yarn library to size threads, and a texture to shape them.',
@@ -100,7 +100,7 @@ test('sizes threads from the yarn library and spaces them by the sett', async ({
   await expect(page.getByTestId('look-info')).toHaveCount(0)
 })
 
-test('yarn textures from the library shape the threads', async ({ page }) => {
+test('yarn textures from the library shape the threads', { tag: '@3d' }, async ({ page }) => {
   await openTool(page, /Yarn library/)
   const yarns = page.getByRole('dialog', { name: 'Yarn library' })
   await yarns.getByRole('button', { name: 'Add a yarn for #ffffff' }).click()
@@ -119,7 +119,7 @@ test('yarn textures from the library shape the threads', async ({ page }) => {
   await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 })
 
-test('shapes the cloth and animates the weaving', async ({ page }) => {
+test('shapes the cloth and animates the weaving', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').click()
   await expect(view(page)).toHaveAttribute('data-woven', '32')
   await page.getByRole('combobox', { name: 'Show as' }).click()
@@ -137,7 +137,7 @@ test('shapes the cloth and animates the weaving', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Weave it' })).toBeVisible()
 })
 
-test('shows the cloth made up as a sofa, a rug and a tapestry', async ({ page }) => {
+test('shows the cloth made up as a sofa, a rug and a tapestry', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').click()
   for (const [label, value] of [
     ['On a sofa', 'sofa'],

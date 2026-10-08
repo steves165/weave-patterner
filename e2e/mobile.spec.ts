@@ -90,7 +90,7 @@ test('tapping a drawdown square traces it, with the explanation on screen', asyn
   await expect(info).toBeHidden()
 })
 
-test('the 3D preview fills the screen and can be closed', async ({ page }) => {
+test('the 3D preview fills the screen and can be closed', { tag: '@3d' }, async ({ page }) => {
   await toolbarButton(page, '3D').tap()
   const canvas = page.getByRole('img', { name: '3D preview of the cloth' })
   // Software-rendered WebGL on an emulated phone can take a while to start.

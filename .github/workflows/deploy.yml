@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # History, to see which files this push changed.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,7 +30,10 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      # The slow 3D browser tests run only when 3D code changed since the previous push (all of them on a manual run).
+      - run: npm run test:e2e:changed
+        env:
+          BASE_SHA: ${{ github.event.before }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

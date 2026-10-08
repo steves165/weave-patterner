@@ -13,7 +13,10 @@ npm install
 npm run dev     # local dev server
 npm run build   # production build in dist/
 npm test          # unit tests (Vitest)
-npm run test:e2e  # browser tests (Playwright; desktop, phone and tablet)
+npm run test:e2e          # browser tests (Playwright; desktop, phone and tablet), without the slow 3D ones
+npm run test:e2e:3d       # just the 3D preview tests
+npm run test:e2e:changed  # the 3D tests too, but only if 3D code changed (what CI runs)
+npm run test:e2e:all      # everything
 npm run lint      # Biome lint + format check (npm run format to fix)
 ```
 

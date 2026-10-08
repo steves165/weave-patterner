@@ -23,8 +23,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mcp": "tsx mcp/index.ts",
-    "test:e2e": "playwright test",
-    "images": "tsx scripts/brand-images.ts"
+    "test:e2e": "playwright test --grep-invert @3d",
+    "images": "tsx scripts/brand-images.ts",
+    "test:e2e:3d": "playwright test --grep @3d",
+    "test:e2e:all": "playwright test",
+    "test:e2e:changed": "node scripts/e2e.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
