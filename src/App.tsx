@@ -10,6 +10,7 @@ import { loadCurrent } from './current'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
 import { ClothDialog } from './dialogs/ClothDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
+import { ColorwaysDialog } from './dialogs/ColorwaysDialog'
 import { DoubleClothDialog } from './dialogs/DoubleClothDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
@@ -17,6 +18,8 @@ import { ProfileDialog } from './dialogs/ProfileDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
 import { TransformDialog } from './dialogs/TransformDialog'
+import { VariationsDialog } from './dialogs/VariationsDialog'
+import { WarpPlanDialog } from './dialogs/WarpPlanDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
@@ -33,6 +36,7 @@ import { useYarns } from './hooks/useYarns'
 import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useTouch } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
+import { selvedgeMisses } from './selvedge'
 import { type Clip, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
 
@@ -49,6 +53,9 @@ type DialogName =
   | 'profile'
   | 'doublecloth'
   | 'transform'
+  | 'warpplan'
+  | 'colorways'
+  | 'variations'
   | 'yarns'
 
 export default function App() {
@@ -79,6 +86,7 @@ export default function App() {
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
+  const selvedge = useMemo(() => selvedgeMisses(draft, 'left', drawdown), [draft, drawdown])
   const floatMask = useMemo(
     () => (highlightFloats ? longFloatMask(draft, floatLimit, drawdown) : null),
     [highlightFloats, draft, floatLimit, drawdown],
@@ -172,6 +180,9 @@ export default function App() {
           onProfile={() => setDialog('profile')}
           onDoubleCloth={() => setDialog('doublecloth')}
           onTransform={() => setDialog('transform')}
+          onWarpPlan={() => setDialog('warpplan')}
+          onColorways={() => setDialog('colorways')}
+          onVariations={() => setDialog('variations')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -202,6 +213,7 @@ export default function App() {
             onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
             floats={floats}
             unwoven={unwoven}
+            selvedge={selvedge}
             highlightFloats={highlightFloats}
             onHighlightFloats={(on) => setView({ highlightFloats: on })}
             floatLimit={floatLimit}
@@ -313,6 +325,19 @@ export default function App() {
         />
         <ClothDialog
           open={dialog === 'cloth'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={applyFromDialog}
+        />
+        <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
+        <ColorwaysDialog
+          open={dialog === 'colorways'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={applyFromDialog}
+        />
+        <VariationsDialog
+          open={dialog === 'variations'}
           draft={draft}
           onClose={() => setDialog(null)}
           onApply={applyFromDialog}

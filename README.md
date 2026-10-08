@@ -25,7 +25,12 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - **Weaving mode**: a full-screen, pick-by-pick guide for the loom (treadles or shafts), keyboard and page-turner
   pedal friendly, remembering where you stopped, with a chime when the weft colour changes; and an end-by-end
   threading guide (shaft and heddle for each end, from either side)
-- **Transform draft**: turn 90° (swap warp and weft), swap face and back, flip, and move the repeat
+- **Variations** and **colourways**: galleries of the same threading with other tie-ups and treadlings, and the same
+  cloth in other colours
+- **Warp winding plan**: colour runs for the warping board, in bouts, with tick boxes and totals
+- **Checks**: long floats, threads that never interlace, and edges the weft won't catch (floating selvedge needed)
+- **Transform draft**: turn 90° (swap warp and weft), swap face and back, flip, move the repeat, and insert or
+  remove tabby
 - **Sequence tools**: fill ranges with straight, point, advancing-twill or custom draws; repeat, mirror, reverse,
   insert, delete, **copy and paste** ends and picks (including threading into treadling); **tromp as writ**
 - **Lift plans**: convert to a lift plan for dobby looms and back to a tie-up and treadling

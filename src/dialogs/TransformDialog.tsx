@@ -16,7 +16,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import { usePhone } from '../layout'
-import { flipDraft, invertDraft, shiftDraft, turnDraft } from '../transforms'
+import { flipDraft, insertTabby, invertDraft, removeTabby, shiftDraft, tabbyBreaks, turnDraft } from '../transforms'
 import type { Draft } from '../weave'
 
 interface Props {
@@ -56,6 +56,8 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
   const [right, setRight] = useState('0')
   const [down, setDown] = useState('0')
   const [error, setError] = useState<string | null>(null)
+  const [tabbyColor, setTabbyColor] = useState('#f5f0e6')
+  const breaks = open ? tabbyBreaks(draft) : []
   useEffect(() => {
     if (open) setError(null)
   }, [open])
@@ -131,6 +133,51 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
               Move
             </Button>
           </Stack>
+          <Divider />
+          <Typography variant="subtitle2">Tabby</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Put a plain-weave pick (odd shafts, then even shafts) after every pattern pick, as overshot and summer and
+            winter are woven, or take tabby picks out.
+          </Typography>
+          <Stack direction="row" sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+              <input
+                type="color"
+                className="picker"
+                aria-label="Tabby weft colour"
+                value={tabbyColor}
+                onChange={(e) => setTabbyColor(e.target.value)}
+              />
+              <Typography variant="body2">Tabby weft</Typography>
+            </Stack>
+            <Button
+              variant="outlined"
+              onClick={() => run(() => insertTabby(draft, tabbyColor), 'Put tabby between the pattern picks')}
+            >
+              Insert tabby
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                try {
+                  const { draft: next, removed } = removeTabby(draft)
+                  if (removed === 0) setError('There are no tabby picks to take out')
+                  else onApply(next, `Took out ${removed} tabby pick${removed === 1 ? '' : 's'}`)
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : String(e))
+                }
+              }}
+            >
+              Remove tabby
+            </Button>
+          </Stack>
+          {breaks.length > 0 && (
+            <Typography variant="body2" color="warning.main" data-testid="tabby-breaks">
+              Tabby won't be plain weave at end{breaks.length > 1 ? 's' : ''} {breaks.slice(0, 8).join(', ')}
+              {breaks.length > 8 ? ` and ${breaks.length - 8} more` : ''}: neighbouring ends are both on odd or both on
+              even shafts.
+            </Typography>
+          )}
           {error && <Alert severity="warning">{error}</Alert>}
         </Stack>
       </DialogContent>

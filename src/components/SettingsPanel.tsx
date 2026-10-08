@@ -19,6 +19,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
+import type { Miss } from '../selvedge'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
 import { type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
@@ -78,6 +79,8 @@ interface Props {
   floats: { warp: number; weft: number }
   /** Threads that never interlace (0-based). */
   unwoven: { ends: number[]; picks: number[] }
+  /** Turns where the weft won't catch the edge end (shuttle starting from the left). */
+  selvedge: Miss[]
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   floatLimit: number
@@ -246,6 +249,13 @@ export function SettingsPanel(p: Props) {
                   .filter(Boolean)
                   .join('; ')}{' '}
                 (they never cross over and under)
+              </Typography>
+            )}
+            {p.selvedge.length > 0 && (
+              <Typography variant="body2" color="warning.main" data-testid="selvedge">
+                Edges: the weft won't catch the edge end at {p.selvedge.length} of {Math.max(1, p.draft.picks - 1)}{' '}
+                turns (first after pick {p.selvedge[0].pick}, {p.selvedge[0].side} edge). Use a floating selvedge, or
+                change the edge threading.
               </Typography>
             )}
           </Section>
