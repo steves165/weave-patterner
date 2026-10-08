@@ -17,6 +17,11 @@ export interface KnitChart {
   gauge: { stitches: number; rows: number }
   /** Longest stranded float (in stitches) before it should be caught. */
   floatLimit: number
+  /**
+   * The pattern repeat: stitches (columns, as drawn, 0-based) `from` to `to`, outlined in red as in published
+   * charts. They're worked as many times as the width needs, with the stitches either side worked once.
+   */
+  repeat?: { from: number; to: number }
 }
 
 export const MAX_STITCHES = 120
@@ -41,10 +46,12 @@ export function blankChart(stitches = 24, rows = 24, colors = ['#f2ead8', '#2e5e
 export function resize(k: KnitChart, stitches: number, rows: number): KnitChart {
   const w = Math.max(1, Math.min(MAX_STITCHES, Math.round(stitches)))
   const h = Math.max(1, Math.min(MAX_ROWS, Math.round(rows)))
+  const repeat = k.repeat && k.repeat.from < w ? { from: k.repeat.from, to: Math.min(k.repeat.to, w - 1) } : undefined
   return {
     ...k,
     stitch: Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => k.stitch[r]?.[c] ?? 'k')),
     color: Array.from({ length: h }, (_, r) => Array.from({ length: w }, (_, c) => k.color[r]?.[c] ?? 0)),
+    repeat: repeat && !(repeat.from === 0 && repeat.to === w - 1) ? repeat : undefined,
   }
 }
 
@@ -75,7 +82,19 @@ export function mirror(k: KnitChart): KnitChart {
     ...k,
     stitch: k.stitch.map((row) => [...row].reverse().map((s) => STITCHES[s].mirror ?? s)),
     color: k.color.map((row) => [...row].reverse()),
+    repeat: k.repeat && { from: widthOf(k) - 1 - k.repeat.to, to: widthOf(k) - 1 - k.repeat.from },
   }
+}
+
+/**
+ * The stitches the repeat box works, and those worked once either side of it (each as used from the row below, on
+ * row 1): so a piece is cast on as a multiple of `repeat` stitches plus `edges`. Null without a repeat box.
+ */
+export function repeatStitches(k: KnitChart): { repeat: number; edges: number } | null {
+  if (!k.repeat || !k.stitch[0]) return null
+  const row = k.stitch[0]
+  const box = rowCounts(row.slice(k.repeat.from, k.repeat.to + 1)).uses
+  return { repeat: box, edges: rowCounts(row).uses - box }
 }
 
 /** The cables in a row: runs of one cable stitch, split into crossings from the left. */
@@ -245,5 +264,13 @@ export function parseChart(v: unknown): KnitChart | null {
     mode: o.mode === 'round' ? 'round' : 'flat',
     gauge: { stitches: num(g?.stitches, 22), rows: num(g?.rows, 30) },
     floatLimit: Math.round(num(o.floatLimit, 5)),
+    ...(o.repeat &&
+    Number.isInteger(o.repeat.from) &&
+    Number.isInteger(o.repeat.to) &&
+    o.repeat.from >= 0 &&
+    o.repeat.from <= o.repeat.to &&
+    o.repeat.to < w
+      ? { repeat: { from: o.repeat.from, to: o.repeat.to } }
+      : {}),
   }
 }

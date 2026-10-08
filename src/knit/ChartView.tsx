@@ -1,6 +1,7 @@
 import { type KeyboardEvent, memo, type PointerEvent, useEffect, useRef, useState } from 'react'
 import { textOn } from '../colors'
 import { cablesIn, colorLetter, isRightSide, type KnitChart, rowsOf, widthOf } from './chart'
+import { type Rect, rectBetween } from './edit'
 import { cablePaths, NO_STITCH, shade } from './render'
 import { STITCHES, type StitchId } from './stitches'
 
@@ -13,6 +14,10 @@ interface Props {
   flagged: Map<number, string>
   /** Paints a square; `start` is true for the first square of a stroke (so a whole drag undoes in one go). */
   onPaint: (r: number, c: number, start: boolean) => void
+  /** Selecting rather than painting: a drag (or Shift and the arrow keys) marks out a rectangle of squares. */
+  selecting?: boolean
+  selection?: Rect | null
+  onSelect?: (s: Rect | null) => void
 }
 
 interface RowProps {
@@ -29,6 +34,10 @@ interface RowProps {
   cursor: number | null
   /** Squares (columns) just painted, to pop. */
   painted: readonly number[]
+  /** Selected squares in this row: columns from and to. */
+  sel: readonly [number, number] | null
+  /** The repeat box's columns, and whether this row is its top or bottom edge. */
+  box: { from: number; to: number; top: boolean; bottom: boolean } | null
 }
 
 const NONE: readonly number[] = []
@@ -61,7 +70,7 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
               data-stitch={s}
               aria-label={`${p.round ? 'Round' : 'Row'} ${p.r + 1}, stitch ${p.width - c}: ${stitch.name}${s === 'none' ? '' : `, colour ${colorLetter(p.colors[c])}`}`}
               aria-selected={p.cursor === c}
-              className={`knit-cell${(p.width - c) % 10 === 1 && c > 0 ? ' knit-ten' : ''}${p.painted.includes(c) ? ' painted' : ''}`}
+              className={`knit-cell${(p.width - c) % 10 === 1 && c > 0 ? ' knit-ten' : ''}${p.painted.includes(c) ? ' painted' : ''}${p.sel && c >= p.sel[0] && c <= p.sel[1] ? ' selected' : ''}`}
               style={{
                 width: p.cell,
                 height: p.cellH,
@@ -92,6 +101,13 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
             </svg>
           )
         })}
+        {p.box && (
+          <div
+            className={`knit-repeat${p.box.top ? ' top' : ''}${p.box.bottom ? ' bottom' : ''}`}
+            style={{ left: p.box.from * p.cell, width: (p.box.to - p.box.from + 1) * p.cell }}
+            aria-hidden="true"
+          />
+        )}
       </div>
       <span className="knit-side">{p.rs && num}</span>
     </div>
@@ -103,12 +119,23 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
  * wrong-side rows on the left (every round on the right). Stitches are numbered from the right. Click or drag to
  * paint (tap on touch screens, where swiping scrolls); arrow keys move and Space paints.
  */
-export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
+export function ChartView({
+  chart,
+  cell,
+  cellH,
+  flagged,
+  onPaint,
+  selecting = false,
+  selection = null,
+  onSelect,
+}: Props) {
   const rows = rowsOf(chart)
   const w = widthOf(chart)
   const dragging = useRef(false)
   const last = useRef('')
   const [cursor, setCursor] = useState<{ r: number; c: number } | null>(null)
+  // Where a selection started (the corner that stays put as it's dragged or extended).
+  const anchor = useRef<{ r: number; c: number } | null>(null)
 
   // Squares the last change painted (a new stitch or colour), by row, so they pop. Big changes (a new chart, a
   // sample, clearing) don't: everything would.
@@ -145,6 +172,16 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
     if (e.button !== 0) return
     const hit = at(e.clientX, e.clientY)
     if (!hit) return
+    if (selecting) {
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      dragging.current = true
+      anchor.current = hit
+      last.current = `${hit.r}-${hit.c}`
+      setCursor(hit)
+      onSelect?.(rectBetween(hit, hit))
+      return
+    }
     if (e.pointerType === 'touch') {
       tapped.current = hit
       return
@@ -161,7 +198,10 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
     const hit = at(e.clientX, e.clientY)
     if (!hit || `${hit.r}-${hit.c}` === last.current) return
     last.current = `${hit.r}-${hit.c}`
-    onPaint(hit.r, hit.c, false)
+    if (selecting && anchor.current) {
+      setCursor(hit)
+      onSelect?.(rectBetween(anchor.current, hit))
+    } else onPaint(hit.r, hit.c, false)
   }
   const up = (e: PointerEvent<HTMLDivElement>) => {
     dragging.current = false
@@ -185,11 +225,20 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
     if (e.key in step) {
       e.preventDefault()
       const [dr, dc] = step[e.key]
-      setCursor({ r: Math.max(0, Math.min(rows - 1, cur.r + dr)), c: Math.max(0, Math.min(w - 1, cur.c + dc)) })
+      const next = { r: Math.max(0, Math.min(rows - 1, cur.r + dr)), c: Math.max(0, Math.min(w - 1, cur.c + dc)) }
+      setCursor(next)
+      // Shift and an arrow key selects, from where the cursor was.
+      if (e.shiftKey && onSelect) {
+        anchor.current ??= cur
+        onSelect(rectBetween(anchor.current, next))
+      } else anchor.current = null
     } else if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
       setCursor(cur)
-      onPaint(cur.r, cur.c, true)
+      if (selecting) {
+        anchor.current = cur
+        onSelect?.(rectBetween(cur, cur))
+      } else onPaint(cur.r, cur.c, true)
     }
   }
 
@@ -202,7 +251,7 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
       aria-colcount={w}
       tabIndex={0}
       aria-activedescendant={cursor ? `knit-${cursor.r}-${cursor.c}` : undefined}
-      className="knit-chart"
+      className={`knit-chart${selecting ? ' selecting' : ''}`}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -225,6 +274,8 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
           flag={flagged.get(r + 1)}
           cursor={cursor?.r === r ? cursor.c : null}
           painted={painted.get(r) ?? NONE}
+          sel={selection && r >= selection.r0 && r <= selection.r1 ? [selection.c0, selection.c1] : null}
+          box={chart.repeat ? { ...chart.repeat, top: r === rows - 1, bottom: r === 0 } : null}
         />
       ))}
       <div className="knit-row" aria-hidden="true">

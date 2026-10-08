@@ -1,4 +1,14 @@
-import { cablesIn, castOn, colorLetter, isRightSide, type KnitChart, label, rowCounts, usedColors } from './chart'
+import {
+  cablesIn,
+  castOn,
+  colorLetter,
+  isRightSide,
+  type KnitChart,
+  label,
+  repeatStitches,
+  rowCounts,
+  usedColors,
+} from './chart'
 import { STITCHES, type StitchId } from './stitches'
 
 /** One stitch (or one cable crossing) as worked, in knitting order. */
@@ -8,6 +18,8 @@ interface Token {
   color: string | null
   counted: boolean
   uses: number
+  /** The square (column, as drawn) it starts at. */
+  c: number
 }
 
 const same = (a: Token, b: Token) => a.text === b.text && a.color === b.color
@@ -38,6 +50,7 @@ export function rowTokens(k: KnitChart, r: number, colored = usedColors(k).lengt
     color: colored ? colorLetter(k.color[r][c]) : null,
     counted: Boolean(STITCHES[id].counted),
     uses,
+    c,
   }))
 }
 
@@ -103,21 +116,40 @@ export function findRepeat(tokens: Token[]): { start: number; unit: number; coun
   return best
 }
 
-/** A row in words: "*k2, p2; rep from * to last 2 sts, k2". */
-export function writeRow(k: KnitChart, r: number, colored = usedColors(k).length > 1): string {
-  const tokens = rowTokens(k, r, colored)
-  if (tokens.length === 0) return 'no stitches'
-  const rep = findRepeat(tokens)
-  if (!rep) return writeTokens(tokens)
-  const before = tokens.slice(0, rep.start)
-  const unit = tokens.slice(rep.start, rep.start + rep.unit)
-  const after = tokens.slice(rep.start + rep.unit * rep.count)
+/** "k1, *k2, p2; rep from * to last 2 sts, k2": the stitches before a repeat, the repeat, and those after. */
+function withRepeat(before: Token[], unit: Token[], after: Token[]): string {
   const left = after.reduce((n, t) => n + t.uses, 0)
   const parts = [...(before.length ? [`${writeTokens(before)}, `] : []), `*${writeTokens(unit)}; rep from *`]
   if (after.length === 0) parts.push(' to end')
   else if (left === 0) parts.push(` to end, ${writeTokens(after)}`)
   else parts.push(` to last ${left === 1 ? 'st' : `${left} sts`}, ${writeTokens(after)}`)
   return parts.join('')
+}
+
+/**
+ * A row in words: "*k2, p2; rep from * to last 2 sts, k2". With a repeat box, its stitches are the repeat; without
+ * one, the row's best repeat is found.
+ */
+export function writeRow(k: KnitChart, r: number, colored = usedColors(k).length > 1): string {
+  const tokens = rowTokens(k, r, colored)
+  if (tokens.length === 0) return 'no stitches'
+  const box = k.repeat
+  if (box) {
+    const inBox = (t: Token) => t.c >= box.from && t.c <= box.to
+    const first = tokens.findIndex(inBox)
+    if (first >= 0) {
+      let last = first
+      while (last + 1 < tokens.length && inBox(tokens[last + 1])) last++
+      return withRepeat(tokens.slice(0, first), tokens.slice(first, last + 1), tokens.slice(last + 1))
+    }
+  }
+  const rep = findRepeat(tokens)
+  if (!rep) return writeTokens(tokens)
+  return withRepeat(
+    tokens.slice(0, rep.start),
+    tokens.slice(rep.start, rep.start + rep.unit),
+    tokens.slice(rep.start + rep.unit * rep.count),
+  )
 }
 
 export interface WrittenRow {
@@ -146,14 +178,22 @@ export function writtenRows(k: KnitChart): WrittenRow[] {
   })
 }
 
+/** "Cast on 24 stitches." or, with a repeat box, "Cast on a multiple of 4 stitches plus 2 (6 for one repeat)." */
+export function castOnText(k: KnitChart): string {
+  const rep = repeatStitches(k)
+  const n = castOn(k)
+  if (!rep) return `Cast on ${n} stitches.`
+  return `Cast on a multiple of ${rep.repeat} stitches${rep.edges ? ` plus ${rep.edges}` : ''} (${n} for one repeat).`
+}
+
 /** The written pattern: setting up, the colours, the key to the abbreviations used, then every row. */
 export function writtenPattern(k: KnitChart, title = 'Knit Patterner chart'): string {
   const lines = [title, '']
   const n = castOn(k)
   lines.push(
     k.mode === 'round'
-      ? `Cast on ${n} stitches. Join to work in the round, being careful not to twist. Every round is read from right to left.`
-      : `Cast on ${n} stitches. Row 1 is a right-side (RS) row.`,
+      ? `${castOnText(k)} Join to work in the round, being careful not to twist. Every round is read from right to left.`
+      : `${castOnText(k)} Row 1 is a right-side (RS) row.`,
   )
   const colors = usedColors(k)
   if (colors.length > 1) {

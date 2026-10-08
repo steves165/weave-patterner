@@ -7,6 +7,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import GridOnIcon from '@mui/icons-material/GridOn'
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt'
 import ImageIcon from '@mui/icons-material/Image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
@@ -74,17 +75,20 @@ import {
   paint,
   parseChart,
   problems,
+  repeatStitches,
   resize,
   rowsOf,
   size,
   widthOf,
 } from './chart'
-import { writtenPattern, writtenRows } from './instructions'
+import { type Clip, clear, copy, paste, type Rect } from './edit'
+import { castOnText, writtenPattern, writtenRows } from './instructions'
 import { KnitLogo } from './KnitLogo'
 import { KnitThumb } from './KnitThumb'
 import { KnittingMode } from './KnittingMode'
 import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
+import { SelectionBar } from './SelectionBar'
 import { SAMPLES } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import './knit.css'
@@ -235,6 +239,10 @@ export default function KnitApp() {
   const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | null>(null)
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  // Selecting squares instead of painting them, what's selected, and what's been copied.
+  const [selecting, setSelecting] = useState(false)
+  const [selection, setSelection] = useState<Rect | null>(null)
+  const [clip, setClip] = useState<Clip | null>(null)
   const [printImage, setPrintImage] = useState<string | null>(null)
   const [target, setTarget] = useState({ width: '50', edges: '0' })
   const fileInput = useRef<HTMLInputElement>(null)
@@ -274,6 +282,28 @@ export default function KnitApp() {
     update(next)
     if (newName !== undefined) setName(newName)
   }
+
+  // Shortcuts for the selection: copy, cut, paste, clear and done.
+  useEffect(() => {
+    if (!selection) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, [role="dialog"]')) return
+      const k = e.key.toLowerCase()
+      const mod = e.ctrlKey || e.metaKey
+      if (e.key === 'Escape') setSelection(null)
+      else if (e.key === 'Delete' || e.key === 'Backspace') update(clear(chart, selection))
+      else if (mod && k === 'c') setClip(copy(chart, selection))
+      else if (mod && k === 'x') {
+        setClip(copy(chart, selection))
+        update(clear(chart, selection))
+      } else if (mod && k === 'v' && clip) update(paste(chart, clip, selection.r0, selection.c0))
+      else return
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  })
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -337,12 +367,11 @@ export default function KnitApp() {
   const cast = castOn(chart)
   const dims = size(chart)
   const cellH = view.toGauge ? Math.round((view.cell * chart.gauge.stitches) / chart.gauge.rows) : view.cell
-  const wanted = castOnFor(
-    number(target.width, 1, 1000, 50),
-    chart.gauge.stitches,
-    cast,
-    Math.round(number(target.edges, 0, 50, 0)),
-  )
+  // Casting on for a width: whole repeats (of the repeat box, or else the whole chart), plus any edge stitches.
+  const boxed = repeatStitches(chart)
+  const unit = boxed?.repeat ?? cast
+  const extra = Math.round(number(target.edges, 0, 50, 0)) + (boxed?.edges ?? 0)
+  const wanted = castOnFor(number(target.width, 1, 1000, 50), chart.gauge.stitches, unit, extra)
 
   const chartPng = (cell = 20) => {
     const canvas = document.createElement('canvas')
@@ -853,8 +882,13 @@ export default function KnitApp() {
                   size="small"
                   exclusive
                   aria-label="Stitch to paint"
-                  value={brush.kind === 'stitch' ? brush.id : null}
-                  onChange={(_, id) => id && setBrush({ kind: 'stitch', id })}
+                  value={brush.kind === 'stitch' && !selecting ? brush.id : null}
+                  onChange={(_, id) => {
+                    if (!id) return
+                    setBrush({ kind: 'stitch', id })
+                    setSelecting(false)
+                    setSelection(null)
+                  }}
                   // Softer corners than a pill, since it wraps onto more lines on small screens.
                   sx={{ borderRadius: '22px' }}
                 >
@@ -869,6 +903,24 @@ export default function KnitApp() {
                     )
                   })}
                 </ToggleButtonGroup>
+                <Tooltip
+                  title="Select squares to copy, paste, flip, repeat or make the pattern repeat (or Shift and the arrow keys)"
+                  describeChild
+                >
+                  <ToggleButton
+                    size="small"
+                    value="select"
+                    selected={selecting}
+                    onChange={() => {
+                      setSelecting(!selecting)
+                      if (selecting) setSelection(null)
+                    }}
+                    sx={{ gap: 0.75, px: 1.5, borderRadius: 999, border: 0, bgcolor: 'var(--wp-seg)' }}
+                  >
+                    <HighlightAltIcon fontSize="small" />
+                    Select
+                  </ToggleButton>
+                </Tooltip>
               </Stack>
               <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60, fontWeight: 600 }}>
@@ -891,8 +943,12 @@ export default function KnitApp() {
                     <ToggleButton
                       size="small"
                       value={i}
-                      selected={brush.kind === 'color' && brush.index === i}
-                      onChange={() => setBrush({ kind: 'color', index: i })}
+                      selected={brush.kind === 'color' && brush.index === i && !selecting}
+                      onChange={() => {
+                        setBrush({ kind: 'color', index: i })
+                        setSelecting(false)
+                        setSelection(null)
+                      }}
                       aria-label={`Paint colour ${colorLetter(i)}`}
                       sx={{ px: 1.25, gap: 0.75, border: 0, borderRadius: 999 }}
                     >
@@ -934,6 +990,26 @@ export default function KnitApp() {
               </Stack>
             </Stack>
 
+            {selection && (
+              <Box sx={{ px: { xs: 1.25, sm: 3 }, pt: { xs: 1.5, sm: 2 } }}>
+                <SelectionBar
+                  chart={chart}
+                  selection={selection}
+                  clip={clip}
+                  onChange={(next, message, moved) => {
+                    update(next)
+                    if (moved !== undefined) setSelection(moved)
+                    setToast(message)
+                  }}
+                  onClip={(c) => {
+                    setClip(c)
+                    setToast(`Copied ${c.stitch[0].length} × ${c.stitch.length} squares`)
+                  }}
+                  onDone={() => setSelection(null)}
+                />
+              </Box>
+            )}
+
             <Stack
               direction={{ xs: 'column', xl: 'row' }}
               sx={{ gap: { xs: 2, sm: 3 }, alignItems: 'flex-start', px: { xs: 1.25, sm: 3 }, py: { xs: 1.5, sm: 3 } }}
@@ -953,7 +1029,16 @@ export default function KnitApp() {
                 }}
                 className="wp-enter"
               >
-                <ChartView chart={chart} cell={view.cell} cellH={cellH} flagged={flagged} onPaint={onPaint} />
+                <ChartView
+                  chart={chart}
+                  cell={view.cell}
+                  cellH={cellH}
+                  flagged={flagged}
+                  onPaint={onPaint}
+                  selecting={selecting}
+                  selection={selection}
+                  onSelect={setSelection}
+                />
               </Paper>
               <Stack sx={{ gap: 2, flex: 1, minWidth: 0, width: { xs: '100%', xl: 'auto' } }}>
                 <Panel title="Size" testId="knit-size" delay={60}>
@@ -980,11 +1065,8 @@ export default function KnitApp() {
                       sx={{ width: 130 }}
                     />
                     <Typography variant="body2" data-testid="knit-cast-on">
-                      Cast on {wanted} stitches (
-                      {Math.round((wanted - Math.round(number(target.edges, 0, 50, 0))) / Math.max(1, cast))} repeats of{' '}
-                      {cast}
-                      {Number(target.edges) > 0 ? ` + ${Math.round(number(target.edges, 0, 50, 0))}` : ''}), about{' '}
-                      {((wanted * 10) / chart.gauge.stitches).toFixed(1)} cm.
+                      Cast on {wanted} stitches ({Math.round((wanted - extra) / Math.max(1, unit))} repeats of {unit}
+                      {extra > 0 ? ` + ${extra}` : ''}), about {((wanted * 10) / chart.gauge.stitches).toFixed(1)} cm.
                     </Typography>
                   </Stack>
                 </Panel>
@@ -1014,9 +1096,9 @@ export default function KnitApp() {
                         Copy
                       </Button>
                     </Stack>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      Cast on {cast} stitches
-                      {chart.mode === 'round' ? ' and join in the round.' : '. Row 1 is a right-side row.'}
+                    <Typography variant="body2" sx={{ mb: 1 }} data-testid="knit-cast-on-text">
+                      {castOnText(chart)}
+                      {chart.mode === 'round' ? ' Join in the round.' : ' Row 1 is a right-side row.'}
                     </Typography>
                     <ol className="knit-written">
                       {[...rows].reverse().map((r) => (
