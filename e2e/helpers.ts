@@ -100,3 +100,14 @@ export async function writtenRow(page: Page, row: number) {
   const text = await page.getByTestId('knit-written').locator(`li[data-row="${row}"]`).innerText()
   return text.replace(/^[^:]*:\s*/, '')
 }
+
+/** What the drawdown shows, square by square (warp or weft, and colour), ignoring passing highlights. */
+export function drawdownPicture(page: Page): Promise<string> {
+  return page
+    .locator('.drawdown')
+    .evaluate((el) =>
+      [...el.querySelectorAll<HTMLElement>('.cell')]
+        .map((c) => `${c.classList.contains('warp') ? 'w' : 'f'}${c.style.backgroundColor}`)
+        .join('|'),
+    )
+}

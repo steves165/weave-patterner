@@ -18,11 +18,28 @@ const STEPS = [
  */
 export function WeaveMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 30 30" aria-hidden="true" focusable="false" style={{ flex: 'none' }}>
+    <svg
+      className="brand-mark"
+      width={size}
+      height={size}
+      viewBox="0 0 30 30"
+      aria-hidden="true"
+      focusable="false"
+      style={{ flex: 'none' }}
+    >
       <rect width={30} height={30} rx={9} fill="var(--wp-accent, #D6246E)" />
       <g fill="var(--mui-palette-primary-contrastText, #FFFFFF)">
-        {STEPS.map(([x, y]) => (
-          <rect key={`${x}-${y}`} x={x} y={y} width={4} height={4} rx={1.3} />
+        {STEPS.map(([x, y], i) => (
+          <rect
+            key={`${x}-${y}`}
+            className="stitch"
+            style={{ ['--i' as string]: i }}
+            x={x}
+            y={y}
+            width={4}
+            height={4}
+            rx={1.3}
+          />
         ))}
       </g>
     </svg>

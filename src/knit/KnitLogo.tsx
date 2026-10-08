@@ -9,7 +9,15 @@ const VS = [7, 15].flatMap((x) => [6.5, 12.5, 18.5].map((y) => [x, y]))
  */
 export function KnitMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 30 30" aria-hidden="true" focusable="false" style={{ flex: 'none' }}>
+    <svg
+      className="brand-mark"
+      width={size}
+      height={size}
+      viewBox="0 0 30 30"
+      aria-hidden="true"
+      focusable="false"
+      style={{ flex: 'none' }}
+    >
       <rect width={30} height={30} rx={9} fill="var(--wp-accent, #00796B)" />
       <g
         fill="none"
@@ -18,8 +26,13 @@ export function KnitMark({ size = 30 }: { size?: number }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {VS.map(([x, y]) => (
-          <path key={`${x}-${y}`} d={`M${x} ${y} L${x + 4} ${y + 5} L${x + 8} ${y}`} />
+        {VS.map(([x, y], i) => (
+          <path
+            key={`${x}-${y}`}
+            className="stitch"
+            style={{ ['--i' as string]: i }}
+            d={`M${x} ${y} L${x + 4} ${y + 5} L${x + 8} ${y}`}
+          />
         ))}
       </g>
     </svg>

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, memo, type PointerEvent, useRef, useState } from 'react'
+import { type KeyboardEvent, memo, type PointerEvent, useEffect, useRef, useState } from 'react'
 import { textOn } from '../colors'
 import { cablesIn, colorLetter, isRightSide, type KnitChart, rowsOf, widthOf } from './chart'
 import { cablePaths, NO_STITCH, shade } from './render'
@@ -27,7 +27,11 @@ interface RowProps {
   round: boolean
   flag: string | undefined
   cursor: number | null
+  /** Squares (columns) just painted, to pop. */
+  painted: readonly number[]
 }
+
+const NONE: readonly number[] = []
 
 const ChartRow = memo(function ChartRow(p: RowProps) {
   const num = (
@@ -57,7 +61,7 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
               data-stitch={s}
               aria-label={`${p.round ? 'Round' : 'Row'} ${p.r + 1}, stitch ${p.width - c}: ${stitch.name}${s === 'none' ? '' : `, colour ${colorLetter(p.colors[c])}`}`}
               aria-selected={p.cursor === c}
-              className={`knit-cell${(p.width - c) % 10 === 1 && c > 0 ? ' knit-ten' : ''}`}
+              className={`knit-cell${(p.width - c) % 10 === 1 && c > 0 ? ' knit-ten' : ''}${p.painted.includes(c) ? ' painted' : ''}`}
               style={{
                 width: p.cell,
                 height: p.cellH,
@@ -105,6 +109,31 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
   const dragging = useRef(false)
   const last = useRef('')
   const [cursor, setCursor] = useState<{ r: number; c: number } | null>(null)
+
+  // Squares the last change painted (a new stitch or colour), by row, so they pop. Big changes (a new chart, a
+  // sample, clearing) don't: everything would.
+  const before = useRef<KnitChart | null>(null)
+  const [painted, setPainted] = useState<Map<number, number[]>>(() => new Map())
+  useEffect(() => {
+    const last = before.current
+    before.current = chart
+    const diff = new Map<number, number[]>()
+    let count = 0
+    if (last && rowsOf(last) === rows && widthOf(last) === w)
+      for (let r = 0; r < rows; r++)
+        for (let c = 0; c < w; c++)
+          if (last.stitch[r][c] !== chart.stitch[r][c] || last.color[r][c] !== chart.color[r][c]) {
+            diff.set(r, [...(diff.get(r) ?? []), c])
+            count++
+          }
+    if (count === 0 || count > (rows * w) / 3) {
+      setPainted((m) => (m.size ? new Map() : m))
+      return
+    }
+    setPainted(diff)
+    const done = setTimeout(() => setPainted(new Map()), 400)
+    return () => clearTimeout(done)
+  }, [chart, rows, w])
 
   const at = (x: number, y: number) => {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-c]')
@@ -195,6 +224,7 @@ export function ChartView({ chart, cell, cellH, flagged, onPaint }: Props) {
           round={chart.mode === 'round'}
           flag={flagged.get(r + 1)}
           cursor={cursor?.r === r ? cursor.c : null}
+          painted={painted.get(r) ?? NONE}
         />
       ))}
       <div className="knit-row" aria-hidden="true">

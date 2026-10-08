@@ -453,3 +453,76 @@
   border-radius: 4px 4px 0 0;
   pointer-events: none;
 }
+
+/* Motion: only for people who haven't asked their device for less of it. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Things arriving: ease up into place. Stagger with --delay. */
+  .wp-enter {
+    animation: wp-enter 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+  /* A box being filled pops in. */
+  .paintable .cell.on,
+  .knit-cell.painted {
+    animation: wp-pop 180ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  /* Drawdown squares a change has just altered glow, then settle. */
+  .drawdown .cell.changed {
+    position: relative;
+    z-index: 1;
+    animation: wp-changed 900ms ease-out;
+  }
+  /* A written-pattern row that has just changed. */
+  .knit-written li.changed {
+    animation: wp-row 1200ms ease-out;
+  }
+  /* A new block label grows across its columns. */
+  .block-label {
+    transform-origin: left center;
+    animation: wp-grow 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  /* The logo's stitches ripple when it's hovered. */
+  a:hover .brand-mark .stitch,
+  a:focus-visible .brand-mark .stitch {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wp-ripple 520ms ease-in-out;
+    animation-delay: calc(var(--i) * 55ms);
+  }
+}
+
+@keyframes wp-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes wp-pop {
+  from {
+    transform: scale(0.55);
+  }
+}
+@keyframes wp-changed {
+  from {
+    box-shadow:
+      inset 0 0 0 2px var(--wp-accent),
+      0 0 6px 1px var(--wp-accent);
+    filter: brightness(1.25);
+  }
+}
+@keyframes wp-row {
+  from {
+    background: color-mix(in srgb, var(--wp-accent) 22%, transparent);
+  }
+}
+@keyframes wp-grow {
+  from {
+    transform: scaleX(0.2);
+    opacity: 0;
+  }
+}
+@keyframes wp-ripple {
+  50% {
+    transform: translateY(-2px) scale(1.12);
+  }
+}

@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 import { defaultDraft, exportFile } from '../src/weave'
-import { openApp, openTool, setField, toast, toolbarButton } from './helpers'
+import { drawdownPicture, openApp, openTool, setField, toast, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -34,12 +34,12 @@ test('save treadles makes a skeleton tie-up for the same cloth', async ({ page }
   d.tieup = d.tieup.map((_, s) => Array.from({ length: 8 }, (_, k) => (k < 4 ? (s - k + 4) % 4 < 2 : s === k - 4)))
   d.treadling = d.treadling.map((_, p) => Array.from({ length: 8 }, (_, k) => k === p % 8))
   await importDraft(page, d)
-  const before = await page.locator('.drawdown').evaluate((el) => el.innerHTML)
+  const before = await drawdownPicture(page)
   await openTool(page, /Transform draft/)
   await page.getByRole('dialog', { name: 'Transform draft' }).getByRole('button', { name: 'Save treadles' }).click()
   await expect(toast(page)).toContainText('Now 4 treadles; 16 picks press two at once')
   await expect(page.getByLabel('Treadles', { exact: true })).toHaveValue('4')
-  expect(await page.locator('.drawdown').evaluate((el) => el.innerHTML)).toBe(before)
+  expect(await drawdownPicture(page)).toBe(before)
 
   await openTool(page, /Transform draft/)
   await page.getByRole('dialog', { name: 'Transform draft' }).getByRole('button', { name: 'Save treadles' }).click()

@@ -31,6 +31,8 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
+    // Still pages, so positions measured mid-animation don't drift; e2e/motion.spec.ts turns motion back on.
+    contextOptions: { reducedMotion: 'reduce' },
     launchOptions,
   },
   projects: [

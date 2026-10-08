@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openApp, openTool, setField, toast, toolbarButton } from './helpers'
+import { drawdownPicture, openApp, openTool, setField, toast, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -38,7 +38,7 @@ test('editing the lift plan sets the shafts for a pick', async ({ page }) => {
 })
 
 test('no tie-up: works as a lift plan for looms without a tie-up', async ({ page }) => {
-  const before = await page.locator('.drawdown').evaluate((el) => el.innerHTML)
+  const before = await drawdownPicture(page)
   await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
   await page.getByLabel('No tie-up (lift plan)').check()
   await expect(toast(page)).toContainText('No tie-up')
@@ -47,7 +47,7 @@ test('no tie-up: works as a lift plan for looms without a tie-up', async ({ page
   await expect(page.getByLabel('Treadles', { exact: true })).toHaveCount(0)
   await expect(page.getByText('4 shafts · lift plan · 32 × 32')).toBeVisible()
   // The same cloth.
-  expect(await page.locator('.drawdown').evaluate((el) => el.innerHTML)).toBe(before)
+  expect(await drawdownPicture(page)).toBe(before)
 
   // More shafts: still a lift plan, one column per shaft.
   await setField(page.getByLabel('Shafts', { exact: true }), '8')

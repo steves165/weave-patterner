@@ -147,10 +147,23 @@ const store = (key: string, value: unknown) => {
 }
 
 /** A card holding one part of the pattern: its size, the knitted preview or the written pattern. */
-function Panel({ title, children, testId }: { title: string; children: ReactNode; testId?: string }) {
+function Panel({
+  title,
+  children,
+  testId,
+  delay = 0,
+}: {
+  title: string
+  children: ReactNode
+  testId?: string
+  /** When it eases in, in ms after the chart. */
+  delay?: number
+}) {
   return (
     <Paper
       variant="outlined"
+      className="wp-enter"
+      style={{ ['--delay' as string]: `${delay}ms` }}
       sx={{ p: 2.5, borderRadius: '20px', bgcolor: 'var(--wp-paper)', boxShadow: '0 1px 2px var(--wp-shadow-soft)' }}
       data-testid={testId}
     >
@@ -300,6 +313,23 @@ export default function KnitApp() {
     return m
   }, [issues, floats])
   const rows = useMemo(() => writtenRows(chart), [chart])
+  // Written rows the last change rewrote, so they flash (not when most of them change, as for a new chart).
+  const lastRows = useRef<Map<number, string> | null>(null)
+  const [rewritten, setRewritten] = useState<Set<number>>(() => new Set())
+  useEffect(() => {
+    const texts = new Map(rows.map((r) => [r.row, `${r.text}${r.stitches}`]))
+    const last = lastRows.current
+    lastRows.current = texts
+    const diff = new Set<number>()
+    if (last && last.size === texts.size) for (const [row, text] of texts) if (last.get(row) !== text) diff.add(row)
+    if (diff.size === 0 || diff.size > texts.size / 2) {
+      setRewritten((d) => (d.size ? new Set() : d))
+      return
+    }
+    setRewritten(diff)
+    const done = setTimeout(() => setRewritten(new Set()), 1250)
+    return () => clearTimeout(done)
+  }, [rows])
   const w = widthOf(chart)
   const h = rowsOf(chart)
   const cast = castOn(chart)
@@ -887,11 +917,12 @@ export default function KnitApp() {
                   boxShadow: '0 1px 2px var(--wp-shadow-soft), 0 12px 32px var(--wp-shadow)',
                   alignSelf: { xs: 'center', xl: 'flex-start' },
                 }}
+                className="wp-enter"
               >
                 <ChartView chart={chart} cell={view.cell} cellH={cellH} flagged={flagged} onPaint={onPaint} />
               </Paper>
               <Stack sx={{ gap: 2, flex: 1, minWidth: 0, width: { xs: '100%', xl: 'auto' } }}>
-                <Panel title="Size" testId="knit-size">
+                <Panel title="Size" testId="knit-size" delay={60}>
                   <Typography variant="body2">
                     Cast on {cast} stitches. The chart is {w} stitches by {h}{' '}
                     {chart.mode === 'round' ? 'rounds' : 'rows'}: about {dims.width.toFixed(1)} ×{' '}
@@ -923,7 +954,7 @@ export default function KnitApp() {
                     </Typography>
                   </Stack>
                 </Panel>
-                <Panel title="Knitted preview">
+                <Panel title="Knitted preview" delay={120}>
                   <FabricPreview chart={chart} repeats={view.repeats} />
                   <FormControlLabel
                     sx={{ display: 'flex', mt: 1.5 }}
@@ -932,7 +963,7 @@ export default function KnitApp() {
                   />
                 </Panel>
                 <Box id="knit-written-pattern" sx={{ scrollMarginTop: 80 }}>
-                  <Panel title="Written pattern" testId="knit-written">
+                  <Panel title="Written pattern" testId="knit-written" delay={180}>
                     <Stack direction="row" sx={{ gap: 1, mb: 1 }}>
                       <Button
                         size="small"
@@ -955,7 +986,7 @@ export default function KnitApp() {
                     </Typography>
                     <ol className="knit-written">
                       {[...rows].reverse().map((r) => (
-                        <li key={r.row} data-row={r.row}>
+                        <li key={r.row} data-row={r.row} className={rewritten.has(r.row) ? 'changed' : undefined}>
                           <strong>
                             {r.label}
                             {r.side ? ` (${r.side})` : ''}:

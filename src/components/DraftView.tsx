@@ -94,6 +94,32 @@ export function DraftView(p: Props) {
     [tracing, draft, drawdown],
   )
   const note = trace && layers ? layerNote(layers, trace.end, trace.pick) : null
+
+  // The drawdown squares the last edit changed, so they can glow for a moment and show what the edit did. A change
+  // to most of the cloth (a new pattern, a resize, another view) isn't shown: it would just flash everything.
+  const shown = useMemo(
+    () =>
+      drawdown.flatMap((row, pick) =>
+        row.map((up, end) => cloth?.[pick][end].color ?? (up ? draft.warpColors[end] : draft.weftColors[pick])),
+      ),
+    [drawdown, cloth, draft.warpColors, draft.weftColors],
+  )
+  const before = useRef<{ shown: string[]; ends: number } | null>(null)
+  const [changed, setChanged] = useState<Set<number>>(() => new Set())
+  useEffect(() => {
+    const last = before.current
+    before.current = { shown, ends }
+    const diff = new Set<number>()
+    if (last && last.ends === ends && last.shown.length === shown.length)
+      for (let i = 0; i < shown.length; i++) if (shown[i] !== last.shown[i]) diff.add(i)
+    if (diff.size === 0 || diff.size > shown.length * 0.4) {
+      setChanged((c) => (c.size ? new Set() : c))
+      return
+    }
+    setChanged(diff)
+    const done = setTimeout(() => setChanged(new Set()), 950)
+    return () => clearTimeout(done)
+  }, [shown, ends])
   useEffect(() => {
     if (!trace) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
@@ -207,7 +233,7 @@ export function DraftView(p: Props) {
                 key={`${pick}-${end}`}
                 data-end={end}
                 data-pick={pick}
-                className={`cell ${warp ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}${trace?.end === end && trace.pick === pick ? ' traced' : ''}`}
+                className={`cell ${warp ? 'warp' : 'weft'}${floatMask?.[pick][end] ? ' float' : ''}${trace?.end === end && trace.pick === pick ? ' traced' : ''}${changed.has(pick * ends + end) ? ' changed' : ''}`}
                 style={{
                   backgroundColor: square ? square.color : warp ? draft.warpColors[end] : draft.weftColors[pick],
                 }}
@@ -336,7 +362,7 @@ export function DraftView(p: Props) {
       <Box sx={{ px: { xs: 1.25, sm: 3 }, py: { xs: 1.25, sm: 4 }, display: 'flex', justifyContent: 'center' }}>
         <Paper
           variant="outlined"
-          className="draft-scroll"
+          className="draft-scroll wp-enter"
           data-scroll={ownScroll ? 'own' : 'page'}
           sx={{
             borderRadius: { xs: '20px', sm: '26px' },

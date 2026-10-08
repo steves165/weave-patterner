@@ -98,7 +98,9 @@
   font-size: 0.875rem;
 }
 .knit-written li {
-  padding: 2px 0;
+  padding: 2px 6px;
+  margin: 0 -6px;
+  border-radius: 6px;
 }
 .print-only {
   display: none;

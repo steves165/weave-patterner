@@ -28,6 +28,7 @@ export function SettingsSidebar({
       sx={{
         flex: 'none',
         width: open ? 340 : 52,
+        transition: (t) => t.transitions.create('width', { duration: t.transitions.duration.short }),
         position: 'sticky',
         right: 0,
         zIndex: 4,

@@ -38,6 +38,7 @@ export function Warning({ children, testId }: { children: ReactNode; testId: str
   return (
     <Stack
       direction="row"
+      className="wp-enter"
       data-testid={testId}
       sx={{
         gap: 1,
