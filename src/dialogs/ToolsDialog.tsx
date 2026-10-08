@@ -17,6 +17,7 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { usePhone } from '../layout'
+import { network, parallel, patternLine } from '../network'
 import {
   advancing,
   applyRangeOp,
@@ -42,7 +43,7 @@ interface Props {
   onCopy: (clip: Clip) => void
 }
 
-type Generator = 'straight' | 'point' | 'advancing' | 'custom'
+type Generator = 'straight' | 'point' | 'advancing' | 'network' | 'parallel' | 'custom'
 
 const NUMBER_FIELD = { size: 'small' as const, type: 'number', sx: { width: 96 } }
 
@@ -58,6 +59,10 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
   const [run, setRun] = useState('4')
   const [advance, setAdvance] = useState('1')
   const [custom, setCustom] = useState('1 2 3 4 3 2')
+  const [line, setLine] = useState('1 8 1')
+  const [initial, setInitial] = useState('4')
+  const [base, setBase] = useState('1-4')
+  const [shift, setShift] = useState('4')
   const [times, setTimes] = useState('1')
   const [count, setCount] = useState('1')
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +87,11 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
         return point(n)
       case 'advancing':
         return advancing(n, Number(run), Number(advance))
+      case 'network':
+        // One value per end of the range: the pattern line stretched over it.
+        return network(patternLine(parseSequence(line), Math.max(1, Number(to) - Number(from) + 1)), n, Number(initial))
+      case 'parallel':
+        return parallel(parseSequence(base), n, Number(shift))
       case 'custom':
         return parseSequence(custom)
     }
@@ -155,6 +165,8 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
               <MenuItem value="straight">Straight draw</MenuItem>
               <MenuItem value="point">Point draw</MenuItem>
               <MenuItem value="advancing">Advancing twill</MenuItem>
+              <MenuItem value="network">Network (pattern line)</MenuItem>
+              <MenuItem value="parallel">Parallel threading</MenuItem>
               <MenuItem value="custom">Custom sequence</MenuItem>
             </TextField>
             {generator === 'advancing' && (
@@ -166,6 +178,37 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
                   value={advance}
                   onChange={(e) => setAdvance(e.target.value)}
                 />
+              </>
+            )}
+            {generator === 'network' && (
+              <>
+                <TextField
+                  size="small"
+                  label="Pattern line points"
+                  value={line}
+                  onChange={(e) => setLine(e.target.value)}
+                  helperText={`Heights 1-${n}, spread over the range`}
+                  sx={{ flex: 1, minWidth: 160 }}
+                />
+                <TextField
+                  {...NUMBER_FIELD}
+                  label="Initial"
+                  value={initial}
+                  onChange={(e) => setInitial(e.target.value)}
+                />
+              </>
+            )}
+            {generator === 'parallel' && (
+              <>
+                <TextField
+                  size="small"
+                  label="Base sequence"
+                  value={base}
+                  onChange={(e) => setBase(e.target.value)}
+                  helperText="Each is followed by a partner"
+                  sx={{ flex: 1, minWidth: 160 }}
+                />
+                <TextField {...NUMBER_FIELD} label="Shift" value={shift} onChange={(e) => setShift(e.target.value)} />
               </>
             )}
             {generator === 'custom' && (

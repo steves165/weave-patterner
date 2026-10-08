@@ -5,7 +5,9 @@ test.beforeEach(async ({ page }) => openApp(page))
 
 test('converts to a lift plan and back without changing the cloth', async ({ page }) => {
   const cloth = () =>
-    page.locator('.drawdown').evaluate((dd) => [...dd.children].map((c) => (c as HTMLElement).style.background).join())
+    page
+      .locator('.drawdown')
+      .evaluate((dd) => [...dd.children].map((c) => (c as HTMLElement).style.backgroundColor).join())
   const before = await cloth()
 
   await openTool(page, /Convert to lift plan/)

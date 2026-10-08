@@ -58,3 +58,46 @@ test('the crosshair follows the mouse and names the end and pick', async ({ page
   await page.mouse.move(5, 5)
   await expect(page.getByTestId('crosshair-label')).toHaveCount(0)
 })
+
+test('fabric view shades the drawdown like threads', async ({ page }) => {
+  const drawdown = page.locator('.drawdown')
+  await expect(drawdown).not.toHaveClass(/fabric/)
+  await page.getByLabel('Fabric view').check()
+  await expect(drawdown).toHaveClass(/fabric/)
+  await expect(drawdown.locator('.cell.warp').first()).toHaveCSS('background-image', /linear-gradient/)
+})
+
+test('sinking shed shows the shafts that go down, and editing it still weaves the same', async ({ page }) => {
+  const tied = page.getByRole('checkbox', { name: 'Treadle 1, shaft 1', exact: true })
+  await expect(tied).toHaveAttribute('aria-checked', 'true')
+  const cloth = () =>
+    page
+      .locator('.drawdown')
+      .evaluate((dd) => [...dd.children].map((c) => (c as HTMLElement).style.backgroundColor).join())
+  const before = await cloth()
+
+  await page.getByRole('switch', { name: 'Sinking shed' }).check()
+  await expect(page.getByRole('group', { name: 'Tie-up (sinking shed)' })).toBeVisible()
+  const sinks = page.getByRole('checkbox', { name: 'Treadle 1, shaft 1 sinks' })
+  await expect(sinks).toHaveAttribute('aria-checked', 'false') // shaft 1 rises on treadle 1, so it doesn't sink
+  await expect(page.getByRole('checkbox', { name: 'Treadle 1, shaft 3 sinks' })).toHaveAttribute('aria-checked', 'true')
+  expect(await cloth()).toBe(before)
+
+  // Marking shaft 1 as sinking on treadle 1 means it no longer rises.
+  await sinks.click()
+  await page.getByRole('switch', { name: 'Sinking shed' }).uncheck()
+  await expect(tied).toHaveAttribute('aria-checked', 'false')
+})
+
+test('threading below puts the threading under the drawdown, shaft 1 nearest the cloth', async ({ page }) => {
+  await page.getByLabel('Threading below').check()
+  await expect(page.locator('.draft')).toHaveAttribute('data-layout', 'threading-below')
+  const threadingTop = (await page.getByRole('group', { name: 'Threading' }).boundingBox())?.y ?? 0
+  const drawdownTop = (await page.getByRole('img', { name: /Woven pattern/ }).boundingBox())?.y ?? 0
+  expect(threadingTop).toBeGreaterThan(drawdownTop)
+  const y = async (name: string) => (await cell(page, name).boundingBox())?.y ?? 0
+  expect(await y('End 1, shaft 1')).toBeLessThan(await y('End 1, shaft 4'))
+  // Editing still targets the named shaft.
+  await cell(page, 'End 2, shaft 4').click()
+  await expect(cell(page, 'End 2, shaft 4')).toHaveAttribute('aria-checked', 'true')
+})

@@ -154,3 +154,28 @@ test('pastes copied threading into the treadling', async ({ page }) => {
   await dialog(page).getByRole('button', { name: 'Paste over' }).click()
   expect((await treadling(page)).slice(0, 4)).toBe('4321')
 })
+
+test('fills with a network threading from a pattern line', async ({ page }) => {
+  await page.getByLabel('Shafts', { exact: true }).fill('8')
+  await page.getByLabel('Shafts', { exact: true }).press('Enter')
+  await sequenceTools(page, 1, 15)
+  await dialog(page).getByLabel('Pattern', { exact: true }).click()
+  await page.getByRole('option', { name: 'Network (pattern line)' }).click()
+  await dialog(page).getByLabel('Pattern line points').fill('1 8 1')
+  await expect(page.getByTestId('sequence-preview')).toHaveText('1 2 3 4 5 6 7 8 5 6 3 4 1 2 3')
+  await dialog(page)
+    .getByRole('button', { name: /Fill ends/ })
+    .click()
+  expect((await threading(page)).slice(0, 15)).toBe('123456785634123')
+})
+
+test('fills with a parallel threading', async ({ page }) => {
+  await page.getByLabel('Shafts', { exact: true }).fill('8')
+  await page.getByLabel('Shafts', { exact: true }).press('Enter')
+  await sequenceTools(page, 1, 8)
+  await dialog(page).getByLabel('Pattern', { exact: true }).click()
+  await page.getByRole('option', { name: 'Parallel threading' }).click()
+  await expect(page.getByTestId('sequence-preview')).toHaveText('1 5 2 6 3 7 4 8')
+  await dialog(page).getByLabel('Shift').fill('9')
+  await expect(page.getByTestId('sequence-preview')).toHaveText('Shift must be 1 to 7')
+})

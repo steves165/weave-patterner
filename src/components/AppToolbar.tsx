@@ -56,6 +56,9 @@ interface Props {
   onTrompAsWrit: () => void
   onCalculator: () => void
   onColors: () => void
+  onCloth: () => void
+  onProfile: () => void
+  onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
   /** The draft is a lift plan (straight tie-up), so offer converting back rather than to a lift plan. */
@@ -218,6 +221,16 @@ export function AppToolbar(p: Props) {
               secondary="Stripe sequences; houndstooth, log cabin and more"
             />
           </MenuItem>
+          <MenuItem onClick={then(p.onCloth)}>
+            <ListItemText
+              primary="Draw the cloth…"
+              secondary="Paint the cloth; get the threading, tie-up and treadling"
+            />
+          </MenuItem>
+          <MenuItem onClick={then(p.onProfile)}>
+            <ListItemText primary="Block profile…" secondary="Design in blocks, substitute turned twill" />
+          </MenuItem>
+          <Divider />
           {p.isLiftplan ? (
             <MenuItem onClick={then(p.onToTreadling)}>
               <ListItemText
@@ -235,6 +248,9 @@ export function AppToolbar(p: Props) {
               <CalculateIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="Warp calculator…" secondary="Warp length, width in reed and yarn per colour" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onYarns)}>
+            <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
           </MenuItem>
         </Menu>
 

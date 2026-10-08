@@ -17,7 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { MAX_THREADS } from '../tools'
 import type { Draft } from '../weave'
@@ -91,6 +91,29 @@ interface Props {
   onNew: () => void
 }
 
+/** On/off display options, in the order shown. */
+const VIEW_SWITCHES: [keyof Omit<ViewOptions, 'ruler'>, string][] = [
+  ['endOneRight', 'End 1 on the right'],
+  ['numbers', 'Numbers in boxes'],
+  ['fabric', 'Fabric view'],
+  ['sinkingShed', 'Sinking shed'],
+  ['threadingBelow', 'Threading below'],
+]
+
+/** A labelled row of settings; the label sits above the controls on narrow screens. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: { xs: 1, sm: 2 }, alignItems: { sm: 'center' } }}>
+      <Typography variant="overline" color="text.secondary" sx={{ width: 80, flexShrink: 0, lineHeight: 1.5 }}>
+        {title}
+      </Typography>
+      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+        {children}
+      </Stack>
+    </Stack>
+  )
+}
+
 /** The fold-away settings above the draft. */
 export function SettingsPanel(p: Props) {
   const [fillWarp, setFillWarp] = useState('#8b0a0a')
@@ -109,120 +132,125 @@ export function SettingsPanel(p: Props) {
         </Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-          {(Object.keys(LIMITS) as Dim[]).map((dim) => (
+        <Stack sx={{ gap: 1.5 }} divider={<Divider flexItem />}>
+          <Section title="Size">
+            {(Object.keys(LIMITS) as Dim[]).map((dim) => (
+              <CommitField
+                key={dim}
+                label={DIM_LABEL[dim]}
+                value={draft[dim]}
+                min={LIMITS[dim][0]}
+                max={LIMITS[dim][1]}
+                onCommit={(n) => p.onResize(dim, n)}
+              />
+            ))}
+          </Section>
+
+          <Section title="Colours">
+            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+              <input
+                type="color"
+                className="picker"
+                aria-label="Warp colour for all ends"
+                value={fillWarp}
+                onChange={(e) => setFillWarp(e.target.value)}
+              />
+              <Button size="small" variant="outlined" onClick={() => p.onFillWarp(fillWarp)}>
+                Set all warp
+              </Button>
+            </Stack>
+            <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+              <input
+                type="color"
+                className="picker"
+                aria-label="Weft colour for all picks"
+                value={fillWeft}
+                onChange={(e) => setFillWeft(e.target.value)}
+              />
+              <Button size="small" variant="outlined" onClick={() => p.onFillWeft(fillWeft)}>
+                Set all weft
+              </Button>
+            </Stack>
+          </Section>
+
+          <Section title="View">
+            <Box sx={{ width: 170, px: 1 }}>
+              <Typography variant="caption" color="text.secondary" id="cell-size-label">
+                Cell size
+              </Typography>
+              <Slider
+                size="small"
+                min={CELL_MIN}
+                max={CELL_MAX}
+                value={p.cellSize}
+                valueLabelDisplay="auto"
+                aria-labelledby="cell-size-label"
+                onChange={(_, v) => p.onCellSize(v as number)}
+              />
+            </Box>
             <CommitField
-              key={dim}
-              label={DIM_LABEL[dim]}
-              value={draft[dim]}
-              min={LIMITS[dim][0]}
-              max={LIMITS[dim][1]}
-              onCommit={(n) => p.onResize(dim, n)}
+              label="Ruler every"
+              value={p.view.ruler}
+              min={0}
+              max={50}
+              onCommit={(n) => p.onView({ ruler: n })}
+              width={110}
             />
-          ))}
-          <Box sx={{ width: 180, px: 1 }}>
-            <Typography variant="caption" color="text.secondary" id="cell-size-label">
-              Cell size
-            </Typography>
-            <Slider
-              size="small"
-              min={CELL_MIN}
-              max={CELL_MAX}
-              value={p.cellSize}
-              valueLabelDisplay="auto"
-              aria-labelledby="cell-size-label"
-              onChange={(_, v) => p.onCellSize(v as number)}
-            />
-          </Box>
-          <Divider orientation="vertical" flexItem />
-          <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-            <input
-              type="color"
-              className="picker"
-              aria-label="Warp colour for all ends"
-              value={fillWarp}
-              onChange={(e) => setFillWarp(e.target.value)}
-            />
-            <Button size="small" variant="outlined" onClick={() => p.onFillWarp(fillWarp)}>
-              Set all warp
-            </Button>
-          </Stack>
-          <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-            <input
-              type="color"
-              className="picker"
-              aria-label="Weft colour for all picks"
-              value={fillWeft}
-              onChange={(e) => setFillWeft(e.target.value)}
-            />
-            <Button size="small" variant="outlined" onClick={() => p.onFillWeft(fillWeft)}>
-              Set all weft
-            </Button>
-          </Stack>
-          <Divider orientation="vertical" flexItem />
-          <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+            {VIEW_SWITCHES.map(([key, label]) => (
+              <FormControlLabel
+                key={key}
+                control={<Switch checked={p.view[key]} onChange={(e) => p.onView({ [key]: e.target.checked })} />}
+                label={label}
+              />
+            ))}
+          </Section>
+
+          <Section title="Floats">
             <FormControlLabel
               control={<Switch checked={p.highlightFloats} onChange={(e) => p.onHighlightFloats(e.target.checked)} />}
               label="Highlight floats longer than"
             />
             <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} width={80} />
-          </Stack>
-          <Typography
-            variant="body2"
-            color={longest > p.floatLimit ? 'warning.main' : 'text.secondary'}
-            data-testid="float-stats"
-          >
-            Longest floats: warp {p.floats.warp}, weft {p.floats.weft}
-          </Typography>
-          <Divider orientation="vertical" flexItem />
-          <FormControlLabel
-            control={
-              <Switch checked={p.view.endOneRight} onChange={(e) => p.onView({ endOneRight: e.target.checked })} />
-            }
-            label="End 1 on the right"
-          />
-          <FormControlLabel
-            control={<Switch checked={p.view.numbers} onChange={(e) => p.onView({ numbers: e.target.checked })} />}
-            label="Numbers in boxes"
-          />
-          <CommitField
-            label="Ruler every"
-            value={p.view.ruler}
-            min={0}
-            max={50}
-            onCommit={(n) => p.onView({ ruler: n })}
-            width={110}
-          />
-          <Divider orientation="vertical" flexItem />
-          <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
-            <Button size="small" startIcon={<ClearAllIcon />} onClick={p.onClear}>
-              Clear grids
-            </Button>
-          </Tooltip>
-          <Tooltip
-            title={
-              p.name
-                ? `Undo all changes since "${p.name}" was last saved or loaded`
-                : 'Undo all changes since starting this pattern'
-            }
-            describeChild
-          >
-            <span>
-              <Button size="small" startIcon={<RestartAltIcon />} disabled={!p.canReset} onClick={p.onReset}>
-                Reset
+            <Typography
+              variant="body2"
+              color={longest > p.floatLimit ? 'warning.main' : 'text.secondary'}
+              data-testid="float-stats"
+            >
+              Longest floats: warp {p.floats.warp}, weft {p.floats.weft}
+            </Typography>
+          </Section>
+
+          <Section title="Pattern">
+            <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
+              <Button size="small" startIcon={<ClearAllIcon />} onClick={p.onClear}>
+                Clear grids
               </Button>
-            </span>
-          </Tooltip>
-          <Tooltip title="Start a new pattern from the default twill" describeChild>
-            <Button size="small" startIcon={<NoteAddIcon />} onClick={p.onNew}>
-              New
-            </Button>
-          </Tooltip>
+            </Tooltip>
+            <Tooltip
+              title={
+                p.name
+                  ? `Undo all changes since "${p.name}" was last saved or loaded`
+                  : 'Undo all changes since starting this pattern'
+              }
+              describeChild
+            >
+              <span>
+                <Button size="small" startIcon={<RestartAltIcon />} disabled={!p.canReset} onClick={p.onReset}>
+                  Reset
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title="Start a new pattern from the default twill" describeChild>
+              <Button size="small" startIcon={<NoteAddIcon />} onClick={p.onNew}>
+                New
+              </Button>
+            </Tooltip>
+          </Section>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
           {p.touch
-            ? 'Tap boxes on the threading (top), tie-up (top right) and treadling (right) to toggle them, and swipe to move around the pattern. Turn on the brush in the toolbar to paint by dragging. Tap a colour swatch to change that warp end or weft pick.'
-            : 'Click or drag on the threading (top), tie-up (top right) and treadling (right); arrow keys and Space work too. Click a colour swatch to change that warp end or weft pick. Ctrl+Z undoes, Ctrl+Shift+Z redoes.'}
+            ? 'Tap boxes on the threading, tie-up and treadling to toggle them, and swipe to move around the pattern. Turn on the brush in the toolbar to paint by dragging. Tap a colour swatch to change that warp end or weft pick.'
+            : 'Click or drag on the threading, tie-up and treadling; arrow keys and Space work too. Click a colour swatch to change that warp end or weft pick. Ctrl+Z undoes, Ctrl+Shift+Z redoes.'}
         </Typography>
       </AccordionDetails>
     </Accordion>

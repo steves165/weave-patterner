@@ -28,10 +28,14 @@ export interface CalcInput {
   /** Colour of each end / pick in one repeat of the draft; cycled across the warp and weft. */
   warpColors: string[]
   weftColors: string[]
+  /** Optional per-colour yarn (from the yarn library) whose grist and price override the defaults above. */
+  yarnFor?: (color: string) => { name: string; grist?: number; price?: number } | undefined
 }
 
 export interface YarnAmount {
   color: string
+  /** Library yarn name for this colour, if any. */
+  yarn?: string
   /** Metres or yards. */
   length: number
   /** kg or lb, when a grist is given. */
@@ -106,9 +110,13 @@ export function calculate(input: CalcInput): CalcResult {
 
   const withWeight = (color: string, length: number): YarnAmount => {
     const amount: YarnAmount = { color, length }
-    if (input.yarnPerWeight && input.yarnPerWeight > 0) {
-      amount.weight = length / input.yarnPerWeight
-      if (input.pricePerWeight && input.pricePerWeight > 0) amount.cost = amount.weight * input.pricePerWeight
+    const yarn = input.yarnFor?.(color)
+    if (yarn) amount.yarn = yarn.name
+    const grist = yarn?.grist ?? input.yarnPerWeight
+    const price = yarn?.price ?? input.pricePerWeight
+    if (grist && grist > 0) {
+      amount.weight = length / grist
+      if (price && price > 0) amount.cost = amount.weight * price
     }
     return amount
   }

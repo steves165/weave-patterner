@@ -24,7 +24,12 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - **Lift plans**: convert to a lift plan for dobby looms and back to a tie-up and treadling
 - **Colours**: stripe sequences for warp and weft; colour-and-weave presets (houndstooth, log cabin, gingham,
   broken-twill check)
-- **Display options**: end 1 on the right, numbers in boxes, rulers every N threads, hover crosshair
+- **Display options**: end 1 on the right, numbers in boxes, rulers every N threads, hover crosshair, fabric
+  (thread) view, sinking-shed tie-up, threading below the drawdown
+- **Network and parallel threadings** from a pattern line or base sequence
+- **Design by drawing the cloth**: works out the smallest threading, tie-up and treadling for a drawn cloth
+- **Block profiles**: design in blocks and substitute turned twill (3/1 against 1/3)
+- **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost
 - Save up to 200 patterns in the browser; export/import `.weave.json` and WIF (including lift plans for dobby looms);

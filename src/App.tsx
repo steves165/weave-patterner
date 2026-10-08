@@ -7,24 +7,38 @@ import { Footer } from './components/Footer'
 import { PrintSheet } from './components/PrintSheet'
 import { CELL_DEFAULT, SettingsPanel } from './components/SettingsPanel'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
+import { ClothDialog } from './dialogs/ClothDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
+import { ProfileDialog } from './dialogs/ProfileDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
+import { YarnsDialog } from './dialogs/YarnsDialog'
 import { download, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
 import { useSharedPatternLink } from './hooks/useSharedPatternLink'
 import { useViewOptions } from './hooks/useViewOptions'
+import { useYarns } from './hooks/useYarns'
 import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useTouch } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { type Clip, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
 
-type DialogName = 'save' | 'load' | 'import' | 'tools' | 'calculator' | 'weave' | 'colors'
+type DialogName =
+  | 'save'
+  | 'load'
+  | 'import'
+  | 'tools'
+  | 'calculator'
+  | 'weave'
+  | 'colors'
+  | 'cloth'
+  | 'profile'
+  | 'yarns'
 
 export default function App() {
   const phone = usePhone()
@@ -40,6 +54,7 @@ export default function App() {
   const [dialog, setDialog] = useState<DialogName | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [view, setView] = useViewOptions()
+  const [yarns, setYarns] = useYarns()
   // Ends or picks copied in the sequence tools, kept until replaced.
   const [clip, setClip] = useState<Clip | null>(null)
   // Whether the next print includes the written-instructions page.
@@ -52,6 +67,13 @@ export default function App() {
     [highlightFloats, draft, floatLimit, drawdown],
   )
 
+  /** Applies a change made in a dialog as one undoable step, then closes it. */
+  const applyFromDialog = (d: Draft, message: string) => {
+    update(() => d)
+    setDialog(null)
+    setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
+  }
+
   /** Opens a different pattern as a new document. */
   const open = (d: Draft, n: string | null, message?: string) => {
     reset(d)
@@ -60,9 +82,6 @@ export default function App() {
     if (message) setToast(message)
   }
   useSharedPatternLink((n, d) => open(d, n, `Opened "${n}" from link — use Save to keep it`), setToast)
-
-  // Shaft 1 is drawn at the bottom of the threading and tie-up.
-  const shaftAt = (row: number) => draft.shafts - 1 - row
 
   return (
     <>
@@ -131,6 +150,9 @@ export default function App() {
           }}
           onCalculator={() => setDialog('calculator')}
           onColors={() => setDialog('colors')}
+          onCloth={() => setDialog('cloth')}
+          onProfile={() => setDialog('profile')}
+          onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
             update(toLiftplan)
@@ -185,22 +207,21 @@ export default function App() {
             cellSize={cellSize}
             view={view}
             touchPaint={touchPaint}
-            onThreading={(row, end, value, continuing) =>
+            onThreading={(shaft, end, value, continuing) =>
               update(
                 (d) => {
                   const threading = [...d.threading]
-                  const s = shaftAt(row)
-                  threading[end] = value ? s : threading[end] === s ? -1 : threading[end]
+                  threading[end] = value ? shaft : threading[end] === shaft ? -1 : threading[end]
                   return { ...d, threading }
                 },
                 { merge: continuing },
               )
             }
-            onTieup={(row, t, value, continuing) =>
+            onTieup={(shaft, t, value, continuing) =>
               update(
                 (d) => ({
                   ...d,
-                  tieup: d.tieup.map((r, s) => (s === shaftAt(row) ? r.map((v, i) => (i === t ? value : v)) : r)),
+                  tieup: d.tieup.map((r, s) => (s === shaft ? r.map((v, i) => (i === t ? value : v)) : r)),
                 }),
                 { merge: continuing },
               )
@@ -250,11 +271,7 @@ export default function App() {
           open={dialog === 'tools'}
           draft={draft}
           onClose={() => setDialog(null)}
-          onApply={(d, message) => {
-            update(() => d)
-            setDialog(null)
-            setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
-          }}
+          onApply={applyFromDialog}
           clip={clip}
           onCopy={setClip}
         />
@@ -262,13 +279,28 @@ export default function App() {
           open={dialog === 'colors'}
           draft={draft}
           onClose={() => setDialog(null)}
-          onApply={(d, message) => {
-            update(() => d)
-            setDialog(null)
-            setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
-          }}
+          onApply={applyFromDialog}
         />
-        <CalculatorDialog open={dialog === 'calculator'} draft={draft} onClose={() => setDialog(null)} />
+        <CalculatorDialog open={dialog === 'calculator'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
+        <YarnsDialog
+          open={dialog === 'yarns'}
+          draft={draft}
+          yarns={yarns}
+          onChange={setYarns}
+          onClose={() => setDialog(null)}
+        />
+        <ClothDialog
+          open={dialog === 'cloth'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={applyFromDialog}
+        />
+        <ProfileDialog
+          open={dialog === 'profile'}
+          draft={draft}
+          onClose={() => setDialog(null)}
+          onApply={applyFromDialog}
+        />
         <WeavingMode
           open={dialog === 'weave'}
           name={name ?? 'Unsaved pattern'}

@@ -63,7 +63,7 @@ export function Crosshair({ container, drawdown, cellSize, ends, picks, endAt }:
         <div
           className="crosshair"
           data-testid="crosshair-column"
-          style={{ left, top: 0, width: cellSize, height: dd.offsetTop + dd.offsetHeight }}
+          style={{ left, top: 0, width: cellSize, height: container.current?.scrollHeight ?? 0 }}
         />
       )}
       {spot.row !== null && (

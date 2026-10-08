@@ -22,14 +22,17 @@ import { useEffect, useState } from 'react'
 import { type CalcInput, calculate, defaultCalcInput, type Units, type YarnAmount } from '../calculator'
 import { usePhone } from '../layout'
 import type { Draft } from '../weave'
+import { type Yarn, yarnFor } from '../yarns'
 
 interface Props {
   open: boolean
   draft: Draft
+  /** The yarn library: a yarn's grist and price apply to threads of its colour. */
+  yarns: Yarn[]
   onClose: () => void
 }
 
-type Fields = Omit<CalcInput, 'units' | 'warpColors' | 'weftColors'>
+type Fields = Omit<CalcInput, 'units' | 'warpColors' | 'weftColors' | 'yarnFor'>
 type FieldKey = keyof Fields
 /** Text being typed, so partially entered numbers aren't clobbered. */
 type Texts = Record<FieldKey, string>
@@ -72,7 +75,7 @@ function loadSaved(): { units: Units; texts: Partial<Texts> } | null {
 const fmt = (n: number, digits = 1) => n.toLocaleString(undefined, { maximumFractionDigits: digits })
 
 /** Works out warp length, width in the reed and yarn needed per colour, with optional weight and cost. */
-export function CalculatorDialog({ open, draft, onClose }: Props) {
+export function CalculatorDialog({ open, draft, yarns, onClose }: Props) {
   const phone = usePhone()
   const [units, setUnits] = useState<Units>(() => loadSaved()?.units ?? 'metric')
   const [texts, setTexts] = useState<Texts>(() => ({
@@ -117,6 +120,7 @@ export function CalculatorDialog({ open, draft, onClose }: Props) {
     pricePerWeight: optional(texts.pricePerWeight),
     warpColors: draft.warpColors,
     weftColors: draft.weftColors,
+    yarnFor: (c) => yarnFor(yarns, c),
   }
   let result: ReturnType<typeof calculate> | null = null
   let error: string | null = null
@@ -125,6 +129,11 @@ export function CalculatorDialog({ open, draft, onClose }: Props) {
   } catch (e) {
     error = e instanceof Error ? e.message : String(e)
   }
+
+  // Show weight/cost columns when any colour has one; a dash marks colours (and totals) that can't be worked out.
+  const amounts = result ? [...result.warp, ...result.weft] : []
+  const showWeight = amounts.some((a) => a.weight !== undefined)
+  const showCost = amounts.some((a) => a.cost !== undefined)
 
   const field = (k: FieldKey) => (
     <TextField
@@ -146,18 +155,16 @@ export function CalculatorDialog({ open, draft, onClose }: Props) {
         <TableCell>
           <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
             <Box sx={{ width: 16, height: 16, bgcolor: r.color, border: 1, borderColor: 'divider' }} />
-            {r.color}
+            {r.yarn ? `${r.yarn} (${r.color})` : r.color}
           </Stack>
         </TableCell>
         <TableCell align="right">
           {fmt(r.length, 0)} {long}
         </TableCell>
-        {result?.totalWeight !== undefined && (
-          <TableCell align="right">
-            {fmt(r.weight ?? 0, 2)} {weightUnit}
-          </TableCell>
+        {showWeight && (
+          <TableCell align="right">{r.weight === undefined ? '—' : `${fmt(r.weight, 2)} ${weightUnit}`}</TableCell>
         )}
-        {result?.totalCost !== undefined && <TableCell align="right">{fmt(r.cost ?? 0, 2)}</TableCell>}
+        {showCost && <TableCell align="right">{r.cost === undefined ? '—' : fmt(r.cost, 2)}</TableCell>}
       </TableRow>
     ))
 
@@ -216,8 +223,8 @@ export function CalculatorDialog({ open, draft, onClose }: Props) {
                       <TableCell />
                       <TableCell>Colour</TableCell>
                       <TableCell align="right">Length</TableCell>
-                      {result.totalWeight !== undefined && <TableCell align="right">Weight</TableCell>}
-                      {result.totalCost !== undefined && <TableCell align="right">Cost</TableCell>}
+                      {showWeight && <TableCell align="right">Weight</TableCell>}
+                      {showCost && <TableCell align="right">Cost</TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -233,16 +240,16 @@ export function CalculatorDialog({ open, draft, onClose }: Props) {
                           {fmt(result.totalLength, 0)} {long}
                         </strong>
                       </TableCell>
-                      {result.totalWeight !== undefined && (
+                      {showWeight && (
                         <TableCell align="right">
                           <strong>
-                            {fmt(result.totalWeight, 2)} {weightUnit}
+                            {result.totalWeight === undefined ? '—' : `${fmt(result.totalWeight, 2)} ${weightUnit}`}
                           </strong>
                         </TableCell>
                       )}
-                      {result.totalCost !== undefined && (
+                      {showCost && (
                         <TableCell align="right">
-                          <strong>{fmt(result.totalCost, 2)}</strong>
+                          <strong>{result.totalCost === undefined ? '—' : fmt(result.totalCost, 2)}</strong>
                         </TableCell>
                       )}
                     </TableRow>
