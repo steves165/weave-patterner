@@ -362,3 +362,17 @@ test('shows the knitting made up in 3D as a sweater, hat, coat or skirt', { tag:
   await page.getByRole('button', { name: 'Close 3D preview' }).click()
   await expect(view).toHaveCount(0)
 })
+
+test('imports a written pattern as a chart', async ({ page }) => {
+  await page.getByRole('button', { name: 'Import' }).click()
+  await page.getByRole('menuitem', { name: /Written pattern/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Import a written pattern' })
+  await dialog
+    .getByLabel('Written pattern')
+    .fill('Cast on 12 stitches.\nRow 1 (RS): k1, *yo, k2tog; rep from * to last st, k1.\nRow 2 (WS): purl.')
+  await expect(dialog.getByTestId('import-result')).toHaveText('2 rows, 12 stitches wide.')
+  await dialog.getByRole('button', { name: 'Make the chart' }).click()
+  await expect(page.getByLabel('Stitches', { exact: true })).toHaveValue('12')
+  expect(await writtenRow(page, 1)).toMatch(/^k1, \*yo, k2tog; rep from \* to last st, k1\./)
+  expect(await writtenRow(page, 2)).toMatch(/^p12\./)
+})

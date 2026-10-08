@@ -86,6 +86,7 @@ import {
   widthOf,
 } from './chart'
 import { type Clip, clear, copy, paste, type Rect } from './edit'
+import { ImportWrittenDialog } from './ImportWrittenDialog'
 import { castOnText, writtenPanels, writtenPattern, writtenRows } from './instructions'
 import { areasText, intarsia } from './intarsia'
 import { KnitLogo } from './KnitLogo'
@@ -249,7 +250,10 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | '3d' | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | '3d' | 'written' | null>(
+    null,
+  )
+  const [importAnchor, setImportAnchor] = useState<HTMLElement | null>(null)
   // Panels saved to use again, and the panel the Panels dialog opens at.
   const [panelStore, setPanelStoreState] = useState<SavedPanel[]>(loadSavedPanels)
   const setPanelStore = (next: SavedPanel[]) => {
@@ -677,6 +681,12 @@ export default function KnitApp() {
       </ListItemIcon>
       Import a chart file…
     </MenuItem>,
+    <MenuItem key="written" onClick={closeThen(() => setDialog('written'))}>
+      <ListItemIcon>
+        <NotesIcon fontSize="small" />
+      </ListItemIcon>
+      Import a written pattern…
+    </MenuItem>,
     <MenuItem key="print" onClick={closeThen(print)}>
       <ListItemIcon>
         <PrintIcon fontSize="small" />
@@ -771,7 +781,7 @@ export default function KnitApp() {
                 compact={fileCompact}
                 icon={<FileUploadIcon />}
                 label="Import"
-                onClick={() => fileInput.current?.click()}
+                onClick={(e) => setImportAnchor(e.currentTarget)}
               />
               <Action
                 compact={fileCompact}
@@ -864,6 +874,33 @@ export default function KnitApp() {
           <Knit3DDialog open name={name.trim() || 'Knitting'} chart={chart} onClose={() => setDialog(null)} />
         </Suspense>
       )}
+      <Menu anchorEl={importAnchor} open={importAnchor !== null} onClose={() => setImportAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setImportAnchor(null)
+            fileInput.current?.click()
+          }}
+        >
+          <ListItemText primary="Chart file…" secondary="A .knit.json file exported from Knit Patterner" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setImportAnchor(null)
+            setDialog('written')
+          }}
+        >
+          <ListItemText primary="Written pattern…" secondary="Paste the rows and get the chart" />
+        </MenuItem>
+      </Menu>
+      <ImportWrittenDialog
+        open={dialog === 'written'}
+        onClose={() => setDialog(null)}
+        onImport={(next, n) => {
+          replace({ ...next, gauge: chart.gauge, floatLimit: chart.floatLimit }, 'Imported pattern')
+          setDialog(null)
+          setToast(`Made a chart from ${n} written ${next.mode === 'round' ? 'rounds' : 'rows'}`)
+        }}
+      />
       <MosaicDialog
         open={dialog === 'mosaic'}
         chart={chart}
