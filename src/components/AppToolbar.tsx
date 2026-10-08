@@ -234,7 +234,10 @@ export function AppToolbar(p: Props) {
             />
           </MenuItem>
           <MenuItem onClick={then(p.onProfile)}>
-            <ListItemText primary="Block profile…" secondary="Design in blocks, substitute turned twill" />
+            <ListItemText
+              primary="Block profile…"
+              secondary="Design in blocks: overshot, summer and winter, lace, crackle, twill…"
+            />
           </MenuItem>
           <MenuItem onClick={then(p.onDoubleCloth)}>
             <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />

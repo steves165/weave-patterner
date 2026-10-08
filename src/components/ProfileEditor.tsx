@@ -36,14 +36,20 @@ interface Props {
   maxBlocks: number
   /** What a filled profile tie-up square means, e.g. "pattern" or "layer A on top". */
   filledMeans: string
+  /**
+   * For block weaves where each block treadle weaves its own block: no tie-up to edit, and as many block treadles
+   * as blocks. `fixedNote` explains it.
+   */
+  fixedNote?: string
 }
 
 /** Edits a block profile: block counts, the profile tie-up, and the profile threading and treadling. */
-export function ProfileEditor({ value, onChange, maxBlocks, filledMeans }: Props) {
+export function ProfileEditor({ value, onChange, maxBlocks, filledMeans, fixedNote }: Props) {
   const { blocks, blockTreadles, tieup } = value
   const setCount = (kind: 'blocks' | 'blockTreadles', text: string) => {
     const n = Math.max(1, Math.min(maxBlocks, Math.round(Number(text)) || 1))
     const next = { ...value, [kind]: n }
+    if (fixedNote) next.blockTreadles = next.blocks
     onChange({ ...next, tieup: resizeGrid(tieup, next.blocks, next.blockTreadles) })
   }
 
@@ -59,36 +65,44 @@ export function ProfileEditor({ value, onChange, maxBlocks, filledMeans }: Props
           slotProps={{ htmlInput: { min: 1, max: maxBlocks } }}
           sx={{ width: 110 }}
         />
-        <TextField
-          size="small"
-          type="number"
-          label="Block treadles"
-          value={blockTreadles}
-          onChange={(e) => setCount('blockTreadles', e.target.value)}
-          slotProps={{ htmlInput: { min: 1, max: maxBlocks } }}
-          sx={{ width: 130 }}
-        />
-      </Stack>
-      <Box>
-        <Typography variant="body2" sx={{ mb: 0.5 }}>
-          Profile tie-up (rows: blocks, columns: block treadles; filled = {filledMeans})
-        </Typography>
-        <Box style={{ ['--cell' as string]: '22px' }}>
-          <Grid
-            rows={blocks}
-            cols={blockTreadles}
-            isOn={(b, t) => tieup[b][t]}
-            onPaint={(b, t, v) =>
-              onChange({
-                ...value,
-                tieup: tieup.map((row, i) => (i === b ? row.map((x, j) => (j === t ? v : x)) : row)),
-              })
-            }
-            label="Profile tie-up"
-            cellLabel={(b, t) => `Block ${b + 1}, block treadle ${t + 1}`}
+        {!fixedNote && (
+          <TextField
+            size="small"
+            type="number"
+            label="Block treadles"
+            value={blockTreadles}
+            onChange={(e) => setCount('blockTreadles', e.target.value)}
+            slotProps={{ htmlInput: { min: 1, max: maxBlocks } }}
+            sx={{ width: 130 }}
           />
+        )}
+      </Stack>
+      {fixedNote ? (
+        <Typography variant="body2" color="text.secondary" data-testid="fixed-tieup">
+          {fixedNote}
+        </Typography>
+      ) : (
+        <Box>
+          <Typography variant="body2" sx={{ mb: 0.5 }}>
+            Profile tie-up (rows: blocks, columns: block treadles; filled = {filledMeans})
+          </Typography>
+          <Box style={{ ['--cell' as string]: '22px' }}>
+            <Grid
+              rows={blocks}
+              cols={blockTreadles}
+              isOn={(b, t) => tieup[b][t]}
+              onPaint={(b, t, v) =>
+                onChange({
+                  ...value,
+                  tieup: tieup.map((row, i) => (i === b ? row.map((x, j) => (j === t ? v : x)) : row)),
+                })
+              }
+              label="Profile tie-up"
+              cellLabel={(b, t) => `Block ${b + 1}, block treadle ${t + 1}`}
+            />
+          </Box>
         </Box>
-      </Box>
+      )}
       <TextField
         size="small"
         label="Profile threading (block per unit)"

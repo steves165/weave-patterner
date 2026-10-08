@@ -35,7 +35,8 @@ npm run lint      # Biome lint + format check (npm run format to fix)
   (thread) view, sinking-shed tie-up, threading below the drawdown
 - **Network and parallel threadings** from a pattern line or base sequence
 - **Design by drawing the cloth**: works out the smallest threading, tie-up and treadling for a drawn cloth
-- **Block profiles**: design in blocks and substitute turned twill (3/1 against 1/3)
+- **Block profiles**: design in blocks and substitute turned twill, overshot, crackle, summer and winter, Bronson
+  lace or M's and O's
 - **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost

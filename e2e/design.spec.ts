@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { openApp, openTool, toast, toolbarButton } from './helpers'
+import { openApp, openTool, threading, toast, toolbarButton } from './helpers'
 
 const field = (page: Page, name: string) => page.getByLabel(name, { exact: true })
 
@@ -42,7 +42,7 @@ test.describe('draw the cloth', () => {
 })
 
 test.describe('block profile', () => {
-  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile: turned twill' })
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile' })
 
   test('substitutes turned twill into a two-block profile', async ({ page }) => {
     await openTool(page, /Block profile/)
@@ -67,6 +67,54 @@ test.describe('block profile', () => {
       .fill('1 2 3 4')
     await expect(dialog(page).getByRole('alert')).toHaveText("Block 4 isn't in the profile tie-up")
     await expect(dialog(page).getByRole('button', { name: 'Create draft' })).toBeDisabled()
+  })
+})
+
+test.describe('block structures', () => {
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile' })
+  async function choose(page: Page, structure: string) {
+    await dialog(page).getByRole('combobox', { name: 'Structure' }).click()
+    await page.getByRole('option', { name: structure, exact: true }).click()
+  }
+
+  test('each structure turns the same profile into its own draft', async ({ page }) => {
+    await openTool(page, /Block profile/)
+    const result = dialog(page).getByTestId('profile-result')
+    for (const [structure, makes] of [
+      ['Overshot', 'Makes 4 shafts, 4 treadles, 28 ends × 28 picks'],
+      ['Crackle', 'Makes 4 shafts, 4 treadles, 28 ends × 28 picks'],
+      ['Summer and winter', 'Makes 4 shafts, 6 treadles, 28 ends × 28 picks'],
+      ['Bronson lace', 'Makes 4 shafts, 4 treadles, 42 ends × 42 picks'],
+      ["M's and O's", 'Makes 4 shafts, 4 treadles, 56 ends × 28 picks'],
+    ]) {
+      await choose(page, structure)
+      await expect(result).toHaveText(makes)
+    }
+  })
+
+  test('block weaves have no profile tie-up to edit and cap the number of blocks', async ({ page }) => {
+    await openTool(page, /Block profile/)
+    await choose(page, 'Overshot')
+    await expect(dialog(page).getByTestId('fixed-tieup')).toContainText('each block treadle weaves its own block')
+    await expect(dialog(page).getByRole('group', { name: 'Profile tie-up' })).toHaveCount(0)
+    await dialog(page).getByLabel('Blocks', { exact: true }).fill('6')
+    await expect(dialog(page).getByLabel('Blocks', { exact: true })).toHaveValue('4')
+    await choose(page, "M's and O's")
+    await expect(dialog(page).getByLabel('Blocks', { exact: true })).toHaveValue('2')
+    await expect(dialog(page).getByLabel('Tabby weft')).toHaveCount(0)
+    await choose(page, 'Summer and winter')
+    await expect(dialog(page).getByRole('group', { name: 'Profile tie-up' })).toBeVisible()
+  })
+
+  test('creates an overshot draft in the chosen colours, with tabby between pattern picks', async ({ page }) => {
+    await openTool(page, /Block profile/)
+    await choose(page, 'Overshot')
+    await dialog(page).getByLabel('Pattern weft').fill('#aa0000')
+    await dialog(page).getByRole('button', { name: 'Create draft' }).click()
+    await expect(toast(page)).toContainText('Overshot draft from a 2-block profile')
+    await expect(page.getByLabel('Weft 1', { exact: true })).toHaveValue('#aa0000')
+    await expect(page.getByLabel('Weft 2', { exact: true })).toHaveValue('#f5f0e6')
+    expect(await threading(page)).toMatch(/^12121212/)
   })
 })
 
