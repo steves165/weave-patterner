@@ -47,6 +47,7 @@ import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
+import { FIELD_GRID, SWITCH_ROW } from '../components/SettingsPanel'
 import { StatusFrame, Warning } from '../components/StatusBar'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { LoadDialog } from '../dialogs/LoadDialog'
@@ -164,7 +165,8 @@ function Panel({ title, children, testId }: { title: string; children: ReactNode
 /** A heading and its settings, in the sidebar or sheet. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Stack component="section" sx={{ gap: 1.5 }}>
+    // Room above each outlined field for its floating label.
+    <Stack component="section" sx={{ gap: 2 }}>
       <Typography variant="h2" sx={{ fontSize: 17, m: 0 }}>
         {title}
       </Typography>
@@ -393,7 +395,7 @@ export default function KnitApp() {
     <Stack sx={{ gap: 2.5 }} divider={<Divider flexItem />}>
       <Section title="Chart">
         <TextField size="small" label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+        <Box sx={FIELD_GRID}>
           <TextField
             size="small"
             type="number"
@@ -417,14 +419,14 @@ export default function KnitApp() {
           value={chart.mode}
           onChange={(_, mode) => mode && update({ ...chart, mode })}
           aria-label="Knitted"
-          sx={{ alignSelf: 'flex-start' }}
+          sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
         >
           <ToggleButton value="flat">Flat</ToggleButton>
           <ToggleButton value="round">In the round</ToggleButton>
         </ToggleButtonGroup>
       </Section>
       <Section title="Gauge">
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+        <Box sx={FIELD_GRID}>
           <TextField
             size="small"
             type="number"
@@ -451,7 +453,7 @@ export default function KnitApp() {
           labelPlacement="start"
           control={<Switch checked={view.toGauge} onChange={(e) => setView({ toGauge: e.target.checked })} />}
           label="Squares to gauge"
-          sx={{ mx: 0, minHeight: 40, justifyContent: 'space-between', gap: 1.5 }}
+          sx={SWITCH_ROW}
         />
       </Section>
       <Section title="Colourwork">

@@ -171,18 +171,20 @@ export function SettingsSheet(props: {
             pb: 1,
             position: 'sticky',
             top: 0,
-            zIndex: 1,
+            zIndex: 2,
             bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider',
           }}
         >
-          <Typography variant="h2" sx={{ fontSize: 19 }}>
-            Settings
+          <Typography variant="h2" sx={{ fontSize: 20 }}>
+            Pattern settings
           </Typography>
           <IconButton aria-label="Close pattern settings" onClick={() => props.onOpen(false)}>
             <CloseIcon />
           </IconButton>
         </Stack>
-        <Box sx={{ px: 2.5, pb: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+        <Box sx={{ px: 2.5, pt: 2.5, pb: 'calc(28px + env(safe-area-inset-bottom, 0px))' }}>
           {props.children}
           {props.links && (
             <Stack

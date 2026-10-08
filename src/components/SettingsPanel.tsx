@@ -87,6 +87,23 @@ interface Props {
   onNew: () => void
 }
 
+/** Two columns of fields, with room between the rows for the fields' floating labels. */
+export const FIELD_GRID = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  columnGap: 1.5,
+  rowGap: 2.25,
+} as const
+
+/** A switch's row: label at the left, switch flush with the right edge (its track has 8px of space around it). */
+export const SWITCH_ROW = {
+  mx: 0,
+  minHeight: 44,
+  justifyContent: 'space-between',
+  gap: 1.5,
+  '& .MuiSwitch-root': { mr: '-8px' },
+} as const
+
 /** On/off display options, in the order shown. */
 type ViewSwitch = 'noTieup' | 'colorBoxes' | 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
@@ -102,7 +119,8 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
 /** A heading and its settings. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Stack component="section" sx={{ gap: 1.5 }}>
+    // Room above each outlined field for its floating label.
+    <Stack component="section" sx={{ gap: 2 }}>
       <Typography variant="h2" sx={{ fontSize: 17, m: 0 }}>
         {title}
       </Typography>
@@ -118,7 +136,7 @@ function SwitchRow(props: { label: string; checked: boolean; onChange: (on: bool
       labelPlacement="start"
       control={<Switch checked={props.checked} onChange={(e) => props.onChange(e.target.checked)} />}
       label={props.label}
-      sx={{ mx: 0, minHeight: 40, justifyContent: 'space-between', gap: 1.5 }}
+      sx={SWITCH_ROW}
     />
   )
 }
@@ -162,7 +180,7 @@ export function SettingsPanel(p: Props) {
   return (
     <Stack sx={{ gap: 2.5 }} divider={<Divider flexItem />}>
       <Section title="Loom">
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
+        <Box sx={FIELD_GRID}>
           {(Object.keys(LIMITS) as Dim[])
             // Without a tie-up there's a lift plan column per shaft, so no separate treadle count.
             .filter((dim) => !(dim === 'treadles' && p.view.noTieup))
@@ -196,7 +214,7 @@ export function SettingsPanel(p: Props) {
           initial={DEFAULT_WEFT}
           onApply={p.onFillWeft}
         />
-        <Button size="small" onClick={p.onColors} sx={{ alignSelf: 'flex-start', ml: -1 }}>
+        <Button size="small" onClick={p.onColors} sx={{ alignSelf: 'flex-start', ml: -1.5 }}>
           Colours and presets…
         </Button>
       </Section>
@@ -222,14 +240,15 @@ export function SettingsPanel(p: Props) {
             {p.cellSize} px
           </Typography>
         </Stack>
-        <CommitField
-          label="Ruler every"
-          value={p.view.ruler}
-          min={0}
-          max={50}
-          onCommit={(n) => p.onView({ ruler: n })}
-          width={130}
-        />
+        <Box sx={FIELD_GRID}>
+          <CommitField
+            label="Ruler every"
+            value={p.view.ruler}
+            min={0}
+            max={50}
+            onCommit={(n) => p.onView({ ruler: n })}
+          />
+        </Box>
         <Stack>
           {VIEW_SWITCHES.map(([key, label]) => (
             <SwitchRow key={key} label={label} checked={p.view[key]} onChange={(on) => p.onView({ [key]: on })} />
@@ -239,7 +258,9 @@ export function SettingsPanel(p: Props) {
 
       <Section title="Floats">
         <SwitchRow label="Highlight floats longer than" checked={p.highlightFloats} onChange={p.onHighlightFloats} />
-        <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} width={130} />
+        <Box sx={FIELD_GRID}>
+          <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} />
+        </Box>
       </Section>
 
       <Section title="Pattern">
