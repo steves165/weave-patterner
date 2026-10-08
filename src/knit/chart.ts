@@ -247,7 +247,8 @@ export function longFloats(k: KnitChart): Float[] {
   const out: Float[] = []
   const w = widthOf(k)
   k.stitch.forEach((row, r) => {
-    const cells = row.flatMap((s, c) => (s === 'none' ? [] : [{ c, color: k.color[r][c] }]))
+    // Slipped stitches aren't worked, so no yarn is used there (the yarn carried past is counted as a float).
+    const cells = row.flatMap((s, c) => (s === 'none' || s === 'sl' ? [] : [{ c, color: k.color[r][c] }]))
     const colors = [...new Set(cells.map((x) => x.color))]
     if (colors.length < 2) return
     let worst: Float | null = null

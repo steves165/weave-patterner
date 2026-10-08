@@ -292,3 +292,19 @@ test('make a panel, name it, and save it to put into another chart', async ({ pa
   await expect(page.getByLabel('Stitches', { exact: true })).toHaveValue('28')
   expect(await writtenRow(page, 1)).toMatch(/^work Panel A, k24/)
 })
+
+test('turns a two-colour design into mosaic knitting', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  const rows = Number(await page.getByLabel('Rows', { exact: true }).inputValue())
+  await page.getByRole('button', { name: 'Make a mosaic…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Make a mosaic' })
+  await expect(dialog.getByTestId('mosaic-result')).toContainText(`${rows} design rows make ${rows * 2} mosaic rows`)
+  await dialog.getByRole('button', { name: 'Make the mosaic' }).click()
+  await expect(page.getByLabel('Rows', { exact: true })).toHaveValue(String(rows * 2))
+  // Each row is worked in one colour, slipping the other.
+  expect(await writtenRow(page, 3)).toMatch(/sl\d? wyib/)
+  expect(await writtenRow(page, 3)).not.toMatch(/ A/)
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.getByLabel('Rows', { exact: true })).toHaveValue(String(rows))
+})

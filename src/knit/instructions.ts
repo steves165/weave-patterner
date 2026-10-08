@@ -49,7 +49,8 @@ export function rowTokens(k: KnitChart, r: number, colored = usedColors(k).lengt
   if (rs) steps.reverse()
   return steps.map(({ id, c, uses }) => ({
     text: rs ? STITCHES[id].rs : STITCHES[id].ws,
-    color: colored ? colorLetter(k.color[r][c]) : null,
+    // A slipped stitch isn't worked, so it takes no yarn: no colour to name.
+    color: colored && id !== 'sl' ? colorLetter(k.color[r][c]) : null,
     counted: Boolean(STITCHES[id].counted),
     uses,
     c,

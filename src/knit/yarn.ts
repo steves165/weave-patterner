@@ -53,10 +53,12 @@ export function yarnNeeded(k: KnitChart, widthCm: number, lengthCm: number): { c
   const perChart = new Map<number, number>()
   const add = (color: number, cm: number) => perChart.set(color, (perChart.get(color) ?? 0) + cm)
   k.stitch.forEach((row, r) => {
-    const colors = row.flatMap((s, c) => (s === 'none' || s === 'rest' ? [] : [k.color[r][c]]))
+    const colors = row.flatMap((s, c) => (s === 'none' || s === 'rest' || s === 'sl' ? [] : [k.color[r][c]]))
     row.forEach((s, c) => {
       if (s === 'none' || s === 'rest') return
-      add(k.color[r][c], s === 'sl' ? w : loop * (FACTOR[s] ?? 1))
+      // A slipped stitch takes only the yarn carried past it: the row's working yarn.
+      if (s === 'sl') add(colors[0] ?? k.color[r][c], w)
+      else add(k.color[r][c], loop * (FACTOR[s] ?? 1))
     })
     // Stranded floats: each colour runs behind the others' stitches between its first and last stitch.
     const used = [...new Set(colors)]

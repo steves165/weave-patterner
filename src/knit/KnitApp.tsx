@@ -7,6 +7,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import GridOnIcon from '@mui/icons-material/GridOn'
+import GridViewIcon from '@mui/icons-material/GridView'
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt'
 import ImageIcon from '@mui/icons-material/Image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
@@ -87,6 +88,7 @@ import { castOnText, writtenPanels, writtenPattern, writtenRows } from './instru
 import { KnitLogo } from './KnitLogo'
 import { KnitThumb } from './KnitThumb'
 import { KnittingMode } from './KnittingMode'
+import { MosaicDialog } from './MosaicDialog'
 import { PanelsDialog } from './PanelsDialog'
 import { loadSavedPanels, type SavedPanel, storeSavedPanels } from './panels'
 import { pictureColors } from './picture'
@@ -240,7 +242,7 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | null>(null)
+  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | null>(null)
   // Panels saved to use again, and the panel the Panels dialog opens at.
   const [panelStore, setPanelStoreState] = useState<SavedPanel[]>(loadSavedPanels)
   const setPanelStore = (next: SavedPanel[]) => {
@@ -607,6 +609,15 @@ export default function KnitApp() {
           >
             Panels…
           </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="inherit"
+            startIcon={<GridViewIcon />}
+            onClick={() => setDialog('mosaic')}
+          >
+            Make a mosaic…
+          </Button>
         </Stack>
         <Typography variant="body2" color="text.secondary">
           {touch
@@ -812,6 +823,16 @@ export default function KnitApp() {
           setName(n)
           setDialog(null)
           setToast(`Saved "${n}"`)
+        }}
+      />
+      <MosaicDialog
+        open={dialog === 'mosaic'}
+        chart={chart}
+        onClose={() => setDialog(null)}
+        onApply={(next, message) => {
+          update(next)
+          setDialog(null)
+          setToast(message)
         }}
       />
       <PanelsDialog
