@@ -376,3 +376,13 @@ test('imports a written pattern as a chart', async ({ page }) => {
   expect(await writtenRow(page, 1)).toMatch(/^k1, \*yo, k2tog; rep from \* to last st, k1\./)
   expect(await writtenRow(page, 2)).toMatch(/^p12\./)
 })
+
+test('exports a PDF pattern booklet', async ({ page }) => {
+  await page.getByRole('button', { name: 'Export' }).click()
+  const download = page.waitForEvent('download')
+  await page.getByRole('menuitem', { name: /Pattern booklet/ }).click()
+  const file = await download
+  expect(file.suggestedFilename()).toMatch(/\.pdf$/)
+  const path = await file.path()
+  expect(readFileSync(path).subarray(0, 5).toString()).toBe('%PDF-')
+})

@@ -63,6 +63,7 @@ import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
+import { bookletPdf } from './booklet'
 import { ChartView } from './ChartView'
 import {
   blankChart,
@@ -406,10 +407,22 @@ export default function KnitApp() {
   }
   const fileBase = name.trim() || 'Knitting chart'
 
-  const exportAs = (format: 'png' | 'text' | 'file') => {
+  const exportAs = (format: 'png' | 'text' | 'file' | 'pdf') => {
     setExportAnchor(null)
     track('export', { format: `knit-${format}` })
-    if (format === 'file')
+    if (format === 'pdf') {
+      setToast('Making the booklet…')
+      bookletPdf(chart, name.trim(), {
+        width: number(target.width, 1, 1000, 50),
+        length: number(target.length, 1, 1000, 60),
+        metresPerBall: number(target.ball, 1, 10000, 200),
+      })
+        .then((blob) => {
+          download(`${fileBase}.pdf`, blob, 'application/pdf')
+          setToast(`Exported ${fileBase}.pdf`)
+        })
+        .catch((e) => setToast(`Couldn't make the booklet: ${e instanceof Error ? e.message : e}`))
+    } else if (format === 'file')
       download(
         `${fileBase}.knit.json`,
         JSON.stringify({ app: 'Knit Patterner', version: 1, name, chart }, null, 1),
@@ -698,6 +711,9 @@ export default function KnitApp() {
     <MenuItem key="png" onClick={closeThen(() => exportAs('png'))}>
       Chart image (PNG)
     </MenuItem>,
+    <MenuItem key="pdf" onClick={closeThen(() => exportAs('pdf'))}>
+      Pattern booklet (PDF)
+    </MenuItem>,
     <MenuItem key="text" onClick={closeThen(() => exportAs('text'))}>
       Written pattern (text)
     </MenuItem>,
@@ -959,6 +975,12 @@ export default function KnitApp() {
       </Menu>
       <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
         <MenuItem onClick={() => exportAs('png')}>Chart image (PNG)</MenuItem>
+        <MenuItem onClick={() => exportAs('pdf')}>
+          <ListItemText
+            primary="Pattern booklet (PDF)"
+            secondary="Gauge, materials, chart with key and the written rows, ready to print or share"
+          />
+        </MenuItem>
         <MenuItem onClick={() => exportAs('text')}>Written pattern (text)</MenuItem>
         <MenuItem onClick={() => exportAs('file')}>
           <SaveIcon fontSize="small" sx={{ mr: 1 }} />
