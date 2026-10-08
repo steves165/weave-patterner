@@ -74,8 +74,8 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Weaves two layers at once, each with its own warp and weft, alternating end by end and pick by pick. Each
-            block uses {2 * shaftsPerLayer(weave)} shafts: half for layer A, half for layer B. Show the face or back of
-            the cloth (View settings) to see each side.
+            block uses {2 * shaftsPerLayer(weave)} shafts: half for layer A, half for layer B. Use Face and Back above
+            the pattern to see each side.
           </Typography>
           <TextField
             select

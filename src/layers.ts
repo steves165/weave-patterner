@@ -104,7 +104,7 @@ export const isLayered = (face: LayerMap, back: LayerMap) =>
  * "Nearby" is a window of 4 or 8 threads after, around or before each square; each square uses whichever shows the
  * clearest difference between neighbours, so that where blocks meet, a window that stays inside one block wins.
  *
- * The back is drawn as if seen through the cloth, so its columns still line up with the threading.
+ * Columns stay in end order; the draft view mirrors the whole draft when showing the back, as if turned over.
  */
 export function clothView(d: Draft, side: Side, drawdown: boolean[][] = computeDrawdown(d)): Square[][] {
   const { ends, picks } = d

@@ -220,6 +220,7 @@ export default function App() {
 
           <DraftView
             draft={draft}
+            onView={setView}
             drawdown={drawdown}
             floatMask={floatMask}
             cellSize={cellSize}

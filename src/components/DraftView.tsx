@@ -1,5 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close'
-import { Alert, IconButton, Paper } from '@mui/material'
+import FlipIcon from '@mui/icons-material/Flip'
+import { Alert, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
@@ -25,6 +26,7 @@ interface Props {
   onTreadling: (pick: number, treadle: number, value: boolean, continuing: boolean) => void
   onWarpColor: (end: number, color: string) => void
   onWeftColor: (pick: number, color: string) => void
+  onView: (patch: Partial<ViewOptions>) => void
 }
 
 /**
@@ -40,8 +42,11 @@ export function DraftView(p: Props) {
   const drawdownRef = useRef<HTMLDivElement>(null)
   // Shaft 1 sits next to the drawdown: the bottom row of the threading normally, the top row when it's below.
   const shaftAt = (row: number) => (view.threadingBelow ? row : shafts - 1 - row)
+  // Turning the cloth over to see the back swaps left and right, so the whole draft is drawn mirrored.
+  const back = view.clothSide === 'back'
+  const mirrored = view.endOneRight !== back
   // Drawn column -> end index, and back (the mapping is its own inverse).
-  const endAt = (column: number) => (view.endOneRight ? ends - 1 - column : column)
+  const endAt = (column: number) => (mirrored ? ends - 1 - column : column)
   const columns = Array.from({ length: ends }, (_, c) => endAt(c))
   const liftplan = isDirectTieup(draft)
   const ruler = view.ruler > 0
@@ -91,7 +96,7 @@ export function DraftView(p: Props) {
         every={view.ruler}
         cellSize={p.cellSize}
         orientation="horizontal"
-        reversed={view.endOneRight}
+        reversed={mirrored}
         label="End numbers"
       />
       {pad(cols - 1)}
@@ -238,6 +243,27 @@ export function DraftView(p: Props) {
           {note && ` ${note}`}
         </Alert>
       )}
+      <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={view.clothSide}
+          onChange={(_, side) => side && p.onView({ clothSide: side })}
+          aria-label="Show the drawdown, or the face or back of the cloth"
+        >
+          <ToggleButton value="drawdown">Drawdown</ToggleButton>
+          <ToggleButton value="face">Face</ToggleButton>
+          <ToggleButton value="back">
+            <FlipIcon fontSize="small" sx={{ mr: 0.5 }} />
+            Back
+          </ToggleButton>
+        </ToggleButtonGroup>
+        {back && (
+          <Typography variant="body2" color="text.secondary" data-testid="back-note">
+            Turned over: left and right are swapped, so end 1 is on the {mirrored ? 'right' : 'left'}.
+          </Typography>
+        )}
+      </Stack>
       <div
         ref={container}
         className="draft"

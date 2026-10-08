@@ -10,7 +10,6 @@ import {
   Button,
   Divider,
   FormControlLabel,
-  MenuItem,
   Slider,
   Stack,
   Switch,
@@ -213,18 +212,6 @@ export function SettingsPanel(p: Props) {
               onCommit={(n) => p.onView({ ruler: n })}
               width={110}
             />
-            <TextField
-              select
-              size="small"
-              label="Show"
-              value={p.view.clothSide}
-              onChange={(e) => p.onView({ clothSide: e.target.value as ViewOptions['clothSide'] })}
-              sx={{ width: 170 }}
-            >
-              <MenuItem value="drawdown">Drawdown</MenuItem>
-              <MenuItem value="face">Face of the cloth</MenuItem>
-              <MenuItem value="back">Back of the cloth</MenuItem>
-            </TextField>
             {VIEW_SWITCHES.map(([key, label]) => (
               <FormControlLabel
                 key={key}
