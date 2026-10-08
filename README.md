@@ -17,7 +17,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 
 - Up to 24 shafts and 24 treadles, and up to 400 ends and picks
 - Double cloth: separate layers, tubes, double width and block double cloth, with face and back views that allow for layers
-- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes and textures (smooth, wool, silk, slub, bouclé) from the yarn library and spacing from the sett
+- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes and textures (smooth, wool, silk, slub, bouclé) from the yarn library and spacing from the sett; shown flat, draped, as a cushion or rolled, with a weaving animation
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation
 - Remembers your settings and the pattern you were working on (saved or not) on this device
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
@@ -46,6 +46,10 @@ npm run lint      # Biome lint + format check (npm run format to fix)
   or damask
 - **Echo weave**: a design line threaded with its echo in two colours
 - **Smallest repeat**: found automatically, with a button to trim the draft to it
+- **Cloth report**: warp and weft faces, how much the threads interlace, float lengths and firmness
+- **Save treadles**: a skeleton tie-up that presses two treadles at once to use fewer
+- **Rigid heddle**: instructions for weaving a draft with a rigid heddle and pick-up stick, or why it can't be
+- **Tablet weaving**: a card-weaving designer with hole colours, S/Z threading, turning and a band preview
 - **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost

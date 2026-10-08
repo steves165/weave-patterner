@@ -68,6 +68,9 @@ interface Props {
   onVariations: () => void
   onEcho: () => void
   onPicture: () => void
+  onReport: () => void
+  onRigidHeddle: () => void
+  onTablet: () => void
   onYarns: () => void
   onToLiftplan: () => void
   onToTreadling: () => void
@@ -277,6 +280,9 @@ export function AppToolbar(p: Props) {
               <ListItemText primary="Convert to lift plan" secondary="Shafts per pick, for dobby looms" />
             </MenuItem>
           )}
+          <MenuItem onClick={then(p.onReport)}>
+            <ListItemText primary="Cloth report…" secondary="Warp and weft faces, interlacing, floats, firmness" />
+          </MenuItem>
           <ListSubheader>Plan the warp</ListSubheader>
           <MenuItem onClick={then(p.onWarpPlan)}>
             <ListItemText primary="Warp winding plan…" secondary="Colour order for the warping board, in bouts" />
@@ -289,6 +295,13 @@ export function AppToolbar(p: Props) {
           </MenuItem>
           <MenuItem onClick={then(p.onYarns)}>
             <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
+          </MenuItem>
+          <ListSubheader>Other looms</ListSubheader>
+          <MenuItem onClick={then(p.onRigidHeddle)}>
+            <ListItemText primary="Rigid heddle…" secondary="Weave this draft with a rigid heddle and pick-up stick" />
+          </MenuItem>
+          <MenuItem onClick={then(p.onTablet)}>
+            <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />
           </MenuItem>
         </Menu>
 

@@ -1,3 +1,4 @@
+import CompressIcon from '@mui/icons-material/Compress'
 import FlipIcon from '@mui/icons-material/Flip'
 import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import RotateRightIcon from '@mui/icons-material/RotateRight'
@@ -16,6 +17,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import { usePhone } from '../layout'
+import { skeletonTieup } from '../skeleton'
 import { flipDraft, insertTabby, invertDraft, removeTabby, shiftDraft, tabbyBreaks, turnDraft } from '../transforms'
 import type { Draft } from '../weave'
 
@@ -133,6 +135,20 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
               Move
             </Button>
           </Stack>
+          <Action
+            icon={<CompressIcon />}
+            label="Save treadles"
+            detail="A skeleton tie-up: fewer treadles, pressing two at once for some picks (rising-shed looms)."
+            onClick={() => {
+              const result = skeletonTieup(draft)
+              if (!result) setError("This draft can't use fewer treadles by pressing two at once")
+              else
+                onApply(
+                  result.draft,
+                  `Now ${result.draft.treadles} treadles; ${result.pressedTogether} pick${result.pressedTogether === 1 ? '' : 's'} press two at once`,
+                )
+            }}
+          />
           <Divider />
           <Typography variant="subtitle2">Tabby</Typography>
           <Typography variant="body2" color="text.secondary">

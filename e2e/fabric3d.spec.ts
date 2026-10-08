@@ -115,3 +115,21 @@ test('yarn textures from the library shape the threads', async ({ page }) => {
   await expect(page.getByTestId('look-info')).toContainText('Thread sizes and textures from your yarn library.')
   await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
 })
+
+test('shapes the cloth and animates the weaving', async ({ page }) => {
+  await toolbarButton(page, '3D').click()
+  await expect(view(page)).toHaveAttribute('data-woven', '32')
+  await page.getByRole('combobox', { name: 'Shape' }).click()
+  await page.getByRole('option', { name: 'Cushion' }).click()
+  await expect(view(page)).toHaveAttribute('data-shape', 'cushion')
+  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+
+  await page.getByRole('button', { name: 'Weave it' }).click()
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible()
+  // Picks appear one by one.
+  await expect.poll(async () => Number(await view(page).getAttribute('data-woven'))).toBeGreaterThan(2)
+  await expect.poll(async () => Number(await view(page).getAttribute('data-woven'))).toBeLessThan(32)
+  await page.getByRole('button', { name: 'Stop' }).click()
+  await expect(view(page)).toHaveAttribute('data-woven', '32')
+  await expect(page.getByRole('button', { name: 'Weave it' })).toBeVisible()
+})

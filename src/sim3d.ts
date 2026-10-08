@@ -103,3 +103,39 @@ export function fabricModel(
       })
   return { paths, ends: shownEnds, picks: shownPicks, layered }
 }
+
+/** How the cloth is shown: flat, or made up into something. */
+export type ClothShape = 'flat' | 'draped' | 'cushion' | 'rolled'
+
+/**
+ * Moves a point of the flat cloth (x across, y along, z out of the face; the cloth spans ±halfW by ±halfH) to where
+ * it lies when the cloth is draped like a scarf, puffed like a cushion, or rolled up from the bottom like a towel.
+ */
+export function shapePoint(shape: ClothShape, [x, y, z]: Point, halfW: number, halfH: number): Point {
+  switch (shape) {
+    case 'flat':
+      return [x, y, z]
+    case 'draped': {
+      // Soft folds along the cloth, as it hangs, with a gentle curve across.
+      const folds = 0.12 * halfH * Math.sin((Math.PI * 1.5 * y) / halfH)
+      const across = -0.08 * halfW * (x / halfW) ** 2
+      return [x, y, z + folds + across]
+    }
+    case 'cushion': {
+      // Puffed up in the middle, flat at the edges.
+      const u = 1 - (x / halfW) ** 2
+      const v = 1 - (y / halfH) ** 2
+      return [x, y, z + 0.5 * Math.min(halfW, halfH) * Math.max(0, u * v)]
+    }
+    case 'rolled': {
+      // The lower part of the cloth rolled up towards the face round a bar.
+      const start = -0.2 * halfH
+      if (y >= start) return [x, y, z]
+      // Sized so the rolled part goes round a little less than once, rather than winding over itself.
+      const radius = Math.max(1.2, (start + halfH) / (1.7 * Math.PI))
+      const r = radius + z
+      const angle = (start - y) / radius
+      return [x, start - r * Math.sin(angle), radius - r * Math.cos(angle)]
+    }
+  }
+}

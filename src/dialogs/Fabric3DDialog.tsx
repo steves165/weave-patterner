@@ -1,7 +1,9 @@
 import CloseIcon from '@mui/icons-material/Close'
 import DownloadIcon from '@mui/icons-material/Download'
 import FlipIcon from '@mui/icons-material/Flip'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import StopIcon from '@mui/icons-material/Stop'
 import {
   Alert,
   AppBar,
@@ -10,9 +12,11 @@ import {
   Dialog,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Slider,
   Stack,
   Switch,
+  TextField,
   Toolbar,
   Typography,
   useTheme,
@@ -21,7 +25,7 @@ import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { download, fileBase } from '../exportDraft'
-import { fabricModel } from '../sim3d'
+import { type ClothShape, fabricModel, shapePoint } from '../sim3d'
 import { TEXTURES, type Texture, thickness as yarnThickness } from '../textures'
 import type { Draft } from '../weave'
 import { clothLook, loadDensity } from '../yarnGeometry'
@@ -40,6 +44,8 @@ interface Props {
 /** Most threads shown each way: more makes the preview slow on phones. */
 export const MAX_SHOWN = 80
 const DEFAULT_SHOWN = 32
+/** How long each pick takes in the weaving animation. */
+const PICK_MS = 120
 
 /** Points along each thread's tube per crossing, and sides round it. */
 const SEGMENTS_PER_CROSSING = 4
@@ -142,6 +148,9 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
   const [shown, setShown] = useState(Math.min(DEFAULT_SHOWN, largest))
   const [thickness, setThickness] = useState(80)
   const [back, setBack] = useState(false)
+  const [shape, setShape] = useState<ClothShape>('flat')
+  // Weaving animation: how many picks are woven so far (null when not animating: all of them).
+  const [woven, setWoven] = useState<number | null>(null)
   // Real yarn sizes and spacing, from the yarn library and the warp calculator's sett.
   const [realSizes, setRealSizes] = useState(true)
   const density = useMemo(() => (open ? loadDensity() : null), [open])
@@ -152,6 +161,9 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
   const model = useMemo(() => fabricModel(draft, shown, shown, undefined, look), [draft, shown, look])
   // Frame the whole cloth, which is taller than it is wide when picks are further apart than ends.
   const frame = shown * Math.max(1, look?.pickSpacing ?? 1)
+  // The flat cloth's half width and height, for shaping it.
+  const halfW = model.ends / 2 + 0.5
+  const halfH = ((model.picks + 1) * (look?.pickSpacing ?? 1)) / 2
   const background = theme.palette.background.default
 
   // Set up WebGL once the dialog has mounted its box; tear it all down on close.
@@ -237,6 +249,14 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         radius,
         curve.getLength(),
       )
+      if (shape !== 'flat') {
+        const pos = geometry.attributes.position
+        for (let i = 0; i < pos.count; i++) {
+          const [x, y, z] = shapePoint(shape, [pos.getX(i), pos.getY(i), pos.getZ(i)], halfW, halfH)
+          pos.setXYZ(i, x, y, z)
+        }
+        geometry.computeVertexNormals()
+      }
       const key = `${path.color}|${path.texture}`
       let material = materials.get(key)
       if (!material) {
@@ -252,11 +272,33 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         })
         materials.set(key, material)
       }
-      s.cloth.add(new THREE.Mesh(geometry, material))
+      const mesh = new THREE.Mesh(geometry, material)
+      mesh.userData = { kind: path.kind, index: path.index }
+      s.cloth.add(mesh)
     }
     s.scene.background = new THREE.Color(background)
     s.render()
-  }, [scene3d, model, thickness, background])
+  }, [scene3d, model, thickness, background, shape, halfW, halfH])
+
+  // While weaving, show only the picks woven so far.
+  const weftOrder = useMemo(() => model.paths.filter((p) => p.kind === 'weft').map((p) => p.index), [model])
+  useEffect(() => {
+    if (!scene3d) return
+    for (const child of scene3d.cloth.children) {
+      const { kind, index } = child.userData as { kind: string; index: number }
+      child.visible = kind !== 'weft' || woven === null || weftOrder.indexOf(index) < woven
+    }
+    scene3d.render()
+  }, [scene3d, woven, weftOrder])
+  useEffect(() => {
+    if (woven === null) return
+    if (woven >= weftOrder.length) {
+      const done = setTimeout(() => setWoven(null), 600)
+      return () => clearTimeout(done)
+    }
+    const next = setTimeout(() => setWoven(woven + 1), PICK_MS)
+    return () => clearTimeout(next)
+  }, [woven, weftOrder.length])
 
   // Frame the cloth when it opens, when the area changes, and when it's turned over.
   useEffect(() => {
@@ -279,6 +321,26 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
           <Typography id="fabric-3d-title" variant="h6" sx={{ flexGrow: 1, minWidth: 0 }} noWrap>
             3D preview: {name ?? 'Unsaved pattern'}
           </Typography>
+          <Button
+            startIcon={woven === null ? <PlayArrowIcon /> : <StopIcon />}
+            onClick={() => setWoven(woven === null ? 0 : null)}
+            disabled={failed !== null}
+          >
+            {woven === null ? 'Weave it' : 'Stop'}
+          </Button>
+          <TextField
+            select
+            size="small"
+            label="Shape"
+            value={shape}
+            onChange={(e) => setShape(e.target.value as ClothShape)}
+            sx={{ width: 130 }}
+          >
+            <MenuItem value="flat">Flat</MenuItem>
+            <MenuItem value="draped">Draped</MenuItem>
+            <MenuItem value="cushion">Cushion</MenuItem>
+            <MenuItem value="rolled">Rolled</MenuItem>
+          </TextField>
           <Button startIcon={<FlipIcon />} onClick={() => setBack(!back)} aria-pressed={back}>
             {back ? 'Show face' : 'Show back'}
           </Button>
@@ -298,6 +360,8 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         <Box
           ref={setBox}
           data-testid="fabric-3d"
+          data-woven={woven ?? model.picks}
+          data-shape={shape}
           data-ends={model.ends}
           data-picks={model.picks}
           data-threads={model.paths.length}

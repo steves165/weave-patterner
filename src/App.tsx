@@ -9,6 +9,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { loadCurrent } from './current'
 import { CalculatorDialog } from './dialogs/CalculatorDialog'
 import { ClothDialog } from './dialogs/ClothDialog'
+import { ClothReportDialog } from './dialogs/ClothReportDialog'
 import { ColorsDialog } from './dialogs/ColorsDialog'
 import { ColorwaysDialog } from './dialogs/ColorwaysDialog'
 import { DoubleClothDialog } from './dialogs/DoubleClothDialog'
@@ -17,6 +18,7 @@ import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { PictureDialog } from './dialogs/PictureDialog'
 import { ProfileDialog } from './dialogs/ProfileDialog'
+import { RigidHeddleDialog } from './dialogs/RigidHeddleDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { ToolsDialog } from './dialogs/ToolsDialog'
 import { TransformDialog } from './dialogs/TransformDialog'
@@ -27,6 +29,7 @@ import { findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
+const TabletDialog = lazy(() => import('./dialogs/TabletDialog'))
 
 import { YarnsDialog } from './dialogs/YarnsDialog'
 import { download, exportDraft, fileBase } from './exportDraft'
@@ -61,6 +64,9 @@ type DialogName =
   | 'variations'
   | 'echo'
   | 'picture'
+  | 'report'
+  | 'rigid'
+  | 'tablet'
   | 'yarns'
 
 export default function App() {
@@ -191,6 +197,9 @@ export default function App() {
           onVariations={() => setDialog('variations')}
           onEcho={() => setDialog('echo')}
           onPicture={() => setDialog('picture')}
+          onReport={() => setDialog('report')}
+          onRigidHeddle={() => setDialog('rigid')}
+          onTablet={() => setDialog('tablet')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
           onToLiftplan={() => {
@@ -339,6 +348,13 @@ export default function App() {
           onClose={() => setDialog(null)}
           onApply={applyFromDialog}
         />
+        <ClothReportDialog open={dialog === 'report'} draft={draft} onClose={() => setDialog(null)} />
+        <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
+        {dialog === 'tablet' && (
+          <Suspense fallback={null}>
+            <TabletDialog open onClose={() => setDialog(null)} />
+          </Suspense>
+        )}
         <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
         <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
         <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />

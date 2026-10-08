@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { doubleCloth } from './doublecloth'
-import { fabricModel, THREAD } from './sim3d'
+import { fabricModel, shapePoint, THREAD } from './sim3d'
 import { computeDrawdown, defaultDraft } from './weave'
 
 const { bend, layerGap } = THREAD
@@ -68,5 +68,39 @@ describe('fabricModel', () => {
     // Layer A ends (even) sit near the face; layer B ends (odd) about a layer gap behind.
     expect(avgZ('warp', 0)).toBeGreaterThan(avgZ('warp', 1) + layerGap / 2)
     expect(avgZ('weft', 0)).toBeGreaterThan(avgZ('weft', 1) + layerGap / 2)
+  })
+})
+
+describe('shapePoint', () => {
+  const W = 10
+  const H = 10
+  it('leaves flat cloth alone', () => {
+    expect(shapePoint('flat', [1, 2, 0.3], W, H)).toEqual([1, 2, 0.3])
+  })
+
+  it('puffs a cushion in the middle and keeps its edges flat', () => {
+    expect(shapePoint('cushion', [0, 0, 0], W, H)[2]).toBeCloseTo(5)
+    expect(shapePoint('cushion', [W, 0, 0], W, H)[2]).toBeCloseTo(0)
+    expect(shapePoint('cushion', [0, -H, 0], W, H)[2]).toBeCloseTo(0)
+  })
+
+  it('drapes in folds without moving the threads sideways', () => {
+    const p = shapePoint('draped', [3, 4, 0], W, H)
+    expect(p.slice(0, 2)).toEqual([3, 4])
+    expect(p[2]).not.toBe(0)
+  })
+
+  it('rolls the bottom of the cloth up smoothly, keeping the top flat', () => {
+    expect(shapePoint('rolled', [0, 5, 0.2], W, H)).toEqual([0, 5, 0.2])
+    // Just below the start of the roll, barely moved; further down, curled up off the flat.
+    const near = shapePoint('rolled', [0, -2.01, 0], W, H)
+    expect(near[1]).toBeCloseTo(-2.01, 1)
+    expect(near[2]).toBeCloseTo(0, 1)
+    const radius = 8 / (1.7 * Math.PI) // the 8 units below the roll's start go round a little less than once
+    const far = shapePoint('rolled', [0, -2 - Math.PI * radius, 0], W, H)
+    expect(far[2]).toBeCloseTo(2 * radius, 5) // half way round
+    // The very end hasn't come all the way round to overlap the cloth.
+    const end = shapePoint('rolled', [0, -H, 0], W, H)
+    expect(end[2]).toBeGreaterThan(0.5)
   })
 })
