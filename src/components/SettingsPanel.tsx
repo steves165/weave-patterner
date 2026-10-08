@@ -302,7 +302,7 @@ export function SettingsPanel(p: Props) {
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="Start a new pattern from the default twill" describeChild>
+            <Tooltip title="Start a new pattern with empty grids" describeChild>
               <Button size="small" startIcon={<NoteAddIcon />} onClick={p.onNew}>
                 New
               </Button>

@@ -132,3 +132,14 @@ test('the app replaces the search summary, and the page has its title and icons'
   const manifest = await page.request.get('manifest.webmanifest')
   expect((await manifest.json()).short_name).toBe('Weave Patterner')
 })
+
+test('New starts with completely empty grids', async ({ page }) => {
+  await page.getByRole('button', { name: 'New' }).click()
+  await expect(toast(page)).toContainText('New pattern: empty grids')
+  expect(await threading(page)).toBe('0'.repeat(32))
+  await expect(page.locator('.draft [role=checkbox][aria-checked="true"]')).toHaveCount(0)
+  // With nothing lifted, the whole cloth shows weft.
+  await expect(page.locator('.drawdown .cell.warp')).toHaveCount(0)
+  // A new pattern is a fresh start: there's nothing to undo.
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled()
+})

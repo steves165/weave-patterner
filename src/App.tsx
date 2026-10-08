@@ -44,7 +44,7 @@ import { useCompact, usePhone, useTouch } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { selvedgeMisses } from './selvedge'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
-import { computeDrawdown, type Draft, defaultDraft, resizeDraft } from './weave'
+import { computeDrawdown, type Draft, defaultDraft, emptyDraft, resizeDraft } from './weave'
 
 type DialogName =
   | 'save'
@@ -283,7 +283,7 @@ export default function App() {
             }
             canReset={draft !== baseline}
             onReset={() => update(() => baseline)}
-            onNew={() => open(defaultDraft(), null)}
+            onNew={() => open(emptyDraft(), null, 'New pattern: empty grids, ready to design')}
           />
 
           <DraftView

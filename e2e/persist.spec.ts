@@ -56,5 +56,5 @@ test('restores the name of a saved pattern, and New starts afresh', async ({ pag
   await page.getByRole('button', { name: 'New' }).click()
   await reload(page)
   await expect(page.locator('.MuiAppBar-root')).not.toContainText('Pattern 1')
-  expect((await threading(page)).slice(0, 4)).toBe('1234')
+  expect((await threading(page)).slice(0, 4)).toBe('0000')
 })

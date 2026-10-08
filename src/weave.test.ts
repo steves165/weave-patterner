@@ -3,6 +3,7 @@ import { ascii, edgeCaseDraft } from './testUtils'
 import {
   computeDrawdown,
   defaultDraft,
+  emptyDraft,
   exportFile,
   importFile,
   MAX_SHAFTS,
@@ -31,6 +32,18 @@ describe('computeDrawdown', () => {
     const d = defaultDraft()
     d.treadling[0] = [true, false, true, false] // treadles 1 and 3 lift every shaft in the twill tie-up
     expect(computeDrawdown(d)[0].every(Boolean)).toBe(true)
+  })
+})
+
+describe('emptyDraft', () => {
+  it('is the default size with nothing threaded, tied up or treadled', () => {
+    const d = emptyDraft()
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 4, 32, 32])
+    expect(d.threading.every((s) => s === -1)).toBe(true)
+    expect(d.tieup.flat().some(Boolean)).toBe(false)
+    expect(d.treadling.flat().some(Boolean)).toBe(false)
+    expect(computeDrawdown(d).flat().some(Boolean)).toBe(false)
+    expect(parseDraft(d)).toEqual(d)
   })
 })
 

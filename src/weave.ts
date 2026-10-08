@@ -32,6 +32,17 @@ export function twillGrids(shafts: number, treadles: number, ends: number, picks
   }
 }
 
+/** A blank draft at the default size: nothing threaded, tied up or treadled, ready to design from scratch. */
+export function emptyDraft(): Draft {
+  const d = defaultDraft()
+  return {
+    ...d,
+    threading: d.threading.map(() => -1),
+    tieup: d.tieup.map((row) => row.map(() => false)),
+    treadling: d.treadling.map((row) => row.map(() => false)),
+  }
+}
+
 export function defaultDraft(): Draft {
   const shafts = 4
   const treadles = 4
