@@ -50,7 +50,10 @@ if (!process.env.E2E_BASE_URL && !process.env.E2E_DEV) {
   const build = spawnSync('npx', ['vite', 'build', '--logLevel', 'warn'], { stdio: 'inherit' })
   if (build.status !== 0) process.exit(build.status ?? 1)
 }
-const result = spawnSync('npx', ['playwright', 'test', ...(run3d ? [] : ['--grep-invert', '@3d']), ...rest], {
-  stdio: 'inherit',
-})
-process.exit(result.status ?? 1)
+const playwright = (extra) =>
+  spawnSync('npx', ['playwright', 'test', ...extra, ...rest], { stdio: 'inherit' }).status ?? 1
+// Everything else first, four at a time; then the 3D tests on their own, two at a time, as several software-rendered
+// 3D previews at once starve the processors and time out.
+let status = playwright(['--grep-invert', '@3d'])
+if (run3d) status = playwright(['--grep', '@3d', '--workers', '2']) || status
+process.exit(status)
