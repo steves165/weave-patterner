@@ -1,5 +1,8 @@
-import { expect, type Page, test } from '@playwright/test'
+import { expect as baseExpect, type Page, test } from '@playwright/test'
 import { openApp, openTool, toolbarButton } from './helpers'
+
+// WebGL here is software-rendered: a frame can take most of a second when tests run side by side.
+const expect = baseExpect.configure({ timeout: 15_000 })
 
 const view = (page: Page) => page.getByTestId('fabric-3d')
 const canvas = (page: Page) => page.getByRole('img', { name: '3D preview of the cloth' })
@@ -25,7 +28,7 @@ test('renders the cloth in 3D, with controls for the area, thickness and side', 
   await expect(page.getByRole('dialog', { name: /3D preview/ })).toBeVisible()
   await expect(canvas(page)).toBeVisible()
   await expect(view(page)).toHaveAttribute('data-threads', '64') // 32 ends + 32 picks
-  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 
   const area = page.getByRole('slider', { name: /Threads shown/ })
   await area.focus()
@@ -55,7 +58,7 @@ test('shows double cloth as two layers', async ({ page }) => {
   await page.getByRole('dialog', { name: 'Double cloth' }).getByRole('button', { name: 'Create draft' }).click()
   await toolbarButton(page, '3D').click()
   await expect(page.getByText(/Double cloth: the lower layer is drawn behind the upper/)).toBeVisible()
-  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 })
 
 test('explains when WebGL is not available', async ({ page }) => {
@@ -92,7 +95,7 @@ test('sizes threads from the yarn library and spaces them by the sett', async ({
   await expect(page.getByTestId('look-info')).toHaveText(
     '6 ends and 8 picks per cm (from the warp calculator). Thread sizes and textures from your yarn library.',
   )
-  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
   await page.getByLabel('Yarns and sett').uncheck()
   await expect(page.getByTestId('look-info')).toHaveCount(0)
 })
@@ -113,16 +116,16 @@ test('yarn textures from the library shape the threads', async ({ page }) => {
 
   await toolbarButton(page, '3D').click()
   await expect(page.getByTestId('look-info')).toContainText('Thread sizes and textures from your yarn library.')
-  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 })
 
 test('shapes the cloth and animates the weaving', async ({ page }) => {
   await toolbarButton(page, '3D').click()
   await expect(view(page)).toHaveAttribute('data-woven', '32')
-  await page.getByRole('combobox', { name: 'Shape' }).click()
+  await page.getByRole('combobox', { name: 'Show as' }).click()
   await page.getByRole('option', { name: 'Cushion' }).click()
   await expect(view(page)).toHaveAttribute('data-shape', 'cushion')
-  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
+  await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
 
   await page.getByRole('button', { name: 'Weave it' }).click()
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible()
@@ -132,4 +135,32 @@ test('shapes the cloth and animates the weaving', async ({ page }) => {
   await page.getByRole('button', { name: 'Stop' }).click()
   await expect(view(page)).toHaveAttribute('data-woven', '32')
   await expect(page.getByRole('button', { name: 'Weave it' })).toBeVisible()
+})
+
+test('shows the cloth made up as a sofa, a rug and a tapestry', async ({ page }) => {
+  await toolbarButton(page, '3D').click()
+  for (const [label, value] of [
+    ['On a sofa', 'sofa'],
+    ['As a rug', 'rug'],
+    ['As a tapestry', 'tapestry'],
+  ]) {
+    await page.getByRole('combobox', { name: 'Show as' }).click()
+    await page.getByRole('option', { name: label }).click()
+    await expect(view(page)).toHaveAttribute('data-shape', value)
+    await expect.poll(() => colourCount(page), { timeout: 20_000 }).toBeGreaterThan(20)
+  }
+  // Thread controls give way to the pattern size; weaving and turning over don't apply.
+  await expect(page.getByRole('slider', { name: /Threads shown/ })).toHaveCount(0)
+  await expect(page.getByText('Pattern size: real size')).toBeVisible()
+  const size = page.getByRole('slider', { name: /Pattern size/ })
+  await size.focus()
+  await size.press('End')
+  await expect(page.getByText('Pattern size: 10× real size')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Weave it' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Show back' })).toBeDisabled()
+  await page.getByRole('button', { name: 'Reset view' }).click()
+
+  await page.getByRole('combobox', { name: 'Show as' }).click()
+  await page.getByRole('option', { name: 'Flat' }).click()
+  await expect(page.getByRole('slider', { name: /Threads shown/ })).toBeVisible()
 })

@@ -21,12 +21,15 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { download, fileBase } from '../exportDraft'
-import { type ClothShape, fabricModel, shapePoint } from '../sim3d'
-import { TEXTURES, type Texture, thickness as yarnThickness } from '../textures'
+import { isMockup, tileSize, VIEWS_3D, type View3D } from '../mockups'
+import { type ClothShape, fabricModel } from '../sim3d'
+import { clothTextures, rug, sofa, tapestry } from '../three/mockups'
+import { clearGroup, yarnGeometry, yarnMaterial } from '../three/yarnMesh'
 import type { Draft } from '../weave'
 import { clothLook, loadDensity } from '../yarnGeometry'
 import type { Yarn } from '../yarns'
@@ -47,81 +50,32 @@ const DEFAULT_SHOWN = 32
 /** How long each pick takes in the weaving animation. */
 const PICK_MS = 120
 
-/** Points along each thread's tube per crossing, and sides round it. */
-const SEGMENTS_PER_CROSSING = 4
-const RADIAL_SEGMENTS = 6
-
 interface Scene {
   renderer: THREE.WebGLRenderer
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   controls: OrbitControls
+  /** The threads, and what the cloth is shown on. */
   cloth: THREE.Group
+  mockup: THREE.Group
+  /** Catches the cloth's shadow behind the flat thread view. */
+  catcher: THREE.Mesh
+  key: THREE.DirectionalLight
   render: () => void
 }
 
-/** Twist stripes as a texture: lighter and darker diagonals, as the plies of a yarn catch the light. Cached. */
-const twistMaps = new Map<number, THREE.CanvasTexture>()
-function twistMap(strength: number) {
-  const cached = twistMaps.get(strength)
-  if (cached) return cached
-  const canvas = document.createElement('canvas')
-  canvas.width = 32
-  canvas.height = 32
-  const ctx = canvas.getContext('2d')
-  if (ctx) {
-    for (let y = 0; y < 32; y++)
-      for (let x = 0; x < 32; x++) {
-        // Diagonal bands: u runs along the yarn and v round it.
-        const band = 0.5 + 0.5 * Math.sin(((x + y) / 32) * Math.PI * 4)
-        const light = Math.round(255 * (1 - strength * 0.45 * band))
-        ctx.fillStyle = `rgb(${light},${light},${light})`
-        ctx.fillRect(x, y, 1, 1)
-      }
-  }
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.wrapS = THREE.RepeatWrapping
-  texture.wrapT = THREE.RepeatWrapping
-  texture.colorSpace = THREE.SRGBColorSpace
-  twistMaps.set(strength, texture)
-  return texture
-}
-
-/**
- * Gives a tube its yarn's character: bumps and thick-and-thin stretches pushed out along the normals, and texture
- * coordinates scaled so the twist stripes repeat about three times per thread spacing whatever its length. The tube's
- * own smooth normals are kept: the bumps are small, and recomputed normals would show a seam along each thread.
- */
-function shapeYarn(geometry: THREE.TubeGeometry, texture: Texture, seed: number, radius: number, length: number) {
-  const pos = geometry.attributes.position
-  const normal = geometry.attributes.normal
-  const uv = geometry.attributes.uv
-  for (let i = 0; i < pos.count; i++) {
-    const along = uv.getX(i) * length
-    const grow = radius * (yarnThickness(texture, seed, along, uv.getY(i)) - 1)
-    if (grow !== 0)
-      pos.setXYZ(
-        i,
-        pos.getX(i) + normal.getX(i) * grow,
-        pos.getY(i) + normal.getY(i) * grow,
-        pos.getZ(i) + normal.getZ(i) * grow,
-      )
-    uv.setX(i, along * 3)
-  }
-  pos.needsUpdate = true
-  uv.needsUpdate = true
-}
-
-/** Removes the threads and frees their GPU memory (materials are shared between threads of one colour). */
-function clearCloth(cloth: THREE.Group) {
-  const materials = new Set<THREE.Material>()
-  for (const child of [...cloth.children]) {
-    const mesh = child as THREE.Mesh
-    mesh.geometry.dispose()
-    materials.add(mesh.material as THREE.Material)
-    cloth.remove(mesh)
-  }
-  for (const m of materials) m.dispose()
+/** Points the key light's shadows at an area `reach` across, centred on `target`. */
+function aimShadows(s: Scene, target: THREE.Vector3, reach: number) {
+  const cam = s.key.shadow.camera
+  cam.left = -reach
+  cam.right = reach
+  cam.top = reach
+  cam.bottom = -reach
+  cam.near = 0.1
+  cam.far = reach * 6
+  cam.updateProjectionMatrix()
+  s.key.target.position.copy(target)
+  s.key.target.updateMatrixWorld()
 }
 
 /** Puts the camera above the face (or behind the back), tilted a little, far enough back to see `size` threads. */
@@ -148,7 +102,14 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
   const [shown, setShown] = useState(Math.min(DEFAULT_SHOWN, largest))
   const [thickness, setThickness] = useState(80)
   const [back, setBack] = useState(false)
-  const [shape, setShape] = useState<ClothShape>('flat')
+  const [view, setView] = useState<View3D>('flat')
+  // Where the camera starts for the made-up view, for Reset view.
+  // Made-up views show the cloth at its real size; this enlarges the pattern to see it better.
+  const [patternScale, setPatternScale] = useState(1)
+  const mockupFrame = useRef<{ camera: THREE.Vector3; target: THREE.Vector3 } | null>(null)
+  const mockupView = isMockup(view)
+  // The thread view's shape (flat for made-up things, which use their own geometry).
+  const shape: ClothShape = mockupView ? 'flat' : (view as ClothShape)
   // Weaving animation: how many picks are woven so far (null when not animating: all of them).
   const [woven, setWoven] = useState<number | null>(null)
   // Real yarn sizes and spacing, from the yarn library and the warp calculator's sett.
@@ -182,23 +143,38 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     renderer.domElement.setAttribute('aria-label', '3D preview of the cloth')
     renderer.domElement.setAttribute('role', 'img')
 
+    renderer.toneMapping = THREE.NeutralToneMapping
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000)
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.4))
-    // Lights from above the face and behind the back, so both sides read when turned over.
-    const key = new THREE.DirectionalLight(0xffffff, 1.8)
-    key.position.set(-0.6, 0.8, 1)
-    scene.add(key)
-    const fill = new THREE.DirectionalLight(0xffffff, 0.9)
+    // Soft light from all round, as in a room, so threads read as round and colours stay true.
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    scene.environmentIntensity = 0.45
+    pmrem.dispose()
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 4000)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8070, 0.4))
+    // A key light from the upper left casting soft shadows, and a fill from behind for the back.
+    const key = new THREE.DirectionalLight(0xffffff, 1.7)
+    key.castShadow = true
+    key.shadow.mapSize.set(1024, 1024)
+    key.shadow.bias = -0.0005
+    key.shadow.normalBias = 0.02
+    scene.add(key, key.target)
+    const fill = new THREE.DirectionalLight(0xffffff, 0.7)
     fill.position.set(0.5, -0.4, -1)
     scene.add(fill)
     const cloth = new THREE.Group()
-    scene.add(cloth)
+    const mockup = new THREE.Group()
+    const catcher = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ opacity: 0.22 }))
+    catcher.receiveShadow = true
+    scene.add(cloth, mockup, catcher)
 
     const render = () => renderer.render(scene, camera)
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.addEventListener('change', render)
-    const s: Scene = { renderer, scene, camera, controls, cloth, render }
+    const s: Scene = { renderer, scene, camera, controls, cloth, mockup, catcher, key, render }
     setScene3d(s)
 
     const resize = () => {
@@ -215,70 +191,69 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     return () => {
       observer.disconnect()
       controls.dispose()
-      clearCloth(cloth)
+      clearGroup(cloth)
+      clearGroup(mockup)
+      catcher.geometry.dispose()
+      ;(catcher.material as THREE.Material).dispose()
+      scene.environment?.dispose()
       renderer.dispose()
       renderer.domElement.remove()
       setScene3d(null)
     }
   }, [open, box])
 
-  // Rebuild the threads whenever the draft, area or thickness changes.
+  // Rebuild the threads whenever the draft, area, thickness or shape changes.
   useEffect(() => {
     const s = scene3d
     if (!s) return
-    clearCloth(s.cloth)
-    const materials = new Map<string, THREE.MeshPhysicalMaterial>()
+    clearGroup(s.cloth)
+    s.cloth.visible = !mockupView
+    s.catcher.visible = !mockupView && shape === 'flat'
+    s.scene.background = new THREE.Color(background)
+    if (mockupView) return
+    const materials = new Map<string, THREE.Material>()
+    const options = { thickness: thickness / 100, shape, halfW, halfH }
     for (const path of model.paths) {
-      const curve = new THREE.CatmullRomCurve3(
-        path.points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
-        false,
-        'centripetal',
-      )
-      const radius = path.radius * (thickness / 100)
-      const geometry = new THREE.TubeGeometry(
-        curve,
-        path.points.length * SEGMENTS_PER_CROSSING,
-        radius,
-        RADIAL_SEGMENTS,
-        false,
-      )
-      shapeYarn(
-        geometry,
-        path.texture,
-        path.kind === 'warp' ? path.index : 10_000 + path.index,
-        radius,
-        curve.getLength(),
-      )
-      if (shape !== 'flat') {
-        const pos = geometry.attributes.position
-        for (let i = 0; i < pos.count; i++) {
-          const [x, y, z] = shapePoint(shape, [pos.getX(i), pos.getY(i), pos.getZ(i)], halfW, halfH)
-          pos.setXYZ(i, x, y, z)
-        }
-        geometry.computeVertexNormals()
-      }
-      const key = `${path.color}|${path.texture}`
-      let material = materials.get(key)
-      if (!material) {
-        const spec = TEXTURES[path.texture]
-        material = new THREE.MeshPhysicalMaterial({
-          color: path.color,
-          roughness: spec.roughness,
-          metalness: 0,
-          sheen: spec.sheen,
-          sheenRoughness: 0.4,
-          sheenColor: new THREE.Color(0xffffff),
-          map: twistMap(spec.twist),
-        })
-        materials.set(key, material)
-      }
-      const mesh = new THREE.Mesh(geometry, material)
+      const mesh = new THREE.Mesh(yarnGeometry(path, options), yarnMaterial(materials, path.color, path.texture))
+      mesh.castShadow = true
+      mesh.receiveShadow = true
       mesh.userData = { kind: path.kind, index: path.index }
       s.cloth.add(mesh)
     }
-    s.scene.background = new THREE.Color(background)
+    // The shadow catcher lies just behind the cloth; from the back it faces away and isn't drawn.
+    s.catcher.scale.set(halfW * 4, halfH * 4, 1)
+    s.catcher.position.set(0, 0, -2.5)
+    s.key.position.set(-halfW * 0.8, halfH * 1.2, Math.max(halfW, halfH) * 2)
+    aimShadows(s, new THREE.Vector3(0, 0, 0), Math.max(halfW, halfH) * 1.3)
     s.render()
-  }, [scene3d, model, thickness, background, shape, halfW, halfH])
+  }, [scene3d, model, thickness, background, shape, halfW, halfH, mockupView])
+
+  // Make up the cloth into a sofa, rug or tapestry, at its real scale.
+  useEffect(() => {
+    const s = scene3d
+    if (!s) return
+    clearGroup(s.mockup)
+    if (!mockupView || !density) return
+    const textures = clothTextures(draft)
+    const real = tileSize(draft, density)
+    const tile = { width: real.width * patternScale, height: real.height * patternScale }
+    const made =
+      view === 'sofa'
+        ? sofa(textures, tile)
+        : view === 'rug'
+          ? rug(textures, tile, draft.warpColors)
+          : tapestry(textures, tile)
+    textures.color.dispose()
+    textures.bump.dispose()
+    s.mockup.add(made.group)
+    s.key.position.copy(made.target).add(new THREE.Vector3(-made.shadowReach, made.shadowReach * 1.6, made.shadowReach))
+    aimShadows(s, made.target, made.shadowReach)
+    mockupFrame.current = { camera: made.camera, target: made.target }
+    s.camera.position.copy(made.camera)
+    s.controls.target.copy(made.target)
+    s.controls.update()
+    s.render()
+  }, [scene3d, mockupView, view, draft, density, patternScale])
 
   // While weaving, show only the picks woven so far.
   const weftOrder = useMemo(() => model.paths.filter((p) => p.kind === 'weft').map((p) => p.index), [model])
@@ -302,8 +277,8 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
 
   // Frame the cloth when it opens, when the area changes, and when it's turned over.
   useEffect(() => {
-    if (scene3d) placeCamera(scene3d, frame, back)
-  }, [scene3d, frame, back])
+    if (scene3d && !mockupView) placeCamera(scene3d, frame, back)
+  }, [scene3d, frame, back, mockupView])
 
   const saveImage = () =>
     scene3d?.renderer.domElement.toBlob(
@@ -324,27 +299,43 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
           <Button
             startIcon={woven === null ? <PlayArrowIcon /> : <StopIcon />}
             onClick={() => setWoven(woven === null ? 0 : null)}
-            disabled={failed !== null}
+            disabled={failed !== null || mockupView}
           >
             {woven === null ? 'Weave it' : 'Stop'}
           </Button>
           <TextField
             select
             size="small"
-            label="Shape"
-            value={shape}
-            onChange={(e) => setShape(e.target.value as ClothShape)}
-            sx={{ width: 130 }}
+            label="Show as"
+            value={view}
+            onChange={(e) => {
+              setWoven(null)
+              setView(e.target.value as View3D)
+            }}
+            sx={{ width: 160 }}
           >
-            <MenuItem value="flat">Flat</MenuItem>
-            <MenuItem value="draped">Draped</MenuItem>
-            <MenuItem value="cushion">Cushion</MenuItem>
-            <MenuItem value="rolled">Rolled</MenuItem>
+            {VIEWS_3D.map((v) => (
+              <MenuItem key={v.value} value={v.value}>
+                {v.label}
+              </MenuItem>
+            ))}
           </TextField>
-          <Button startIcon={<FlipIcon />} onClick={() => setBack(!back)} aria-pressed={back}>
+          <Button startIcon={<FlipIcon />} onClick={() => setBack(!back)} aria-pressed={back} disabled={mockupView}>
             {back ? 'Show face' : 'Show back'}
           </Button>
-          <Button startIcon={<RestartAltIcon />} onClick={() => scene3d && placeCamera(scene3d, frame, back)}>
+          <Button
+            startIcon={<RestartAltIcon />}
+            onClick={() => {
+              const made = mockupFrame.current
+              if (!scene3d) return
+              if (mockupView && made) {
+                scene3d.camera.position.copy(made.camera)
+                scene3d.controls.target.copy(made.target)
+                scene3d.controls.update()
+                scene3d.render()
+              } else placeCamera(scene3d, frame, back)
+            }}
+          >
             Reset view
           </Button>
           <Button startIcon={<DownloadIcon />} onClick={saveImage} disabled={failed !== null}>
@@ -361,7 +352,7 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
           ref={setBox}
           data-testid="fabric-3d"
           data-woven={woven ?? model.picks}
-          data-shape={shape}
+          data-shape={view}
           data-ends={model.ends}
           data-picks={model.picks}
           data-threads={model.paths.length}
@@ -373,32 +364,50 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         direction={{ xs: 'column', sm: 'row' }}
         sx={{ gap: { xs: 0, sm: 4 }, px: 3, py: 1, borderTop: 1, borderColor: 'divider', alignItems: { sm: 'center' } }}
       >
-        <Box sx={{ flex: 1, maxWidth: 360 }}>
-          <Typography variant="caption" color="text.secondary" id="shown-label">
-            Threads shown: {model.ends} ends × {model.picks} picks
-          </Typography>
-          <Slider
-            size="small"
-            min={Math.min(4, largest)}
-            max={largest}
-            value={shown}
-            onChange={(_, v) => setShown(v as number)}
-            aria-labelledby="shown-label"
-          />
-        </Box>
-        <Box sx={{ flex: 1, maxWidth: 360 }}>
-          <Typography variant="caption" color="text.secondary" id="thickness-label">
-            Thread thickness: {thickness}%
-          </Typography>
-          <Slider
-            size="small"
-            min={40}
-            max={100}
-            value={thickness}
-            onChange={(_, v) => setThickness(v as number)}
-            aria-labelledby="thickness-label"
-          />
-        </Box>
+        {mockupView ? (
+          <Box sx={{ flex: 1, maxWidth: 360 }}>
+            <Typography variant="caption" color="text.secondary" id="scale-label">
+              Pattern size: {patternScale === 1 ? 'real size' : `${patternScale}× real size`}
+            </Typography>
+            <Slider
+              size="small"
+              min={1}
+              max={10}
+              value={patternScale}
+              onChange={(_, v) => setPatternScale(v as number)}
+              aria-labelledby="scale-label"
+            />
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ flex: 1, maxWidth: 360 }}>
+              <Typography variant="caption" color="text.secondary" id="shown-label">
+                Threads shown: {model.ends} ends × {model.picks} picks
+              </Typography>
+              <Slider
+                size="small"
+                min={Math.min(4, largest)}
+                max={largest}
+                value={shown}
+                onChange={(_, v) => setShown(v as number)}
+                aria-labelledby="shown-label"
+              />
+            </Box>
+            <Box sx={{ flex: 1, maxWidth: 360 }}>
+              <Typography variant="caption" color="text.secondary" id="thickness-label">
+                Thread thickness: {thickness}%
+              </Typography>
+              <Slider
+                size="small"
+                min={40}
+                max={100}
+                value={thickness}
+                onChange={(_, v) => setThickness(v as number)}
+                aria-labelledby="thickness-label"
+              />
+            </Box>
+          </>
+        )}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <FormControlLabel
             control={<Switch checked={realSizes} onChange={(e) => setRealSizes(e.target.checked)} />}
@@ -415,8 +424,8 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
           )}
         </Box>
         <Typography variant="body2" color="text.secondary">
-          {model.layered ? 'Double cloth: the lower layer is drawn behind the upper. ' : ''}Drag to turn, scroll or
-          pinch to zoom.
+          {model.layered && !mockupView ? 'Double cloth: the lower layer is drawn behind the upper. ' : ''}Drag to turn,
+          scroll or pinch to zoom.
         </Typography>
       </Stack>
     </Dialog>

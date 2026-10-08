@@ -54,13 +54,14 @@ describe('resizeDraft', () => {
     expect(ascii(r)[0].slice(0, 8)).toBe('####....')
   })
 
-  it('supports up to 24 shafts and treadles', () => {
-    expect([MAX_SHAFTS, MAX_TREADLES]).toEqual([24, 24])
-    const r = resizeDraft(defaultDraft(), { shafts: 24, treadles: 24, ends: 48 })
-    expect(new Set(r.threading).size).toBe(24)
-    expect(r.tieup).toHaveLength(24)
-    expect(r.tieup.every((row) => row.length === 24 && row.filter(Boolean).length === 12)).toBe(true)
+  it('supports up to 128 shafts and treadles', () => {
+    expect([MAX_SHAFTS, MAX_TREADLES]).toEqual([128, 128])
+    const r = resizeDraft(defaultDraft(), { shafts: 128, treadles: 128, ends: 256 })
+    expect(new Set(r.threading).size).toBe(128)
+    expect(r.tieup).toHaveLength(128)
+    expect(r.tieup.every((row) => row.length === 128 && row.filter(Boolean).length === 64)).toBe(true)
     expect(parseDraft(r)).toEqual(r)
+    expect(() => parseDraft({ ...r, shafts: 129 })).toThrow(/dimensions/)
   })
 })
 

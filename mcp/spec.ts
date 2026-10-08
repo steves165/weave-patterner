@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { type Draft, parseDraft } from '../src/weave'
+import { type Draft, MAX_SHAFTS, MAX_TREADLES, parseDraft } from '../src/weave'
 
 /**
  * The pattern format AIs write: 1-based shaft and treadle numbers, threading/treadling given as one repeat
@@ -10,12 +10,12 @@ const positive = z.number().int().min(1)
 
 export const patternShape = {
   name: z.string().min(1).max(100).describe('Pattern name'),
-  shafts: z.number().int().min(1).max(32).describe('Number of shafts'),
+  shafts: z.number().int().min(1).max(MAX_SHAFTS).describe('Number of shafts'),
   treadles: z
     .number()
     .int()
     .min(1)
-    .max(32)
+    .max(MAX_TREADLES)
     .optional()
     .describe('Number of treadles (defaults to the highest treadle used). Omit when using liftplan.'),
   threading: z

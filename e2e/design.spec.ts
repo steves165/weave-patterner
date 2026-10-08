@@ -27,7 +27,8 @@ test.describe('draw the cloth', () => {
     await expect(field(page, 'Shafts')).toHaveValue('4')
   })
 
-  test('warns when the cloth needs more shafts than a loom has', async ({ page }) => {
+  test('works out drafts needing more than 24 shafts', async ({ page }) => {
+    // 25 different columns: a diagonal. (Over 128 is refused; see the unit tests.)
     await page.getByLabel('Ends', { exact: true }).fill('30')
     await page.getByLabel('Ends', { exact: true }).press('Enter')
     await openTool(page, /Draw the cloth/)
@@ -36,8 +37,8 @@ test.describe('draw the cloth', () => {
       await dialog(page)
         .getByRole('checkbox', { name: `Pick ${i}, end ${i}`, exact: true })
         .click()
-    await expect(dialog(page).getByRole('alert')).toContainText('needs 25 shafts')
-    await expect(dialog(page).getByRole('button', { name: 'Create draft' })).toBeDisabled()
+    await expect(dialog(page).getByTestId('cloth-needs')).toHaveText('Needs 25 shafts and 25 treadles')
+    await expect(dialog(page).getByRole('button', { name: 'Create draft' })).toBeEnabled()
   })
 })
 

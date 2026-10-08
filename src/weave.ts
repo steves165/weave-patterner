@@ -13,9 +13,9 @@ export interface Draft {
   weftColors: string[]
 }
 
-/** Most shafts and treadles a draft can have (a 24-shaft dobby). */
-export const MAX_SHAFTS = 24
-export const MAX_TREADLES = 24
+/** Most shafts and treadles a draft can have: 128, as in WeavePoint, for large dobby and computer looms. */
+export const MAX_SHAFTS = 128
+export const MAX_TREADLES = 128
 
 export const resize = <T>(arr: T[], len: number, fill: (i: number) => T): T[] =>
   Array.from({ length: len }, (_, i) => (i < arr.length ? arr[i] : fill(i)))
@@ -103,7 +103,12 @@ export function parseDraft(data: unknown): Draft {
   const d = data as Partial<Draft> | null
   if (!d || typeof d !== 'object') throw new Error('Not a weave pattern')
   const { shafts, treadles, ends, picks } = d
-  if (!isInt(shafts, 1, 64) || !isInt(treadles, 1, 64) || !isInt(ends, 1, 1000) || !isInt(picks, 1, 1000))
+  if (
+    !isInt(shafts, 1, MAX_SHAFTS) ||
+    !isInt(treadles, 1, MAX_TREADLES) ||
+    !isInt(ends, 1, 1000) ||
+    !isInt(picks, 1, 1000)
+  )
     throw new Error('Pattern has missing or invalid dimensions')
   const boolGrid = (g: unknown, rows: number, cols: number): g is boolean[][] =>
     Array.isArray(g) &&

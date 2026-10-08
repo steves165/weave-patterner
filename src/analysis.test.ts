@@ -42,9 +42,9 @@ describe('draftFromCloth', () => {
   })
 
   it('refuses cloth needing too many shafts', () => {
-    // 25 different columns: a diagonal.
-    const cloth = Array.from({ length: 25 }, (_, p) => Array.from({ length: 25 }, (_, e) => p === e))
-    expect(() => draftFromCloth(cloth, defaultDraft())).toThrow(/needs 25 shafts/)
+    // 129 different columns: a diagonal.
+    const cloth = Array.from({ length: 129 }, (_, p) => Array.from({ length: 129 }, (_, e) => p === e))
+    expect(() => draftFromCloth(cloth, defaultDraft())).toThrow(/needs 129 shafts/)
     expect(() => draftFromCloth([], defaultDraft())).toThrow(/Draw some cloth/)
   })
 })

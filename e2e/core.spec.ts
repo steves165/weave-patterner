@@ -108,15 +108,17 @@ test('the sample file on disk is the one used in tests', () => {
   )
 })
 
-test('supports up to 24 shafts and treadles', async ({ page }) => {
+test('supports up to 128 shafts and treadles', async ({ page }) => {
   const shafts = page.getByLabel('Shafts', { exact: true })
   const treadles = page.getByLabel('Treadles', { exact: true })
-  await setField(shafts, '24')
-  await setField(treadles, '30')
-  await expect(shafts).toHaveValue('24')
-  await expect(treadles).toHaveValue('24') // clamped to the limit
-  await expect(cell(page, 'End 24, shaft 24')).toHaveAttribute('aria-checked', 'true')
-  await expect(cell(page, 'Treadle 24, shaft 24')).toBeVisible()
-  await expect(cell(page, 'Pick 24, treadle 24')).toHaveAttribute('aria-checked', 'true')
-  await expect(page.getByText('24 shafts · 24 treadles').first()).toBeVisible()
+  await setField(page.getByLabel('Ends', { exact: true }), '128')
+  await setField(page.getByLabel('Picks', { exact: true }), '128')
+  await setField(shafts, '128')
+  await setField(treadles, '130')
+  await expect(shafts).toHaveValue('128')
+  await expect(treadles).toHaveValue('128') // clamped to the limit
+  await expect(cell(page, 'End 128, shaft 128')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Treadle 128, shaft 128')).toBeVisible()
+  await expect(cell(page, 'Pick 128, treadle 128')).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByText('128 shafts · 128 treadles').first()).toBeVisible()
 })

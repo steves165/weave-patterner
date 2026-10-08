@@ -118,9 +118,9 @@ describe('doubleCloth', () => {
       opts({
         structure: 'blocks',
         weave: 'twill',
-        profile: { threading: [1], treadling: [1], tieup: [[true], [true], [true], [true]] },
+        profile: { threading: [1], treadling: [1], tieup: Array.from({ length: 17 }, () => [true]) },
       }),
-      /needs 32 shafts/,
+      /needs 136 shafts/,
     ],
     [opts({ structure: 'blocks', profile: { threading: [3], treadling: [1], tieup: [[true]] } }), /Block 3 isn't/],
     [opts({ repeats: 0 }), /at least one repeat/],

@@ -61,8 +61,8 @@ const WARP_PATTERN_TABBY: [ColorKey, string][] = [
 export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
   overshot: { name: 'Overshot', maxBlocks: 4, freeTieup: false, colors: WARP_PATTERN_TABBY },
   crackle: { name: 'Crackle', maxBlocks: 4, freeTieup: false, colors: WARP_PATTERN_TABBY },
-  'summer-winter': { name: 'Summer and winter', maxBlocks: 10, freeTieup: true, colors: WARP_PATTERN_TABBY },
-  bronson: { name: 'Bronson lace', maxBlocks: 10, freeTieup: true, colors: WARP_PATTERN_TABBY },
+  'summer-winter': { name: 'Summer and winter', maxBlocks: 40, freeTieup: true, colors: WARP_PATTERN_TABBY },
+  bronson: { name: 'Bronson lace', maxBlocks: 40, freeTieup: true, colors: WARP_PATTERN_TABBY },
   'ms-os': {
     name: "M's and O's",
     maxBlocks: 2,
@@ -74,7 +74,8 @@ export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
   },
   damask: {
     name: 'Damask',
-    maxBlocks: 4,
+    // 5 shafts and up to 5 treadles a block.
+    maxBlocks: 25,
     freeTieup: true,
     colors: [
       ['warp', 'Warp'],
@@ -92,7 +93,8 @@ export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
   },
   taquete: {
     name: 'Taqueté',
-    maxBlocks: 10,
+    // Up to 4 treadles a block treadle.
+    maxBlocks: 32,
     freeTieup: true,
     colors: [
       ['warp', 'Warp'],
@@ -102,7 +104,7 @@ export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
   },
   rep: {
     name: 'Rep weave',
-    maxBlocks: 12,
+    maxBlocks: 64,
     freeTieup: true,
     colors: [
       ['warp', 'Dark warp'],

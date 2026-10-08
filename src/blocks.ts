@@ -1,9 +1,9 @@
-import { type Draft, parseDraft } from './weave'
+import { type Draft, MAX_SHAFTS, parseDraft } from './weave'
 
 /** Shafts (and treadles) each block uses in turned twill. */
 export const UNIT = 4
-/** Most blocks (and block treadles): 6 × 4 = 24 shafts. */
-export const MAX_BLOCKS = 6
+/** Most blocks (and block treadles): as many as fit, 4 shafts each. */
+export const MAX_BLOCKS = Math.floor(MAX_SHAFTS / UNIT)
 
 export interface Profile {
   /** Block (1-based) for each profile unit across the warp. */
@@ -17,7 +17,7 @@ export interface Profile {
 /**
  * Block substitution into turned twill: each profile unit becomes 4 ends (a straight draw on the block's own 4
  * shafts) or 4 picks (the block treadle's own 4 treadles). Where the profile tie-up is on, the block weaves 3/1
- * (warp-faced) twill; elsewhere 1/3 (weft-faced). Up to 6 blocks, so up to 24 shafts and treadles.
+ * (warp-faced) twill; elsewhere 1/3 (weft-faced). Up to MAX_BLOCKS blocks, 4 shafts and treadles each.
  */
 export function turnedTwill(profile: Profile, warpColors: string[], weftColors: string[]): Draft {
   const blocks = profile.tieup.length

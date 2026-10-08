@@ -79,8 +79,8 @@ test('tubes and double width use one shuttle; twill needs more shafts per block'
   await expect(result(page)).toHaveText('Makes 16 shafts, 16 treadles, 56 ends × 56 picks')
   await dialog(page).getByLabel('Blocks', { exact: true }).fill('3')
   await expect(result(page)).toHaveText(/Makes 24 shafts/)
-  await dialog(page).getByLabel('Blocks', { exact: true }).fill('4') // only 3 blocks fit in 24 shafts
-  await expect(dialog(page).getByLabel('Blocks', { exact: true })).toHaveValue('3')
+  await dialog(page).getByLabel('Blocks', { exact: true }).fill('20') // only 16 blocks fit in 128 shafts
+  await expect(dialog(page).getByLabel('Blocks', { exact: true })).toHaveValue('16')
 })
 
 test('stitched layers, layer labels in weaving mode, and hidden crossings when tracing', async ({ page }) => {

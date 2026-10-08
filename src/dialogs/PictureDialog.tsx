@@ -16,13 +16,13 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { turnedTwill } from '../blocks'
-import { blockWeave } from '../blockWeaves'
+import { MAX_BLOCKS, turnedTwill } from '../blocks'
+import { BLOCK_WEAVES, blockWeave } from '../blockWeaves'
 import { doubleCloth } from '../doublecloth'
 import { lightnessGrid, midLightness, type Pixels, pictureProfile, twoTone } from '../image'
 import { readImagePixels } from '../imageFile'
 import { usePhone } from '../layout'
-import type { Draft } from '../weave'
+import { type Draft, MAX_SHAFTS } from '../weave'
 
 interface Props {
   open: boolean
@@ -34,12 +34,13 @@ type Structure = 'summer-winter' | 'taquete' | 'turned-twill' | 'damask' | 'doub
 
 /** Unit weaves (any block can be pattern on any pick), with their block limits. */
 const STRUCTURES: [Structure, string, number][] = [
-  ['summer-winter', 'Summer and winter', 10],
-  ['taquete', 'Taqueté', 10],
-  ['rep', 'Rep weave', 12],
-  ['turned-twill', 'Turned twill', 6],
-  ['double-cloth', 'Double cloth', 6],
-  ['damask', 'Damask', 4],
+  ['summer-winter', 'Summer and winter', BLOCK_WEAVES['summer-winter'].maxBlocks],
+  ['taquete', 'Taqueté', BLOCK_WEAVES.taquete.maxBlocks],
+  ['rep', 'Rep weave', BLOCK_WEAVES.rep.maxBlocks],
+  ['turned-twill', 'Turned twill', MAX_BLOCKS],
+  // Plain-weave double cloth: 4 shafts a block.
+  ['double-cloth', 'Double cloth', Math.floor(MAX_SHAFTS / 4)],
+  ['damask', 'Damask', BLOCK_WEAVES.damask.maxBlocks],
 ]
 
 /** Builds the draft for a structure, with dark showing where the picture is dark. */
