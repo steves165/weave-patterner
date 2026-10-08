@@ -43,9 +43,9 @@ export function RigidHeddleDialog({ open, draft, onClose }: Props) {
               This draft can't be woven on a rigid heddle with one pick-up stick. {result.reason}
             </Alert>
             <Typography variant="body2" color="text.secondary">
-              A rigid heddle can lift the hole ends, the slot ends, or (with a pick-up stick) a chosen set of slot ends,
-              with or without the hole ends. Plain weave and pick-up patterns built on it translate; twills and most
-              4-shaft structures don't.
+              A rigid heddle can lift the hole ends, the slot ends, or (with a pick-up stick and a heddle rod) up to two
+              chosen sets of slot ends, alone or together, with or without the hole ends. Plain weave and pick-up
+              patterns built on it translate; twills and most 4-shaft structures don't.
             </Typography>
           </Stack>
         )}
@@ -61,6 +61,12 @@ export function RigidHeddleDialog({ open, draft, onClose }: Props) {
                 ? 'not needed.'
                 : `with the heddle down, pick up slot ends ${list(result.plan.pickUp)} behind the heddle.`}
             </Typography>
+            {result.plan.rod.length > 0 && (
+              <Typography data-testid="rh-rod">
+                <strong>Heddle rod:</strong> in front of the heddle, with the heddle down, pick up slot ends{' '}
+                {list(result.plan.rod)} on a heddle rod (a stick with string heddles round those ends).
+              </Typography>
+            )}
             <Box>
               <Typography sx={{ mb: 1 }}>
                 <strong>Weaving:</strong>

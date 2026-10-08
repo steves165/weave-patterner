@@ -105,3 +105,20 @@ test.describe('tablet weaving', () => {
     await expect(dialog(page).getByLabel('Turning', { exact: true })).toHaveValue('8F 8B 8F 8B')
   })
 })
+
+test('rigid heddle: a second set of picked-up ends goes on a heddle rod', async ({ page }) => {
+  // Holes on shaft 1, slot ends on shafts 2–4 in turn; a lift plan using two different sets of slot ends.
+  const d = defaultDraft()
+  d.threading = d.threading.map((_, e) => (e % 2 === 0 ? 0 : 1 + (Math.floor(e / 2) % 3)))
+  d.tieup = [0, 1, 2, 3].map((s) => [0, 1, 2, 3].map((t) => s === t))
+  const lifts = [[1], [2, 3, 4], [2], [3]]
+  d.treadling = d.treadling.map((_, p) => [0, 1, 2, 3].map((t) => lifts[p % 4].includes(t + 1)))
+  await importDraft(page, d)
+  await openTool(page, /Rigid heddle/)
+  const dialog = page.getByRole('dialog', { name: 'Rigid heddle' })
+  await expect(dialog.getByTestId('rh-pickup')).toContainText('pick up slot ends 2, 8')
+  await expect(dialog.getByTestId('rh-rod')).toContainText('pick up slot ends 4, 10')
+  const steps = dialog.getByRole('list', { name: 'Weaving steps' })
+  await expect(steps.getByRole('listitem').nth(2)).toHaveText('Pick 3: Heddle neutral, pick-up stick on edge')
+  await expect(steps.getByRole('listitem').nth(3)).toHaveText('Pick 4: Heddle neutral, heddle rod lifted')
+})
