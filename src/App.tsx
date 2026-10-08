@@ -19,7 +19,7 @@ import { ToolsDialog } from './dialogs/ToolsDialog'
 import { WeavingMode } from './dialogs/WeavingMode'
 import { YarnsDialog } from './dialogs/YarnsDialog'
 import { download, exportDraft, fileBase } from './exportDraft'
-import { longestFloats, longFloatMask } from './floats'
+import { longestFloats, longFloatMask, unwovenThreads } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
 import { useRememberCurrent } from './hooks/useRememberCurrent'
 import { useSharedPatternLink } from './hooks/useSharedPatternLink'
@@ -71,6 +71,7 @@ export default function App() {
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
+  const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
   const floatMask = useMemo(
     () => (highlightFloats ? longFloatMask(draft, floatLimit, drawdown) : null),
     [highlightFloats, draft, floatLimit, drawdown],
@@ -191,6 +192,7 @@ export default function App() {
             onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
             onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
             floats={floats}
+            unwoven={unwoven}
             highlightFloats={highlightFloats}
             onHighlightFloats={(on) => setView({ highlightFloats: on })}
             floatLimit={floatLimit}

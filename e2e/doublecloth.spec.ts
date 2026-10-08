@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { openApp, openTool, toast } from './helpers'
+import { openApp, openTool, toast, toolbarButton } from './helpers'
 
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Double cloth' })
 const result = (page: Page) => dialog(page).getByTestId('doublecloth-result')
@@ -84,4 +84,39 @@ test('tubes and double width use one shuttle; twill needs more shafts per block'
   await expect(result(page)).toHaveText(/Makes 24 shafts/)
   await dialog(page).getByLabel('Blocks', { exact: true }).fill('4') // only 3 blocks fit in 24 shafts
   await expect(dialog(page).getByLabel('Blocks', { exact: true })).toHaveValue('3')
+})
+
+test('stitched layers, layer labels in weaving mode, and hidden crossings when tracing', async ({ page }) => {
+  await openTool(page, /Double cloth/)
+  await choose(page, 'Structure', 'Stitched layers')
+  await expect(dialog(page).getByLabel('Stitch every (repeats)')).toHaveValue('2')
+  await expect(result(page)).toHaveText('Makes 4 shafts, 6 treadles, 32 ends × 32 picks')
+  await choose(page, 'Structure', 'Two separate layers')
+  await dialog(page).getByRole('button', { name: 'Create draft' }).click()
+
+  // End 2 and pick 2 are both layer B: hidden on the face.
+  await page.locator('.drawdown [data-end="1"][data-pick="1"]').click()
+  await expect(page.getByTestId('trace-info')).toContainText('so this crossing is hidden on the face')
+  await page.keyboard.press('Escape')
+
+  await toolbarButton(page, 'Weave').click()
+  await expect(page.getByTestId('pick-layer')).toHaveText('Top layer')
+  await page.getByRole('button', { name: 'Next pick' }).click()
+  await expect(page.getByTestId('pick-layer')).toHaveText('Bottom layer (top layer lifted out of the way)')
+})
+
+test('single-layer drafts show no layer label when weaving', async ({ page }) => {
+  await toolbarButton(page, 'Weave').click()
+  await expect(page.getByTestId('instruction')).toBeVisible()
+  await expect(page.getByTestId('pick-layer')).toHaveCount(0)
+})
+
+test('warns about threads that are never woven in', async ({ page }) => {
+  await expect(page.getByTestId('unwoven')).toHaveCount(0)
+  // Untie shaft 4 from treadles 3 and 4: nothing lifts it any more.
+  await page.getByRole('checkbox', { name: 'Treadle 3, shaft 4', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Treadle 4, shaft 4', exact: true }).click()
+  await expect(page.getByTestId('unwoven')).toHaveText(
+    'Not woven in: ends 4, 8, 12, 16, 20, 24 and 2 more (they never cross over and under)',
+  )
 })

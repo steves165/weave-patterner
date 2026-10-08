@@ -1,3 +1,4 @@
+import type { LayerMap } from './layers'
 import { isDirectTieup } from './liftplan'
 import type { Draft } from './weave'
 
@@ -39,4 +40,13 @@ export function traceCell(d: Draft, end: number, pick: number): Trace {
   else
     explanation = `${at}: weft shows because end ${end + 1} is on shaft ${s}, and treadle${treadles.length > 1 ? 's' : ''} ${one(treadles)} ${treadles.length > 1 ? "don't" : "doesn't"} lift it.`
   return { end, pick, shaft, treadles, lifting, warpUp, explanation }
+}
+
+/** For layered cloth (double cloth), a note on which side a crossing is hidden, or null if it shows on both. */
+export function layerNote(layers: { face: LayerMap; back: LayerMap }, end: number, pick: number): string | null {
+  if (layers.face.hidden[pick][end])
+    return `End ${end + 1} and pick ${pick + 1} are both in the lower layer here, so this crossing is hidden on the face.`
+  if (layers.back.hidden[pick][end])
+    return `End ${end + 1} and pick ${pick + 1} are both in the upper layer here, so this crossing is hidden on the back.`
+  return null
 }

@@ -26,6 +26,7 @@ const STRUCTURES: [Structure, string, string][] = [
   ['separate', 'Two separate layers', 'Two cloths woven at once, one above the other'],
   ['tubular', 'Tube', 'One shuttle goes round both layers, joining them at both edges'],
   ['double-width', 'Double width', 'Joined at one edge only, so it opens out to twice the width'],
+  ['stitched', 'Stitched layers', 'Held together at intervals where a top end dips under a bottom pick'],
   ['blocks', 'Block double cloth', 'The layers swap places to make a two-colour pattern, reversed on the back'],
 ]
 
@@ -42,6 +43,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
   const [structure, setStructure] = useState<Structure>('blocks')
   const [weave, setWeave] = useState<LayerWeave>('plain')
   const [repeats, setRepeats] = useState('8')
+  const [stitchEvery, setStitchEvery] = useState('2')
   const [colors, setColors] = useState({ warpA: '#1a237e', weftA: '#1a237e', warpB: '#fafafa', weftB: '#fafafa' })
   const [profile, setProfile] = useState(defaultProfileInput)
   const oneShuttle = structure === 'tubular' || structure === 'double-width'
@@ -53,6 +55,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
           structure,
           weave,
           repeats: Number(repeats),
+          stitchEvery: Number(stitchEvery),
           ...colors,
           profile: structure === 'blocks' ? toProfile(profile) : undefined,
         }),
@@ -60,7 +63,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) }
     }
-  }, [structure, weave, repeats, colors, profile])
+  }, [structure, weave, repeats, stitchEvery, colors, profile])
 
   const label = STRUCTURES.find(([s]) => s === structure)?.[1] ?? ''
 
@@ -109,6 +112,17 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
                 onChange={(e) => setRepeats(e.target.value)}
                 slotProps={{ htmlInput: { min: 1 } }}
                 sx={{ width: 110 }}
+              />
+            )}
+            {structure === 'stitched' && (
+              <TextField
+                size="small"
+                type="number"
+                label="Stitch every (repeats)"
+                value={stitchEvery}
+                onChange={(e) => setStitchEvery(e.target.value)}
+                slotProps={{ htmlInput: { min: 1 } }}
+                sx={{ width: 170 }}
               />
             )}
           </Stack>

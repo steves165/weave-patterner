@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { longestFloats, longFloatMask } from './floats'
+import { longestFloats, longFloatMask, unwovenThreads } from './floats'
 import { greenBlocks } from './testUtils'
 import { defaultDraft } from './weave'
 
@@ -46,5 +46,29 @@ describe('longFloatMask', () => {
     d.treadling = d.treadling.map(() => [true, false, false, false]) // shafts 1 and 2 up on every pick
     const mask = longFloatMask(d, 5)
     expect(mask.every((row) => row[0] && row[1] && !row[2])).toBe(true)
+  })
+})
+
+describe('unwovenThreads', () => {
+  it('finds nothing in a normal draft', () => {
+    expect(unwovenThreads(defaultDraft())).toEqual({ ends: [], picks: [] })
+    expect(unwovenThreads(greenBlocks())).toEqual({ ends: [], picks: [] })
+  })
+
+  it('finds ends on a shaft no treadle lifts', () => {
+    const d = defaultDraft()
+    d.tieup[3] = [false, false, false, false] // shaft 4 never rises
+    const r = unwovenThreads(d)
+    expect(r.ends).toEqual([3, 7, 11, 15, 19, 23, 27, 31])
+    expect(r.picks).toEqual([])
+  })
+
+  it('ignores unthreaded ends and empty picks', () => {
+    const d = defaultDraft()
+    d.threading[0] = -1
+    d.treadling[0] = [false, false, false, false]
+    expect(unwovenThreads(d)).toEqual({ ends: [], picks: [] })
+    d.treadling[1] = [true, true, true, true] // lifts everything: passes under every end
+    expect(unwovenThreads(d).picks).toEqual([1])
   })
 })

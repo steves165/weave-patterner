@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type DoubleClothOptions, doubleCloth } from './doublecloth'
-import { clothView } from './layers'
+import { clothView, isLayered, layerMap, pickLayers } from './layers'
+import { layerNote } from './trace'
 import { computeDrawdown, defaultDraft } from './weave'
 
 const COLORS = { warpA: '#000000', warpB: '#ffffff', weftA: '#111111', weftB: '#eeeeee' }
@@ -48,6 +49,19 @@ describe('doubleCloth', () => {
     // Treadles go A, B per pick index: picks run A0 B0 B1 A1.
     const layerOf = (p: number) => wide.treadling[p].findIndex(Boolean) % 2
     expect([0, 1, 2, 3, 4, 5, 6, 7].map(layerOf)).toEqual([0, 1, 1, 0, 0, 1, 1, 0])
+  })
+
+  it('stitches the layers together on every few repeats', () => {
+    const d = doubleCloth(opts({ structure: 'stitched', repeats: 4, stitchEvery: 2 }))
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 6, 16, 16])
+    const dd = computeDrawdown(d)
+    // Layer-A ends go under some layer-B picks only in the stitching repeats (picks 5–8 and 13–16).
+    const dips = (p: number) => [0, 2, 4, 6, 8, 10, 12, 14].filter((e) => !dd[p][e]).length
+    expect([1, 3, 5, 7, 9, 11, 13, 15].map(dips)).toEqual([0, 0, 4, 4, 0, 0, 4, 4])
+    // Each stitch is under the layer-A weft on the pick before, so it barely shows on the face.
+    const face = clothView(d, 'face').flat()
+    expect(face.filter((s) => isA(s.color)).length / face.length).toBeGreaterThan(0.85)
+    expect(() => doubleCloth(opts({ structure: 'stitched', stitchEvery: 0 }))).toThrow(/at least every repeat/)
   })
 
   it('swaps layers by block, following the profile', () => {
@@ -143,5 +157,46 @@ describe('clothView', () => {
     const d = doubleCloth(opts({}))
     expect(clothView(d, 'face')).toHaveLength(d.picks)
     expect(clothView(d, 'face')[0]).toHaveLength(d.ends)
+  })
+})
+
+describe('pickLayers and layerNote', () => {
+  const both = (d: ReturnType<typeof doubleCloth>) => ({ face: layerMap(d, 'face'), back: layerMap(d, 'back') })
+
+  it('labels each pick of separate layers top or bottom, and nothing for single cloth', () => {
+    const d = doubleCloth(opts({}))
+    const { face, back } = both(d)
+    expect(pickLayers(face, back).slice(0, 4)).toEqual(['top', 'bottom', 'top', 'bottom'])
+    const single = both(defaultDraft())
+    expect(new Set(pickLayers(single.face, single.back))).toEqual(new Set([null]))
+    expect(isLayered(face, back)).toBe(true)
+    expect(isLayered(single.face, single.back)).toBe(false)
+  })
+
+  it('says the layers swap across the width in block double cloth', () => {
+    const d = doubleCloth(
+      opts({
+        structure: 'blocks',
+        profile: {
+          threading: [1, 1, 2, 2],
+          treadling: [1, 1],
+          tieup: [[true], [false]],
+        },
+      }),
+    )
+    const { face, back } = both(d)
+    expect(pickLayers(face, back).slice(0, 4)).toEqual(['both', 'both', 'both', 'both'])
+  })
+
+  it('notes where a crossing is hidden', () => {
+    const d = doubleCloth(opts({}))
+    const layers = both(d)
+    // End 2 (layer B) on pick 2 (layer B): under layer A on the face.
+    expect(layerNote(layers, 1, 1)).toMatch(/both in the lower layer here, so this crossing is hidden on the face/)
+    // End 1 (A) on pick 1 (A): hidden on the back.
+    expect(layerNote(layers, 0, 0)).toMatch(/hidden on the back/)
+    // End 1 (A) on pick 2 (B): A's end passes over B's weft between the layers; no note.
+    expect(layerNote(layers, 0, 1)).toBeNull()
+    expect(layerNote(both(defaultDraft()), 0, 0)).toBeNull()
   })
 })

@@ -10,9 +10,10 @@ export type LayerWeave = 'plain' | 'twill'
  * - tubular: one shuttle goes round both layers, joining them at both edges into a tube.
  * - double-width: one shuttle weaves top, bottom, bottom, top, joining the layers at one edge only, so the cloth
  *   opens out to twice the width.
+ * - stitched: two layers held together at intervals, where an upper-layer end drops under a lower-layer pick.
  * - blocks: the layers swap places by block (pick-up style double weave), following a block profile.
  */
-export type Structure = 'separate' | 'tubular' | 'double-width' | 'blocks'
+export type Structure = 'separate' | 'tubular' | 'double-width' | 'stitched' | 'blocks'
 
 export interface DoubleClothOptions {
   structure: Structure
@@ -24,6 +25,8 @@ export interface DoubleClothOptions {
   weftB: string
   /** Number of weave repeats across and along, for every structure except blocks. */
   repeats: number
+  /** Stitched only: stitch the layers together on every this many repeats along (default 2). */
+  stitchEvery?: number
   /** Blocks only. tieup[block][blockTreadle] is true where layer A is on top. */
   profile?: Profile
 }
@@ -75,15 +78,25 @@ export function doubleCloth(o: DoubleClothOptions): Draft {
   if (bad !== undefined) throw new Error(`Block ${bad} isn't in the profile tie-up`)
   if (profile.threading.length === 0 || profile.treadling.length === 0) throw new Error('Add at least one profile unit')
 
+  const stitchEvery = o.stitchEvery ?? 2
+  const stitched = o.structure === 'stitched'
+  if (stitched && (!Number.isInteger(stitchEvery) || stitchEvery < 1)) throw new Error('Stitch at least every repeat')
   const shafts = blockCount * 2 * n
-  const treadles = blockTreadles * 2 * n
+  // Stitching needs its own treadles: one per lower-layer pick in the repeat.
+  const treadles = blockTreadles * 2 * n + (stitched ? n : 0)
   if (shafts > MAX_SHAFTS)
     throw new Error(`That needs ${shafts} shafts (${2 * n} per block); the limit is ${MAX_SHAFTS}`)
   if (treadles > MAX_TREADLES)
     throw new Error(`That needs ${treadles} treadles (${2 * n} per block treadle); the limit is ${MAX_TREADLES}`)
 
   const ends = profile.threading.flatMap((b) => endUnit(n).map((t) => ({ ...t, block: b - 1 })))
-  const picks = profile.treadling.flatMap((k) => pickUnit(n, o.structure).map((t) => ({ ...t, block: k - 1 })))
+  const picks = profile.treadling.flatMap((k, r) =>
+    pickUnit(n, o.structure).map((t) => ({
+      ...t,
+      block: k - 1,
+      stitch: stitched && t.layer === 1 && r % stitchEvery === stitchEvery - 1,
+    })),
+  )
   if (ends.length > MAX_THREADS || picks.length > MAX_THREADS)
     throw new Error(`That would make ${Math.max(ends.length, picks.length)} threads; the limit is ${MAX_THREADS}`)
 
@@ -105,6 +118,14 @@ export function doubleCloth(o: DoubleClothOptions): Draft {
           }
         }
     }
+  // A stitching pick is a lower-layer pick with one upper-layer shaft left down, so its ends dip under the lower weft.
+  // The shaft left down is one that was also down on the upper-layer pick just before, so the stitch tucks in.
+  if (stitched)
+    for (let j = 0; j < n; j++) {
+      const t = blockTreadles * 2 * n + j
+      for (let s = 0; s < shafts; s++) tieup[s][t] = tieup[s][treadleOf(0, 1, j)]
+      tieup[shaftOf(0, 0, (j + n / 2) % n)][t] = false
+    }
 
   // One shuttle for a tube or double width, so one weft colour.
   const oneShuttle = o.structure === 'tubular' || o.structure === 'double-width'
@@ -117,7 +138,7 @@ export function doubleCloth(o: DoubleClothOptions): Draft {
     tieup,
     treadling: picks.map((p) => {
       const row = Array<boolean>(treadles).fill(false)
-      row[treadleOf(p.block, p.layer, p.index)] = true
+      row[p.stitch ? blockTreadles * 2 * n + p.index : treadleOf(p.block, p.layer, p.index)] = true
       return row
     }),
     warpColors: ends.map((e) => (e.layer === 0 ? o.warpA : o.warpB).toLowerCase()),

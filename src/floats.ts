@@ -44,3 +44,18 @@ export function longFloatMask(d: Draft, maxLength: number, dd = computeDrawdown(
   }
   return mask
 }
+
+/**
+ * Threaded ends and treadled picks that never interlace: an end that stays up (or down) on every pick, or a pick
+ * that passes over (or under) every end. They aren't woven into the cloth. Unthreaded ends and empty picks are
+ * left out, as they're usually deliberate.
+ */
+export function unwovenThreads(d: Draft, dd = computeDrawdown(d)) {
+  const picks = d.treadling.flatMap((row, p) => (row.some(Boolean) ? [p] : []))
+  const ends = d.threading.flatMap((s, e) => (s >= 0 ? [e] : []))
+  const constant = (values: boolean[]) => values.length > 1 && values.every((v) => v === values[0])
+  return {
+    ends: picks.length > 1 ? ends.filter((e) => constant(picks.map((p) => dd[p][e]))) : [],
+    picks: ends.length > 1 ? picks.filter((p) => constant(ends.map((e) => dd[p][e]))) : [],
+  }
+}

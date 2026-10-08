@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { layerMap, pickLayers } from '../layers'
 import { isDirectTieup } from '../liftplan'
 import { computeDrawdown, type Draft } from '../weave'
 import { loadProgress, type Progress, pickInfo, saveProgress, step } from '../weaving'
@@ -60,6 +61,12 @@ function PickMap({ draft, pick }: { draft: Draft; pick: number }) {
   )
 }
 
+const LAYER_TEXT = {
+  top: 'Top layer',
+  bottom: 'Bottom layer (top layer lifted out of the way)',
+  both: 'Both layers: they swap places across the width',
+} as const
+
 /**
  * Full-screen, pick-by-pick guide for use at the loom: which treadles to press (or shafts to lift) and which
  * weft to throw. Big targets for a tablet, keyboard and foot-pedal friendly (arrows, Space, PageUp/PageDown),
@@ -68,6 +75,11 @@ function PickMap({ draft, pick }: { draft: Draft; pick: number }) {
 export function WeavingMode({ open, name, draft, onClose }: Props) {
   const [progress, setProgress] = useState<Progress>({ pick: 0, repeat: 0 })
   const [view, setView] = useState<'treadles' | 'shafts'>('treadles')
+  // For double cloth: which layer each pick weaves.
+  const layers = useMemo(
+    () => (open ? pickLayers(layerMap(draft, 'face'), layerMap(draft, 'back')) : []),
+    [open, draft],
+  )
   const [goTo, setGoTo] = useState('')
 
   useEffect(() => {
@@ -178,6 +190,11 @@ export function WeavingMode({ open, name, draft, onClose }: Props) {
           <Typography variant="h5" sx={{ mt: 1 }} data-testid="instruction">
             {instruction}
           </Typography>
+          {layers[pick] && (
+            <Typography color="text.secondary" data-testid="pick-layer">
+              {LAYER_TEXT[layers[pick]]}
+            </Typography>
+          )}
         </Box>
 
         <Stack

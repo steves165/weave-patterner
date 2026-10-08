@@ -77,6 +77,8 @@ interface Props {
   onFillWeft: (color: string) => void
   /** Long-float highlighting. */
   floats: { warp: number; weft: number }
+  /** Threads that never interlace (0-based). */
+  unwoven: { ends: number[]; picks: number[] }
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   floatLimit: number
@@ -99,6 +101,15 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
   ['sinkingShed', 'Sinking shed'],
   ['threadingBelow', 'Threading below'],
 ]
+
+/** "1, 5, 9 and 3 more" style list of 0-based thread indices, numbered from 1. */
+const listThreads = (indices: number[], max = 6) =>
+  indices.length > max
+    ? `${indices
+        .slice(0, max)
+        .map((i) => i + 1)
+        .join(', ')} and ${indices.length - max} more`
+    : indices.map((i) => i + 1).join(', ')
 
 /** A labelled row of settings; the label sits above the controls on narrow screens. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -236,6 +247,20 @@ export function SettingsPanel(p: Props) {
             >
               Longest floats: warp {p.floats.warp}, weft {p.floats.weft}
             </Typography>
+            {(p.unwoven.ends.length > 0 || p.unwoven.picks.length > 0) && (
+              <Typography variant="body2" color="warning.main" data-testid="unwoven">
+                Not woven in:{' '}
+                {[
+                  p.unwoven.ends.length > 0 &&
+                    `${p.unwoven.ends.length === 1 ? 'end' : 'ends'} ${listThreads(p.unwoven.ends)}`,
+                  p.unwoven.picks.length > 0 &&
+                    `${p.unwoven.picks.length === 1 ? 'pick' : 'picks'} ${listThreads(p.unwoven.picks)}`,
+                ]
+                  .filter(Boolean)
+                  .join('; ')}{' '}
+                (they never cross over and under)
+              </Typography>
+            )}
           </Section>
 
           <Section title="Pattern">

@@ -34,23 +34,18 @@ function windowMean(values: number[][], alongRows: boolean, { span: want, offset
   )
 }
 
-/**
- * The cloth as seen from one side, allowing for layers (double cloth). Over nearby picks, an end lifted much less
- * often than an end beside it is in the lower layer; likewise a pick with many more ends lifted over it than a pick
- * beside it. Where a lower-layer end crosses a lower-layer pick, the crossing is hidden under the upper layer, so the
- * square takes the colour of the nearest visible square in the same end, or failing that the same pick. Single-layer
- * cloth looks just like the drawdown (from the back, the other side of each crossing).
- *
- * "Nearby" is a window of 4 or 8 threads after, around or before each square; each square uses whichever shows the
- * clearest difference between neighbours, so that where blocks meet, a window that stays inside one block wins.
- *
- * The back is drawn as if seen through the cloth, so its columns still line up with the threading.
- */
-export function clothView(d: Draft, side: Side, drawdown: boolean[][] = computeDrawdown(d)): Square[][] {
+/** Per square: whether the end and pick there are in the lower layer, and so whether the crossing is hidden. */
+export interface LayerMap {
+  lowerEnd: boolean[][]
+  lowerPick: boolean[][]
+  hidden: boolean[][]
+}
+
+/** Works out the layers as seen from one side; see `clothView`. */
+export function layerMap(d: Draft, side: Side, drawdown: boolean[][] = computeDrawdown(d)): LayerMap {
   const { ends, picks } = d
   // From the back, a lifted end is underneath, so everything turns over.
-  const up = drawdown.map((row) => row.map((v) => (side === 'face' ? v : !v)))
-  const lift = up.map((row) => row.map((v) => (v ? 1 : 0)))
+  const lift = drawdown.map((row) => row.map((v) => ((side === 'face') === v ? 1 : 0)))
   // How often each end is up over nearby picks, and how many nearby ends are up on each pick, for each window.
   const endRates = WINDOWS.map((w) => windowMean(lift, false, w))
   const pickRates = WINDOWS.map((w) => windowMean(lift, true, w))
@@ -74,13 +69,52 @@ export function clothView(d: Draft, side: Side, drawdown: boolean[][] = computeD
     }
     return lower
   }
-  const hidden = up.map((row, p) => row.map((_, e) => isLower(endRates, p, e, true) && isLower(pickRates, p, e, false)))
+  const lowerEnd = lift.map((row, p) => row.map((_, e) => isLower(endRates, p, e, true)))
+  const lowerPick = lift.map((row, p) => row.map((_, e) => isLower(pickRates, p, e, false)))
+  const hidden = lift.map((row, p) => row.map((_, e) => lowerEnd[p][e] && lowerPick[p][e]))
+  return { lowerEnd, lowerPick, hidden }
+}
 
+/**
+ * Which layer a pick weaves, for weaving instructions: 'top' or 'bottom' when it does so right across the cloth,
+ * 'both' when the layers swap places across the width (block double cloth), or null for single-layer cloth.
+ */
+export function pickLayers(face: LayerMap, back: LayerMap): ('top' | 'bottom' | 'both' | null)[] {
+  return face.lowerPick.map((row, p) => {
+    const lower = row.filter(Boolean).length / row.length
+    // A pick in the lower layer seen from the face is in the upper layer seen from the back.
+    const upper = back.lowerPick[p].filter(Boolean).length / row.length
+    if (lower >= 0.9) return 'bottom'
+    if (upper >= 0.9) return 'top'
+    return lower >= 0.2 && upper >= 0.2 ? 'both' : null
+  })
+}
+
+/** Whether a draft weaves in layers anywhere (some crossings are hidden from both sides). */
+export const isLayered = (face: LayerMap, back: LayerMap) =>
+  face.hidden.some((row) => row.some(Boolean)) && back.hidden.some((row) => row.some(Boolean))
+
+/**
+ * The cloth as seen from one side, allowing for layers (double cloth). Over nearby picks, an end lifted much less
+ * often than an end beside it is in the lower layer; likewise a pick with many more ends lifted over it than a pick
+ * beside it. Where a lower-layer end crosses a lower-layer pick, the crossing is hidden under the upper layer, so the
+ * square takes the colour of the nearest visible square in the same end, or failing that the same pick. Single-layer
+ * cloth looks just like the drawdown (from the back, the other side of each crossing).
+ *
+ * "Nearby" is a window of 4 or 8 threads after, around or before each square; each square uses whichever shows the
+ * clearest difference between neighbours, so that where blocks meet, a window that stays inside one block wins.
+ *
+ * The back is drawn as if seen through the cloth, so its columns still line up with the threading.
+ */
+export function clothView(d: Draft, side: Side, drawdown: boolean[][] = computeDrawdown(d)): Square[][] {
+  const { ends, picks } = d
+  const { hidden } = layerMap(d, side, drawdown)
+  const up = (p: number, e: number) => (side === 'face') === drawdown[p][e]
   const square = (p: number, e: number): Square =>
-    up[p][e] ? { warp: true, color: d.warpColors[e] } : { warp: false, color: d.weftColors[p] }
-  return up.map((row, p) =>
-    row.map((_, e) => {
-      if (!hidden[p][e]) return square(p, e)
+    up(p, e) ? { warp: true, color: d.warpColors[e] } : { warp: false, color: d.weftColors[p] }
+  return hidden.map((row, p) =>
+    row.map((isHidden, e) => {
+      if (!isHidden) return square(p, e)
       for (let k = 1; k <= SEARCH; k++)
         for (const pp of [p - k, p + k]) if (pp >= 0 && pp < picks && !hidden[pp][e]) return square(pp, e)
       for (let k = 1; k <= SEARCH; k++)

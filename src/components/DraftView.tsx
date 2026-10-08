@@ -2,10 +2,10 @@ import CloseIcon from '@mui/icons-material/Close'
 import { Alert, IconButton, Paper } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
-import { clothView } from '../layers'
+import { clothView, layerMap } from '../layers'
 import { useCompact, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
-import { traceCell } from '../trace'
+import { layerNote, traceCell } from '../trace'
 import type { Draft } from '../weave'
 import { Crosshair } from './Crosshair'
 import { ColorStrip, Grid } from './Grid'
@@ -62,6 +62,13 @@ export function DraftView(p: Props) {
   const [selected, setSelected] = useState<{ end: number; pick: number } | null>(null)
   const trace =
     selected && selected.end < ends && selected.pick < picks ? traceCell(draft, selected.end, selected.pick) : null
+  // Layers, worked out only while tracing, to say where a crossing is hidden in double cloth.
+  const tracing = selected !== null
+  const layers = useMemo(
+    () => (tracing ? { face: layerMap(draft, 'face', drawdown), back: layerMap(draft, 'back', drawdown) } : null),
+    [tracing, draft, drawdown],
+  )
+  const note = trace && layers ? layerNote(layers, trace.end, trace.pick) : null
   useEffect(() => {
     if (!trace) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
@@ -228,6 +235,7 @@ export function DraftView(p: Props) {
           }
         >
           {trace.explanation}
+          {note && ` ${note}`}
         </Alert>
       )}
       <div
