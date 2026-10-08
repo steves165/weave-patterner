@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Profile } from './blocks'
 import { BLOCK_WEAVES, type BlockWeave, blockWeave, crackleThreading } from './blockWeaves'
+import { longestFloats } from './floats'
 import { computeDrawdown, type Draft } from './weave'
 
 const COLORS = { warp: '#eeeeee', pattern: '#1a237e', tabby: '#cccccc' }
@@ -93,6 +94,21 @@ describe('blockWeave', () => {
     expect(weftFloat(d, 0, [0, 1, 2, 3, 4, 5, 6, 7])).toBe(4)
     expect(weftFloat(d, 0, [16, 17, 18, 19, 20, 21, 22, 23])).toBe(1)
     expect(new Set(d.weftColors)).toEqual(new Set([COLORS.pattern]))
+  })
+
+  it('damask: turned satin, warp-faced in pattern blocks and weft-faced in the ground, floats of 4 at most', () => {
+    const d = blockWeave('damask', twoBlocks, COLORS)
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([10, 10, 20, 20])
+    const dd = computeDrawdown(d)
+    const share = (picks: number[], ends: number[]) =>
+      picks.flatMap((p) => ends.map((e) => dd[p][e])).filter(Boolean).length / (picks.length * ends.length)
+    const a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    const b = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    expect(share(a, a)).toBe(0.8) // block A on block treadle 1: pattern, warp-faced
+    expect(share(a, b)).toBe(0.2) // block B: ground, weft-faced
+    expect(share(b, b)).toBe(0.8)
+    expect(longestFloats(d).warp).toBeLessThanOrEqual(5)
+    expect(longestFloats(d).weft).toBeLessThanOrEqual(5)
   })
 
   it('block weaves weave each block on its own treadle; unit weaves follow the profile tie-up', () => {

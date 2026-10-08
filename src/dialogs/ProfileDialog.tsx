@@ -59,6 +59,11 @@ const STRUCTURES: [Structure, string, string][] = [
     'One shaft per block plus two ground shafts. Lace blocks float over five ends; the rest weave plain.',
   ],
   ['ms-os', "M's and O's", 'Two blocks on four shafts. The block being woven is ribbed and the other plain; no tabby.'],
+  [
+    'damask',
+    'Damask',
+    'Turned 5-end satin, as woven on a drawloom: pattern blocks warp-faced, the ground weft-faced. Each unit (découpure) is 5 ends and 5 picks, on 5 shafts per block.',
+  ],
 ]
 
 const maxBlocksFor = (s: Structure) => (s === 'turned-twill' ? MAX_BLOCKS : BLOCK_WEAVES[s].maxBlocks)

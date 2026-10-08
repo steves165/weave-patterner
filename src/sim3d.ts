@@ -1,4 +1,5 @@
 import { isLayered, layerMap } from './layers'
+import type { Texture } from './textures'
 import { computeDrawdown, type Draft } from './weave'
 import type { ClothLook } from './yarnGeometry'
 
@@ -20,6 +21,7 @@ export interface ThreadPath {
   color: string
   /** Radius of the thread, relative to the spacing between ends (before any thickness setting). */
   radius: number
+  texture: Texture
   points: Point[]
 }
 
@@ -78,6 +80,7 @@ export function fabricModel(
         index: e,
         color: d.warpColors[e],
         radius: warpSize(e) / 2,
+        texture: look?.warpTexture[e] ?? 'smooth',
         points: extend(
           picksIn.map((p) => [x(e), y(p), warpZ(p, e)]),
           0,
@@ -91,6 +94,7 @@ export function fabricModel(
         index: p,
         color: d.weftColors[p],
         radius: weftSize(p) / 2,
+        texture: look?.weftTexture[p] ?? 'smooth',
         points: extend(
           endsIn.map((e) => [x(e), y(p), weftZ(p, e)]),
           0.5,

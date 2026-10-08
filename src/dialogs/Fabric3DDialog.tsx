@@ -22,6 +22,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { download, fileBase } from '../exportDraft'
 import { fabricModel } from '../sim3d'
+import { TEXTURES, type Texture, thickness as yarnThickness } from '../textures'
 import type { Draft } from '../weave'
 import { clothLook, loadDensity } from '../yarnGeometry'
 import type { Yarn } from '../yarns'
@@ -51,6 +52,58 @@ interface Scene {
   controls: OrbitControls
   cloth: THREE.Group
   render: () => void
+}
+
+/** Twist stripes as a texture: lighter and darker diagonals, as the plies of a yarn catch the light. Cached. */
+const twistMaps = new Map<number, THREE.CanvasTexture>()
+function twistMap(strength: number) {
+  const cached = twistMaps.get(strength)
+  if (cached) return cached
+  const canvas = document.createElement('canvas')
+  canvas.width = 32
+  canvas.height = 32
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    for (let y = 0; y < 32; y++)
+      for (let x = 0; x < 32; x++) {
+        // Diagonal bands: u runs along the yarn and v round it.
+        const band = 0.5 + 0.5 * Math.sin(((x + y) / 32) * Math.PI * 4)
+        const light = Math.round(255 * (1 - strength * 0.45 * band))
+        ctx.fillStyle = `rgb(${light},${light},${light})`
+        ctx.fillRect(x, y, 1, 1)
+      }
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  texture.colorSpace = THREE.SRGBColorSpace
+  twistMaps.set(strength, texture)
+  return texture
+}
+
+/**
+ * Gives a tube its yarn's character: bumps and thick-and-thin stretches pushed out along the normals, and texture
+ * coordinates scaled so the twist stripes repeat about three times per thread spacing whatever its length. The tube's
+ * own smooth normals are kept: the bumps are small, and recomputed normals would show a seam along each thread.
+ */
+function shapeYarn(geometry: THREE.TubeGeometry, texture: Texture, seed: number, radius: number, length: number) {
+  const pos = geometry.attributes.position
+  const normal = geometry.attributes.normal
+  const uv = geometry.attributes.uv
+  for (let i = 0; i < pos.count; i++) {
+    const along = uv.getX(i) * length
+    const grow = radius * (yarnThickness(texture, seed, along, uv.getY(i)) - 1)
+    if (grow !== 0)
+      pos.setXYZ(
+        i,
+        pos.getX(i) + normal.getX(i) * grow,
+        pos.getY(i) + normal.getY(i) * grow,
+        pos.getZ(i) + normal.getZ(i) * grow,
+      )
+    uv.setX(i, along * 3)
+  }
+  pos.needsUpdate = true
+  uv.needsUpdate = true
 }
 
 /** Removes the threads and frees their GPU memory (materials are shared between threads of one colour). */
@@ -162,24 +215,42 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
     const s = scene3d
     if (!s) return
     clearCloth(s.cloth)
-    const materials = new Map<string, THREE.MeshStandardMaterial>()
+    const materials = new Map<string, THREE.MeshPhysicalMaterial>()
     for (const path of model.paths) {
       const curve = new THREE.CatmullRomCurve3(
         path.points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
         false,
         'centripetal',
       )
+      const radius = path.radius * (thickness / 100)
       const geometry = new THREE.TubeGeometry(
         curve,
         path.points.length * SEGMENTS_PER_CROSSING,
-        path.radius * (thickness / 100),
+        radius,
         RADIAL_SEGMENTS,
         false,
       )
-      let material = materials.get(path.color)
+      shapeYarn(
+        geometry,
+        path.texture,
+        path.kind === 'warp' ? path.index : 10_000 + path.index,
+        radius,
+        curve.getLength(),
+      )
+      const key = `${path.color}|${path.texture}`
+      let material = materials.get(key)
       if (!material) {
-        material = new THREE.MeshStandardMaterial({ color: path.color, roughness: 0.85, metalness: 0 })
-        materials.set(path.color, material)
+        const spec = TEXTURES[path.texture]
+        material = new THREE.MeshPhysicalMaterial({
+          color: path.color,
+          roughness: spec.roughness,
+          metalness: 0,
+          sheen: spec.sheen,
+          sheenRoughness: 0.4,
+          sheenColor: new THREE.Color(0xffffff),
+          map: twistMap(spec.twist),
+        })
+        materials.set(key, material)
       }
       s.cloth.add(new THREE.Mesh(geometry, material))
     }
@@ -267,15 +338,15 @@ export default function Fabric3DDialog({ open, name, draft, yarns, onClose }: Pr
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <FormControlLabel
             control={<Switch checked={realSizes} onChange={(e) => setRealSizes(e.target.checked)} />}
-            label="Yarn sizes and sett"
+            label="Yarns and sett"
           />
           {look && density && (
             <Typography variant="caption" color="text.secondary" component="p" data-testid="look-info">
               {density.sett} ends and {density.ppi} picks per {density.units === 'metric' ? 'cm' : 'inch'} (from the
               warp calculator).{' '}
               {look.fromYarns
-                ? 'Thread sizes from the grist in your yarn library.'
-                : 'Add a grist to yarns in the yarn library to size threads.'}
+                ? 'Thread sizes and textures from your yarn library.'
+                : 'Add a grist to yarns in the yarn library to size threads, and a texture to shape them.'}
             </Typography>
           )}
         </Box>

@@ -17,7 +17,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 
 - Up to 24 shafts and 24 treadles, and up to 400 ends and picks
 - Double cloth: separate layers, tubes, double width and block double cloth, with face and back views that allow for layers
-- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes from the yarn library and spacing from the sett
+- 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes and textures (smooth, wool, silk, slub, bouclé) from the yarn library and spacing from the sett
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation
 - Remembers your settings and the pattern you were working on (saved or not) on this device
 - Edit threading, tie-up and treadling by click, drag, keyboard or touch, with undo/redo (Ctrl+Z, Ctrl+Shift+Z)
@@ -36,7 +36,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 - **Network and parallel threadings** from a pattern line or base sequence
 - **Design by drawing the cloth**: works out the smallest threading, tie-up and treadling for a drawn cloth
 - **Block profiles**: design in blocks and substitute turned twill, overshot, crackle, summer and winter, Bronson
-  lace or M's and O's
+  lace, M's and O's or damask (turned 5-end satin)
 - **Yarn library**: named yarns matched by colour, used by the warp calculator for weight and cost
 - **Long-float highlighting** and float statistics
 - **Warp calculator**: width in reed, warp length and yarn per colour, with optional weight and cost

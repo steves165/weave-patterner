@@ -86,6 +86,7 @@ test.describe('block structures', () => {
       ['Summer and winter', 'Makes 4 shafts, 6 treadles, 28 ends × 28 picks'],
       ['Bronson lace', 'Makes 4 shafts, 4 treadles, 42 ends × 42 picks'],
       ["M's and O's", 'Makes 4 shafts, 4 treadles, 56 ends × 28 picks'],
+      ['Damask', 'Makes 10 shafts, 10 treadles, 35 ends × 35 picks'],
     ]) {
       await choose(page, structure)
       await expect(result).toHaveText(makes)

@@ -28,6 +28,7 @@ describe('clothLook', () => {
   it('sizes each thread from its yarn, relative to the end spacing', () => {
     const look = clothLook(d, yarns, { units: 'metric', sett: 5, ppi: 5 })
     expect(look.fromYarns).toBe(true)
+    expect(look.warpTexture[0]).toBe('smooth')
     // 5 ends per cm: 2 mm apart.
     expect(look.warpSize[0]).toBeCloseTo(yarnDiameter(1000, 'metric') / 2)
     expect(look.weftSize[0]).toBe(DEFAULT_SIZE)

@@ -1,3 +1,5 @@
+import { isTexture, type Texture } from './textures'
+
 /** A yarn in the user's library: its colour links it to warp and weft threads of that colour. */
 export interface Yarn {
   id: string
@@ -7,6 +9,8 @@ export interface Yarn {
   grist?: number
   /** Price per kg or per lb. */
   price?: number
+  /** How it looks in the 3D preview; smooth if not set. */
+  texture?: Texture
 }
 
 const KEY = 'weave-yarns'
@@ -15,10 +19,13 @@ export function loadYarns(): Yarn[] {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? '[]')
     return Array.isArray(raw)
-      ? raw.filter(
-          (y): y is Yarn =>
-            y && typeof y.id === 'string' && typeof y.name === 'string' && /^#[0-9a-f]{6}$/i.test(y.color),
-        )
+      ? raw
+          .filter(
+            (y): y is Yarn =>
+              y && typeof y.id === 'string' && typeof y.name === 'string' && /^#[0-9a-f]{6}$/i.test(y.color),
+          )
+          // Drop a texture this version doesn't know rather than the whole yarn.
+          .map((y) => (y.texture === undefined || isTexture(y.texture) ? y : { ...y, texture: undefined }))
       : []
   } catch {
     return []

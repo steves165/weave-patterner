@@ -9,8 +9,10 @@ import { type Draft, MAX_SHAFTS, MAX_TREADLES, parseDraft } from './weave'
  * - summer-winter: a unit weave on 2 tie-down shafts plus one pattern shaft per block (1-x-2-x), woven with tabby.
  * - bronson: Bronson lace, one pattern shaft per block (1-x-1-x-1-2), lace and plain blocks.
  * - ms-os: M's and O's, 2 blocks on 4 shafts (1-2-1-2-3-4-3-4 and 1-3-1-3-2-4-2-4), ribbed and plain blocks.
+ * - damask: turned 5-end satin, 5 shafts per block: pattern blocks warp-faced, the ground weft-faced, as drawloom
+ *   damask is woven (each profile unit, its découpure, is 5 ends and 5 picks).
  */
-export type BlockWeave = 'overshot' | 'crackle' | 'summer-winter' | 'bronson' | 'ms-os'
+export type BlockWeave = 'overshot' | 'crackle' | 'summer-winter' | 'bronson' | 'ms-os' | 'damask'
 
 export interface BlockColors {
   warp: string
@@ -35,6 +37,7 @@ export const BLOCK_WEAVES: Record<BlockWeave, Spec> = {
   'summer-winter': { name: 'Summer and winter', maxBlocks: 10, freeTieup: true, tabby: true },
   bronson: { name: 'Bronson lace', maxBlocks: 10, freeTieup: true, tabby: true },
   'ms-os': { name: "M's and O's", maxBlocks: 2, freeTieup: false, tabby: false },
+  damask: { name: 'Damask', maxBlocks: 4, freeTieup: true, tabby: false },
 }
 
 /** One pick: the 0-based shafts it lifts, and whether it's a tabby pick. */
@@ -176,6 +179,26 @@ export function blockWeave(weave: BlockWeave, profile: Profile, colors: BlockCol
         ],
       ]
       unitPicks = (k) => [0, 1, 0, 1].map((i) => ({ lift: lifts[k][i], tabby: false }))
+      break
+    }
+    case 'damask': {
+      const satin = 5
+      shafts = satin * blocks
+      threading = profile.threading.flatMap((b) => all(satin).map((i) => (b - 1) * satin + i))
+      // 5-end satin, counter 2: on pick j one shaft in each block is the odd one out. Pattern blocks lift all but
+      // that one (warp-faced); ground blocks lift only that one (weft-faced).
+      unitPicks = (k) =>
+        all(satin).map((j) => {
+          const odd = (2 * j) % satin
+          return {
+            lift: all(blocks).flatMap((b) =>
+              all(satin)
+                .filter((i) => (i === odd) !== pattern(b, k))
+                .map((i) => b * satin + i),
+            ),
+            tabby: false,
+          }
+        })
       break
     }
   }

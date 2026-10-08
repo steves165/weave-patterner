@@ -1,4 +1,5 @@
 import { defaultCalcInput, type Units } from './calculator'
+import type { Texture } from './textures'
 import type { Draft } from './weave'
 import { type Yarn, yarnFor } from './yarns'
 
@@ -14,7 +15,10 @@ export interface ClothLook {
   warpSize: number[]
   weftSize: number[]
   pickSpacing: number
-  /** True when at least one thread's size came from a yarn's grist. */
+  /** Each thread's yarn texture (smooth when its yarn doesn't say). */
+  warpTexture: Texture[]
+  weftTexture: Texture[]
+  /** True when at least one thread's size or texture came from its yarn. */
   fromYarns: boolean
 }
 
@@ -50,10 +54,17 @@ export function clothLook(d: Draft, yarns: Yarn[], density: Density): ClothLook 
     fromYarns = true
     return yarnDiameter(grist, density.units) / endGap
   }
+  const texture = (color: string): Texture => {
+    const t = yarnFor(yarns, color)?.texture
+    if (t && t !== 'smooth') fromYarns = true
+    return t ?? 'smooth'
+  }
   return {
     warpSize: d.warpColors.map(size),
     weftSize: d.weftColors.map(size),
     pickSpacing: spacingMm(density.ppi, density.units) / endGap,
+    warpTexture: d.warpColors.map(texture),
+    weftTexture: d.weftColors.map(texture),
     fromYarns,
   }
 }

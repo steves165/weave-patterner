@@ -8,11 +8,13 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
 import { usePhone } from '../layout'
+import { TEXTURES, type Texture } from '../textures'
 import type { Draft } from '../weave'
 import { newYarnId, type Yarn } from '../yarns'
 
@@ -42,7 +44,7 @@ export function YarnsDialog({ open, draft, yarns, onChange, onClose }: Props) {
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">
             A yarn matches threads of its colour. Grist is metres per kg (or yards per lb if you use imperial in the
-            calculator); price is per kg (or lb).
+            calculator); price is per kg (or lb). Grist and texture also shape the threads in the 3D preview.
           </Typography>
           {yarns.length === 0 && <Typography color="text.secondary">No yarns yet.</Typography>}
           <Stack sx={{ gap: 1.5 }} role="list" aria-label="Yarns">
@@ -70,6 +72,20 @@ export function YarnsDialog({ open, draft, yarns, onChange, onClose }: Props) {
                   onChange={(e) => set(y.id, { grist: optionalNumber(e.target.value) })}
                   sx={{ width: 110 }}
                 />
+                <TextField
+                  select
+                  size="small"
+                  label="Texture"
+                  value={y.texture ?? 'smooth'}
+                  onChange={(e) => set(y.id, { texture: e.target.value as Texture })}
+                  sx={{ width: 160 }}
+                >
+                  {(Object.keys(TEXTURES) as Texture[]).map((t) => (
+                    <MenuItem key={t} value={t}>
+                      {TEXTURES[t].name}
+                    </MenuItem>
+                  ))}
+                </TextField>
                 <TextField
                   size="small"
                   type="number"

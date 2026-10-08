@@ -74,7 +74,7 @@ test('explains when WebGL is not available', async ({ page }) => {
 test('sizes threads from the yarn library and spaces them by the sett', async ({ page }) => {
   await toolbarButton(page, '3D').click()
   await expect(page.getByTestId('look-info')).toHaveText(
-    '8 ends and 8 picks per cm (from the warp calculator). Add a grist to yarns in the yarn library to size threads.',
+    '8 ends and 8 picks per cm (from the warp calculator). Add a grist to yarns in the yarn library to size threads, and a texture to shape them.',
   )
   await page.getByRole('button', { name: 'Close 3D preview' }).click()
 
@@ -90,9 +90,28 @@ test('sizes threads from the yarn library and spaces them by the sett', async ({
 
   await toolbarButton(page, '3D').click()
   await expect(page.getByTestId('look-info')).toHaveText(
-    '6 ends and 8 picks per cm (from the warp calculator). Thread sizes from the grist in your yarn library.',
+    '6 ends and 8 picks per cm (from the warp calculator). Thread sizes and textures from your yarn library.',
   )
   await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
-  await page.getByLabel('Yarn sizes and sett').uncheck()
+  await page.getByLabel('Yarns and sett').uncheck()
   await expect(page.getByTestId('look-info')).toHaveCount(0)
+})
+
+test('yarn textures from the library shape the threads', async ({ page }) => {
+  await openTool(page, /Yarn library/)
+  const yarns = page.getByRole('dialog', { name: 'Yarn library' })
+  await yarns.getByRole('button', { name: 'Add a yarn for #ffffff' }).click()
+  await yarns.getByRole('combobox', { name: 'Texture' }).click()
+  await page.getByRole('option', { name: 'Bouclé' }).click()
+  await yarns.getByRole('button', { name: 'Done' }).click()
+
+  // Remembered with the yarn.
+  await page.reload()
+  await openTool(page, /Yarn library/)
+  await expect(page.getByRole('combobox', { name: 'Texture' })).toHaveText('Bouclé')
+  await page.getByRole('dialog', { name: 'Yarn library' }).getByRole('button', { name: 'Done' }).click()
+
+  await toolbarButton(page, '3D').click()
+  await expect(page.getByTestId('look-info')).toContainText('Thread sizes and textures from your yarn library.')
+  await expect.poll(() => colourCount(page)).toBeGreaterThan(20)
 })
