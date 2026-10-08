@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openApp, openTool, toast, toolbarButton } from './helpers'
+import { openApp, openTool, setField, toast, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -35,4 +35,42 @@ test('editing the lift plan sets the shafts for a pick', async ({ page }) => {
   await page.getByRole('checkbox', { name: 'Pick 1, shaft 4' }).click()
   await toolbarButton(page, 'Weave').click()
   await expect(page.getByTestId('instruction')).toHaveText('Lift shafts 1, 2, 4')
+})
+
+test('no tie-up: works as a lift plan for looms without a tie-up', async ({ page }) => {
+  const before = await page.locator('.drawdown').evaluate((el) => el.innerHTML)
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
+  await page.getByLabel('No tie-up (lift plan)').check()
+  await expect(toast(page)).toContainText('No tie-up')
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Lift plan' })).toBeVisible()
+  await expect(page.getByLabel('Treadles', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('4 shafts · lift plan · 32 × 32')).toBeVisible()
+  // The same cloth.
+  expect(await page.locator('.drawdown').evaluate((el) => el.innerHTML)).toBe(before)
+
+  // More shafts: still a lift plan, one column per shaft.
+  await setField(page.getByLabel('Shafts', { exact: true }), '8')
+  await expect(page.getByRole('checkbox', { name: 'Pick 1, shaft 8', exact: true })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+
+  // Drafts made with the tools come out as lift plans too.
+  await openTool(page, /Block profile/)
+  const profile = page.getByRole('dialog', { name: 'Block profile' })
+  await profile.getByRole('combobox', { name: 'Structure' }).click()
+  await page.getByRole('option', { name: 'Summer and winter', exact: true }).click()
+  await profile.getByRole('button', { name: 'Create draft' }).click()
+  await expect(page.getByRole('group', { name: 'Lift plan' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+
+  // Remembered between visits.
+  await page.reload()
+  await expect(page.getByLabel('No tie-up (lift plan)')).toBeChecked()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+
+  // Converting back to a tie-up and treadling brings the tie-up back.
+  await toolbarButton(page, 'Tools').click()
+  await page.getByRole('menuitem', { name: /Convert to tie-up and treadling/ }).click()
+  await expect(page.getByLabel('No tie-up (lift plan)')).not.toBeChecked()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
 })

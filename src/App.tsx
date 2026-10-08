@@ -104,16 +104,26 @@ export default function App() {
     [highlightFloats, draft, floatLimit, drawdown],
   )
 
+  /** Without a tie-up, every draft is kept as a lift plan (shafts lifted on each pick). */
+  const keepLiftplan = (d: Draft) => (view.noTieup && !isDirectTieup(d) ? toLiftplan(d) : d)
+  const changeView = (patch: Partial<typeof view>) => {
+    setView(patch)
+    if (patch.noTieup && !isDirectTieup(draft)) {
+      update(toLiftplan)
+      setToast('No tie-up: the right-hand grid is now a lift plan, marking the shafts to lift on each pick')
+    }
+  }
+
   /** Applies a change made in a dialog as one undoable step, then closes it. */
   const applyFromDialog = (d: Draft, message: string) => {
-    update(() => d)
+    update(() => keepLiftplan(d))
     setDialog(null)
     setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
   }
 
   /** Opens a different pattern as a new document. */
   const open = (d: Draft, n: string | null, message?: string) => {
-    reset(d)
+    reset(keepLiftplan(d))
     setName(n)
     setDialog(null)
     if (message) setToast(message)
@@ -210,6 +220,8 @@ export default function App() {
             try {
               const next = toTreadling(draft)
               update(() => next)
+              // A tie-up and treadling needs the tie-up shown.
+              setView({ noTieup: false })
               setToast(`Converted to tie-up and treadling with ${next.treadles} treadles`)
             } catch (e) {
               setToast(e instanceof Error ? e.message : String(e))
@@ -223,7 +235,14 @@ export default function App() {
             name={name}
             compact={compact}
             touch={touch}
-            onResize={(dim, n) => update((d) => resizeDraft(d, { [dim]: n }))}
+            onResize={(dim, n) =>
+              // Without a tie-up, a lift plan has one column per shaft.
+              update((d) =>
+                keepLiftplan(
+                  resizeDraft(d, dim === 'shafts' && view.noTieup ? { shafts: n, treadles: n } : { [dim]: n }),
+                ),
+              )
+            }
             cellSize={cellSize}
             onCellSize={(n) => setView({ cellSize: n })}
             onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
@@ -238,7 +257,7 @@ export default function App() {
             floatLimit={floatLimit}
             onFloatLimit={(n) => setView({ floatLimit: n })}
             view={view}
-            onView={setView}
+            onView={changeView}
             onClear={() =>
               update((d) => ({
                 ...d,
@@ -254,7 +273,7 @@ export default function App() {
 
           <DraftView
             draft={draft}
-            onView={setView}
+            onView={changeView}
             drawdown={drawdown}
             floatMask={floatMask}
             cellSize={cellSize}
@@ -415,6 +434,7 @@ export default function App() {
         draft={draft}
         endOneRight={view.endOneRight}
         instructions={printInstructions}
+        noTieup={view.noTieup}
       />
     </>
   )

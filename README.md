@@ -16,6 +16,7 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 ## Features
 
 - Up to 128 shafts and 128 treadles (as in WeavePoint), and up to 400 ends and picks
+- **No tie-up** mode for table, dobby and computer looms: the draft stays a lift plan and the tie-up is hidden
 - Double cloth: separate layers, tubes, double width and block double cloth, with face and back views that allow for layers
 - 3D preview (WebGL): turn, zoom and flip the cloth to see how the threads go over and under, including both layers of double cloth, with thread sizes and textures (smooth, wool, silk, slub, bouclé) from the yarn library and spacing from the sett; shown flat, draped, as a cushion or rolled, with a weaving animation; soft shadows, room lighting and flattened, fibrous yarns; or made up on a sofa, as a rug or as a tapestry at real (or enlarged) scale
 - Click a drawdown square to outline the threading, tie-up, treadling and colours that decide it, with an explanation

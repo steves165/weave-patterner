@@ -16,14 +16,17 @@ interface Props {
   endOneRight?: boolean
   /** Add a page of written threading, tie-up and treadling instructions. */
   instructions?: boolean
+  /** Leave the tie-up out of a lift plan, for looms without one. */
+  noTieup?: boolean
 }
 
 /**
  * A print-only rendering of the full draft in the classic layout: warp colours and threading above the
  * drawdown, tie-up top right, treadling and weft colours to the right, with a tick and number every 4 threads.
  */
-export function PrintSheet({ name, draft, endOneRight = false, instructions = false }: Props) {
+export function PrintSheet({ name, draft, endOneRight = false, instructions = false, noTieup = false }: Props) {
   const { shafts, treadles, ends, picks } = draft
+  const hideTieup = noTieup && isDirectTieup(draft)
   const drawdown = computeDrawdown(draft)
 
   const labelBand = C * 1.6 // room for tick numbers
@@ -75,11 +78,12 @@ export function PrintSheet({ name, draft, endOneRight = false, instructions = fa
   draft.threading.forEach((s, e) => {
     if (s >= 0) rect(`t${e}`, xOf(e), yThread + (shafts - 1 - s) * C, '#111')
   })
-  draft.tieup.forEach((row, s) => {
-    row.forEach((on, t) => {
-      if (on) rect(`u${s}-${t}`, xTie + t * C, yThread + (shafts - 1 - s) * C, '#111')
+  if (!hideTieup)
+    draft.tieup.forEach((row, s) => {
+      row.forEach((on, t) => {
+        if (on) rect(`u${s}-${t}`, xTie + t * C, yThread + (shafts - 1 - s) * C, '#111')
+      })
     })
-  })
   draft.treadling.forEach((row, p) => {
     row.forEach((on, t) => {
       if (on) rect(`r${p}-${t}`, xTie + t * C, yDraw + p * C, '#111')
@@ -172,7 +176,8 @@ export function PrintSheet({ name, draft, endOneRight = false, instructions = fa
       <header className="print-header">
         <h1>{name}</h1>
         <p>
-          {shafts} shafts · {treadles} treadles · {ends} ends × {picks} picks · rising shed
+          {hideTieup ? `${shafts} shafts · lift plan` : `${shafts} shafts · ${treadles} treadles`} · {ends} ends ×{' '}
+          {picks} picks · rising shed
         </p>
         <div className="print-palette">
           {palette.map((c) => (
@@ -193,7 +198,7 @@ export function PrintSheet({ name, draft, endOneRight = false, instructions = fa
         aria-label={`Draft of ${name}`}
       >
         {grid('gt', x0, yThread, ends, shafts)}
-        {grid('gu', xTie, yThread, treadles, shafts)}
+        {!hideTieup && grid('gu', xTie, yThread, treadles, shafts)}
         {grid('gr', xTie, yDraw, treadles, picks)}
         {cells}
         {drawLines}

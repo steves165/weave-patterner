@@ -17,6 +17,7 @@ describe('parseViewOptions', () => {
       ruler: 8,
       clothSide: 'back',
       fabric: true,
+      noTieup: true,
       sinkingShed: true,
       threadingBelow: true,
       cellSize: 10,

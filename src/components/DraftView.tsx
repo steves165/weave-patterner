@@ -49,6 +49,8 @@ export function DraftView(p: Props) {
   const endAt = (column: number) => (mirrored ? ends - 1 - column : column)
   const columns = Array.from({ length: ends }, (_, c) => endAt(c))
   const liftplan = isDirectTieup(draft)
+  // A loom without a tie-up lifts shafts directly: the lift plan needs no tie-up beside it.
+  const hideTieup = view.noTieup && liftplan
   const ruler = view.ruler > 0
   // Phones, tablets and touch screens pan the pattern in its own box; desktops and laptops grow it to full size and
   // scroll the page instead.
@@ -127,17 +129,23 @@ export function DraftView(p: Props) {
         traced={(r, c) => tracedThreading(shaftAt(r), endAt(c))}
         touchPaint={p.touchPaint}
       />
-      {/* Sinking shed shows the shafts that go down: the opposite of the (rising) tie-up that is stored. */}
-      <Grid
-        rows={shafts}
-        cols={treadles}
-        isOn={(r, t) => draft.tieup[shaftAt(r)][t] !== sinking}
-        onPaint={(r, t, v, cont) => p.onTieup(shaftAt(r), t, v !== sinking, cont)}
-        label={sinking ? 'Tie-up (sinking shed)' : 'Tie-up'}
-        traced={(r, t) => tracedTieup(shaftAt(r), t)}
-        cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}${sinking ? ' sinks' : ''}`}
-        touchPaint={p.touchPaint}
-      />
+      {hideTieup ? (
+        <div />
+      ) : (
+        <>
+          {/* Sinking shed shows the shafts that go down: the opposite of the (rising) tie-up that is stored. */}
+          <Grid
+            rows={shafts}
+            cols={treadles}
+            isOn={(r, t) => draft.tieup[shaftAt(r)][t] !== sinking}
+            onPaint={(r, t, v, cont) => p.onTieup(shaftAt(r), t, v !== sinking, cont)}
+            label={sinking ? 'Tie-up (sinking shed)' : 'Tie-up'}
+            traced={(r, t) => tracedTieup(shaftAt(r), t)}
+            cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}${sinking ? ' sinks' : ''}`}
+            touchPaint={p.touchPaint}
+          />
+        </>
+      )}
       {pad(cols - 2)}
     </>
   )

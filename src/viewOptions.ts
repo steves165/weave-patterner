@@ -12,6 +12,8 @@ export interface ViewOptions {
   clothSide: 'drawdown' | 'face' | 'back'
   /** Draw the drawdown as shaded threads, like cloth. */
   fabric: boolean
+  /** For looms without a tie-up (table, dobby and computer looms): keep the draft a lift plan and hide the tie-up. */
+  noTieup: boolean
   /** Show the tie-up as the shafts that sink (countermarch looms) instead of those that rise. */
   sinkingShed: boolean
   /** Put the threading and tie-up below the drawdown (Scandinavian layout). */
@@ -36,6 +38,7 @@ export const DEFAULT_VIEW: ViewOptions = {
   ruler: 4,
   clothSide: 'drawdown',
   fabric: false,
+  noTieup: false,
   sinkingShed: false,
   threadingBelow: false,
   cellSize: CELL_DEFAULT,
@@ -55,6 +58,7 @@ const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   ruler: intIn(0, 50),
   clothSide: (v) => v === 'drawdown' || v === 'face' || v === 'back',
   fabric: isBool,
+  noTieup: isBool,
   sinkingShed: isBool,
   threadingBelow: isBool,
   cellSize: intIn(CELL_MIN, CELL_MAX),

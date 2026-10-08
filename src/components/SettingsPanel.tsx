@@ -97,8 +97,9 @@ interface Props {
 }
 
 /** On/off display options, in the order shown. */
-type ViewSwitch = 'colorBoxes' | 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
+type ViewSwitch = 'noTieup' | 'colorBoxes' | 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
+  ['noTieup', 'No tie-up (lift plan)'],
   ['colorBoxes', 'Thread colours in boxes'],
   ['endOneRight', 'End 1 on the right'],
   ['numbers', 'Numbers in boxes'],
@@ -149,23 +150,27 @@ export function SettingsPanel(p: Props) {
         <Typography variant="subtitle2">
           Pattern settings
           <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            {draft.shafts} shafts · {draft.treadles} treadles · {draft.ends} × {draft.picks}
+            {draft.shafts} shafts · {p.view.noTieup ? 'lift plan' : `${draft.treadles} treadles`} · {draft.ends} ×{' '}
+            {draft.picks}
           </Typography>
         </Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Stack sx={{ gap: 1.5 }} divider={<Divider flexItem />}>
           <Section title="Size">
-            {(Object.keys(LIMITS) as Dim[]).map((dim) => (
-              <CommitField
-                key={dim}
-                label={DIM_LABEL[dim]}
-                value={draft[dim]}
-                min={LIMITS[dim][0]}
-                max={LIMITS[dim][1]}
-                onCommit={(n) => p.onResize(dim, n)}
-              />
-            ))}
+            {(Object.keys(LIMITS) as Dim[])
+              // Without a tie-up there's a lift plan column per shaft, so no separate treadle count.
+              .filter((dim) => !(dim === 'treadles' && p.view.noTieup))
+              .map((dim) => (
+                <CommitField
+                  key={dim}
+                  label={DIM_LABEL[dim]}
+                  value={draft[dim]}
+                  min={LIMITS[dim][0]}
+                  max={LIMITS[dim][1]}
+                  onCommit={(n) => p.onResize(dim, n)}
+                />
+              ))}
           </Section>
 
           <Section title="Colours">
