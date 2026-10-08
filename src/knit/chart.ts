@@ -22,6 +22,8 @@ export interface KnitChart {
    * bobbin for each area of colour). Stranded unless set.
    */
   colorwork?: 'stranded' | 'intarsia'
+  /** Sizes the pattern is made in: each name with its finished width and length in cm. */
+  sizes?: { name: string; width: number; length: number }[]
   /**
    * The pattern repeat: stitches (columns, as drawn, 0-based) `from` to `to`, outlined in red as in published
    * charts. They're worked as many times as the width needs, with the stitches either side worked once.
@@ -318,6 +320,16 @@ export function parseChart(v: unknown): KnitChart | null {
     gauge: { stitches: num(g?.stitches, 22), rows: num(g?.rows, 30) },
     floatLimit: Math.round(num(o.floatLimit, 5)),
     ...(o.colorwork === 'intarsia' ? { colorwork: 'intarsia' as const } : {}),
+    ...(Array.isArray(o.sizes)
+      ? (() => {
+          const ok = (n: unknown) => typeof n === 'number' && n > 0 && n <= 1000
+          const sizes = o.sizes
+            .filter((x) => x && typeof x.name === 'string' && ok(x.width) && ok(x.length))
+            .map((x) => ({ name: x.name.slice(0, 20), width: x.width, length: x.length }))
+            .slice(0, 12)
+          return sizes.length ? { sizes } : {}
+        })()
+      : {}),
     ...(o.repeat &&
     Number.isInteger(o.repeat.from) &&
     Number.isInteger(o.repeat.to) &&

@@ -11,6 +11,7 @@ import {
 } from './chart'
 import { intarsia } from './intarsia'
 import { panelChart, panelLetter, panelRows } from './panels'
+import { sizePlans } from './shaping'
 import { STITCHES, type StitchId } from './stitches'
 
 /** One stitch (or one cable crossing) as worked, in knitting order. */
@@ -257,6 +258,13 @@ export function writtenPattern(k: KnitChart, title = 'Knit Patterner chart'): st
         `Intarsia: wind a separate bobbin for each area of colour, ${total} in all (${bobbins.map((b) => `${colorLetter(b.color)} ×${b.count}`).join(', ')}). At each colour change, drop the old colour and bring the new one up from under it, twisting the yarns so no hole forms.`,
       )
     } else lines.push('', 'Stranded colourwork: carry the colour not in use loosely across the back.')
+  }
+  if (k.sizes?.length) {
+    lines.push('', 'Sizes:')
+    for (const p of sizePlans(k, k.sizes))
+      lines.push(
+        `  ${p.name}: cast on ${p.castOn} stitches (${p.actualWidth.toFixed(1)} cm wide); work ${p.rows} ${k.mode === 'round' ? 'rounds' : 'rows'} (${p.length} cm); about ${Math.ceil(p.metres)} m of yarn.`,
+      )
   }
   const used = new Set<StitchId>(k.stitch.flat())
   lines.push('', 'Abbreviations:')

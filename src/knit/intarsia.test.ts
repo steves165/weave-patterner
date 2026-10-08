@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { longFloats } from './chart'
-import { intarsia } from './intarsia'
+import { type KnitChart, longFloats } from './chart'
 import { writtenPattern } from './instructions'
+import { intarsia } from './intarsia'
 import { chartFrom } from './samples'
 import { yarnNeeded } from './yarn'
 
 // Two blocks of B on an A ground: B on the left in rows 1–2, and a separate B block on the right in row 4.
 // Rows listed from the top; 0 is A, 1 is B.
 const blocks = () =>
-  chartFrom(
-    Array(4).fill('.........'),
-    ['000000011', '000000000', '110000000', '110000000'],
-    ['#ffffff', '#c62828'],
-  )
+  chartFrom(Array(4).fill('.........'), ['000000011', '000000000', '110000000', '110000000'], ['#ffffff', '#c62828'])
 
 describe('intarsia', () => {
   it('counts a bobbin for each area of colour, and the twists in each row, in working order', () => {
@@ -39,8 +35,10 @@ describe('intarsia', () => {
     const k = { ...stranded, colorwork: 'intarsia' as const, floatLimit: 1 }
     expect(longFloats({ ...stranded, floatLimit: 1 }).length).toBeGreaterThan(0)
     expect(longFloats(k)).toEqual([])
-    const b = (c: typeof k) => yarnNeeded(c, 10, 10)[1].metres
+    const b = (c: KnitChart) => yarnNeeded(c, 10, 10)[1].metres
     expect(b(k)).toBeLessThan(b(stranded))
-    expect(writtenPattern(k)).toContain('Intarsia: wind a separate bobbin for each area of colour, 3 in all (A ×1, B ×2)')
+    expect(writtenPattern(k)).toContain(
+      'Intarsia: wind a separate bobbin for each area of colour, 3 in all (A ×1, B ×2)',
+    )
   })
 })

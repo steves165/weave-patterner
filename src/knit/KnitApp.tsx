@@ -96,6 +96,7 @@ import { loadSavedPanels, type SavedPanel, storeSavedPanels } from './panels'
 import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
+import { SizesPanel } from './SizesPanel'
 import { SAMPLES } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import { yarnNeeded } from './yarn'
@@ -1146,6 +1147,9 @@ export default function KnitApp() {
                       {extra > 0 ? ` + ${extra}` : ''}), about {((wanted * 10) / chart.gauge.stitches).toFixed(1)} cm.
                     </Typography>
                   </Stack>
+                </Panel>
+                <Panel title="Sizes and shaping" testId="knit-sizes" delay={75}>
+                  <SizesPanel chart={chart} onChange={(next) => update(next)} />
                 </Panel>
                 <Panel title="Yarn needed" testId="knit-yarn" delay={90}>
                   <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>

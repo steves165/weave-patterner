@@ -319,3 +319,22 @@ test('intarsia counts bobbins and twists instead of checking floats', async ({ p
   await expect(page.getByTestId('knit-bobbins')).toContainText(/\d+ bobbins: A ×\d+, B ×\d+/)
   await expect(page.getByTestId('knit-intarsia').locator('li[data-intarsia-row="1"]')).toContainText('twist')
 })
+
+test('sizes: cast-on, rows and yarn for each, and increases or decreases spread evenly', async ({ page }) => {
+  await page.getByRole('button', { name: 'Samples' }).click()
+  await page.getByRole('menuitem', { name: /2×2 rib/ }).click()
+  const sizes = page.getByTestId('knit-sizes')
+  await sizes.getByRole('button', { name: 'Add a size' }).click()
+  await sizes.getByRole('button', { name: 'Add a size' }).click()
+  await expect(sizes.locator('tr[data-size]')).toHaveCount(2)
+  // 45 cm at 22 sts per 10 cm is 99 sts: in 12-stitch repeats, 8 repeats is 96.
+  await expect(sizes.locator('tr[data-size="XS"] [data-testid="size-cast-on"]')).toHaveText('96')
+  await sizes.getByLabel('S width', { exact: true }).fill('60')
+  await expect(sizes.locator('tr[data-size="S"] [data-testid="size-cast-on"]')).toHaveText('132')
+  await expect(sizes.getByRole('img', { name: 'Outline of the piece in 2 sizes' })).toBeVisible()
+  await sizes.getByLabel('Stitches on the needle').fill('50')
+  await sizes.getByLabel('By').fill('5')
+  await expect(sizes.getByTestId('spread-evenly')).toHaveText('(k8, k2tog) 5 times. (45 sts)')
+  await sizes.getByRole('button', { name: 'Increase' }).click()
+  await expect(sizes.getByTestId('spread-evenly')).toHaveText('(k10, m1) 5 times. (55 sts)')
+})
