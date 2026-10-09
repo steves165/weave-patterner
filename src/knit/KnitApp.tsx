@@ -66,7 +66,7 @@ import { useHelpKeys } from '../help/useHelpKeys'
 import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
-import { SeasonPicker } from '../SeasonalTheme'
+import { patternColours } from '../seasons'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
 import { bookletPdf } from './booklet'
@@ -616,7 +616,6 @@ export default function KnitApp() {
         )}
       </Section>
       <Section title="View" help="preview">
-        <SeasonPicker app="Knit Patterner" />
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5, minHeight: 40 }}>
           <Typography id="knit-zoom" sx={{ flex: 'none', width: 56, fontWeight: 500 }}>
             Zoom
@@ -702,7 +701,10 @@ export default function KnitApp() {
   )
 
   const fileMenuItems = [
-    <MenuItem key="new" onClick={closeThen(() => replace(blankChart(), 'Untitled'))}>
+    <MenuItem
+      key="new"
+      onClick={closeThen(() => replace(blankChart(undefined, undefined, patternColours()?.knit), 'Untitled'))}
+    >
       <ListItemIcon>
         <InsertDriveFileIcon fontSize="small" />
       </ListItemIcon>
@@ -823,7 +825,7 @@ export default function KnitApp() {
                 compact={fileCompact}
                 icon={<InsertDriveFileIcon />}
                 label="New"
-                onClick={() => replace(blankChart(), 'Untitled')}
+                onClick={() => replace(blankChart(undefined, undefined, patternColours()?.knit), 'Untitled')}
               />
               <Action compact={fileCompact} icon={<SaveIcon />} label="Save" onClick={() => setDialog('save')} />
               <Action compact={fileCompact} icon={<FolderOpenIcon />} label="Load" onClick={() => setDialog('load')} />

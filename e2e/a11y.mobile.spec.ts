@@ -27,3 +27,18 @@ test.describe('phones and tablets: axe finds no accessibility problems', () => {
     expect(await a11yProblems(page, '[role="menu"]'), 'Knit File').toEqual([])
   })
 })
+
+test('Theme is in the settings sheet, beside Help, and its dialog fits', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'phones keep the links in the settings sheet')
+  await openApp(page)
+  await page.getByText('Pattern settings').click()
+  const theme = page.getByRole('button', { name: 'Theme' })
+  await theme.scrollIntoViewIfNeeded()
+  await theme.click()
+  const dialog = page.getByRole('dialog', { name: 'Colour theme' })
+  await expect(dialog).toBeVisible()
+  expect(await a11yProblems(page, '[role="dialog"]')).toEqual([])
+  await dialog.locator('input[value="winter"]').check()
+  await expect(page.locator('html')).toHaveClass(/season-winter/)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+})

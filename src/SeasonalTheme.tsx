@@ -1,4 +1,16 @@
-import { MenuItem, TextField, ThemeProvider } from '@mui/material'
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Radio,
+  RadioGroup,
+  Stack,
+  ThemeProvider,
+  Typography,
+} from '@mui/material'
 import { createContext, type ReactNode, useContext, useLayoutEffect, useMemo, useState } from 'react'
 import {
   activeSeason,
@@ -9,11 +21,13 @@ import {
   seasonBrand,
   seasonCss,
 } from './seasons'
-import { type Brand, makeTheme } from './theme'
+import { type Brand, makeTheme, WEAVE } from './theme'
 
-const Choice = createContext<{ choice: SeasonChoice; setChoice: (c: SeasonChoice) => void }>({
+const Choice = createContext<{ choice: SeasonChoice; setChoice: (c: SeasonChoice) => void; app: string; base: Brand }>({
   choice: 'none',
   setChoice: () => {},
+  app: '',
+  base: WEAVE,
 })
 
 /**
@@ -21,7 +35,7 @@ const Choice = createContext<{ choice: SeasonChoice; setChoice: (c: SeasonChoice
  * go on <html> (a class and a style sheet) for the parts drawn with App.css's variables, and into the browser's
  * theme colour.
  */
-export function SeasonalTheme({ base, children }: { base: Brand; children: ReactNode }) {
+export function SeasonalTheme({ app, base, children }: { app: string; base: Brand; children: ReactNode }) {
   const [choice, setChoiceState] = useState<SeasonChoice>(loadSeasonChoice)
   const season = activeSeason(choice)
   const id = season?.id
@@ -53,8 +67,10 @@ export function SeasonalTheme({ base, children }: { base: Brand; children: React
         saveSeasonChoice(c)
         setChoiceState(c)
       },
+      app,
+      base,
     }),
-    [choice],
+    [choice, app, base],
   )
   return (
     <Choice.Provider value={value}>
@@ -65,31 +81,95 @@ export function SeasonalTheme({ base, children }: { base: Brand; children: React
   )
 }
 
-/** The colour theme list for View settings: the app's own colours, holidays only, or a season. */
-export function SeasonPicker({ app }: { app: string }) {
-  const { choice, setChoice } = useContext(Choice)
+/** A row of colour dots: how a theme looks. */
+function Swatches({ colors }: { colors: string[] }) {
   return (
-    <TextField
-      select
-      size="small"
-      label="Colour theme"
-      value={SEASONS.some((s) => s.id === choice) || choice === 'holidays' ? choice : 'none'}
-      onChange={(e) => setChoice(e.target.value)}
-      helperText="Changes the app's colours, not your pattern's."
-      slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: '60vh' } } } } } }}
-      sx={{ minWidth: 0 }}
-      fullWidth
-    >
-      <MenuItem value="none">{app} colours</MenuItem>
-      <MenuItem value="holidays">Halloween and Christmas, when it's time</MenuItem>
-      {SEASONS.map((s) => (
-        <MenuItem key={s.id} value={s.id}>
-          <span aria-hidden="true" style={{ marginRight: 8 }}>
-            {s.emoji}
-          </span>
-          {s.name}
-        </MenuItem>
+    <Stack direction="row" aria-hidden="true" sx={{ gap: 0.5, flex: 'none' }}>
+      {colors.map((c, i) => (
+        <Box
+          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list of colours
+          key={i}
+          sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: c, border: '1px solid rgba(0,0,0,0.15)' }}
+        />
       ))}
-    </TextField>
+    </Stack>
+  )
+}
+
+/**
+ * The colour theme dialog (from Theme at the foot of the page): the app's own colours, Halloween and Christmas
+ * when it's time, or a season. It applies as soon as one is picked; new patterns start in its colours.
+ */
+export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { choice, setChoice, app, base } = useContext(Choice)
+  const value = SEASONS.some((s) => s.id === choice) || choice === 'holidays' ? choice : 'none'
+  const option = (id: string, label: ReactNode, hint: string, colors: string[]) => (
+    <Box
+      component="label"
+      key={id}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        px: 1.5,
+        py: 1,
+        borderRadius: 3,
+        border: 2,
+        borderColor: value === id ? 'primary.main' : 'divider',
+        cursor: 'pointer',
+        '&:hover': { bgcolor: 'var(--wp-hover)' },
+      }}
+    >
+      <Radio value={id} sx={{ p: 0.5 }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {hint}
+        </Typography>
+      </Box>
+      <Swatches colors={colors} />
+    </Box>
+  )
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" aria-labelledby="theme-title">
+      <DialogTitle id="theme-title">Colour theme</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Seasonal colours for {app}. New patterns start in the theme's colours; patterns you already have keep theirs.
+        </Typography>
+        <RadioGroup
+          aria-labelledby="theme-title"
+          value={value}
+          onChange={(e) => setChoice(e.target.value)}
+          sx={{ gap: 1 }}
+        >
+          {option('none', `${app} colours`, 'The usual look', [base.accent.light, base.background.light])}
+          {option(
+            'holidays',
+            'Halloween and Christmas',
+            'Only when it’s time: late October, and December',
+            ['halloween', 'christmas'].map((id) => SEASONS.find((x) => x.id === id)?.light.accent ?? ''),
+          )}
+          {SEASONS.map((x) =>
+            option(
+              x.id,
+              <>
+                <span aria-hidden="true" style={{ marginRight: 6 }}>
+                  {x.emoji}
+                </span>
+                {x.name}
+              </>,
+              x.blurb,
+              [x.light.accent, x.dark.bg, x.pattern.warp, x.pattern.weft],
+            ),
+          )}
+        </RadioGroup>
+      </DialogContent>
+      <DialogActions>
+        <Button variant="contained" disableElevation onClick={onClose}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }

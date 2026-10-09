@@ -41,8 +41,8 @@ export function twillGrids(shafts: number, treadles: number, ends: number, picks
 }
 
 /** A blank draft at the default size: nothing threaded, tied up or treadled, ready to design from scratch. */
-export function emptyDraft(): Draft {
-  const d = defaultDraft()
+export function emptyDraft(colors?: { warp: string; weft: string }): Draft {
+  const d = defaultDraft(colors)
   return {
     ...d,
     threading: d.threading.map(() => -1),
@@ -51,7 +51,8 @@ export function emptyDraft(): Draft {
   }
 }
 
-export function defaultDraft(): Draft {
+/** The starting draft: a 4-shaft twill, in the given colours (pink by default). */
+export function defaultDraft(colors = { warp: DEFAULT_WARP, weft: DEFAULT_WEFT }): Draft {
   const shafts = 4
   const treadles = 4
   const ends = 32
@@ -62,8 +63,8 @@ export function defaultDraft(): Draft {
     ends,
     picks,
     ...twillGrids(shafts, treadles, ends, picks),
-    warpColors: Array(ends).fill(DEFAULT_WARP),
-    weftColors: Array(picks).fill(DEFAULT_WEFT),
+    warpColors: Array(ends).fill(colors.warp),
+    weftColors: Array(picks).fill(colors.weft),
   }
 }
 

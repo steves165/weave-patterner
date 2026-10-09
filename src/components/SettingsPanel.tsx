@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
-import { SeasonPicker } from '../SeasonalTheme'
+import { patternColours } from '../seasons'
 import { MONO_FONT } from '../theme'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
@@ -204,7 +204,7 @@ export function SettingsPanel(p: Props) {
           hint="Sets every end"
           aria="Warp colour for all ends"
           button="Set all warp"
-          initial={DEFAULT_WARP}
+          initial={patternColours()?.warp ?? DEFAULT_WARP}
           onApply={p.onFillWarp}
         />
         <ColorRow
@@ -212,7 +212,7 @@ export function SettingsPanel(p: Props) {
           hint="Sets every pick"
           aria="Weft colour for all picks"
           button="Set all weft"
-          initial={DEFAULT_WEFT}
+          initial={patternColours()?.weft ?? DEFAULT_WEFT}
           onApply={p.onFillWeft}
         />
         <Button size="small" onClick={p.onColors} sx={{ alignSelf: 'flex-start', ml: -1.5 }}>
@@ -221,7 +221,6 @@ export function SettingsPanel(p: Props) {
       </Section>
 
       <Section title="View" help="settings">
-        <SeasonPicker app="Weave Patterner" />
         <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', minHeight: 40 }}>
           <Typography id="cell-size-label" sx={{ flex: 'none', width: 70, fontWeight: 500 }}>
             Cell size

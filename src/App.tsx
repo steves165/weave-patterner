@@ -61,6 +61,7 @@ import { useYarns } from './hooks/useYarns'
 import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useRoomForSidebar, useTouch, useViewportWidth } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
+import { patternColours } from './seasons'
 import { selvedgeMisses } from './selvedge'
 import { patternUrl } from './share'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
@@ -102,7 +103,7 @@ export default function App() {
   // The pattern from last time on this device, saved or not.
   const [restored] = useState(loadCurrent)
   const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(
-    () => restored?.draft ?? defaultDraft(),
+    () => restored?.draft ?? defaultDraft(patternColours() ?? undefined),
     restored?.baseline,
   )
   const [name, setName] = useState<string | null>(restored?.name ?? null)
@@ -247,7 +248,7 @@ export default function App() {
       }
       canReset={draft !== baseline}
       onReset={() => update(() => baseline)}
-      onNew={() => open(emptyDraft(), null, 'New pattern: empty grids, ready to design')}
+      onNew={() => open(emptyDraft(patternColours() ?? undefined), null, 'New pattern: empty grids, ready to design')}
     />
   )
 

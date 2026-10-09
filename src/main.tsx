@@ -11,7 +11,7 @@ if (!root) throw new Error('Missing #root element')
 
 createRoot(root).render(
   <StrictMode>
-    <SeasonalTheme base={WEAVE}>
+    <SeasonalTheme app="Weave Patterner" base={WEAVE}>
       <CssBaseline />
       <App />
     </SeasonalTheme>

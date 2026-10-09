@@ -260,7 +260,7 @@ export const KNIT_HELP: Topic[] = [
         list: [
           'The **Knitted preview** draws the fabric: knit Vs, purl bumps, eyelets, cables and colours. **Show repeats** repeats the chart across and up.',
           '**3D** shows the knitting made up as a sweater, hat, coat or skirt at its real size from the gauge. Drag to turn it; **Pattern size** enlarges the pattern.',
-          '**Colour theme** (in View) gives the app seasonal colours in place of the teal: Halloween, Christmas, Winter, Spring, Summer or Autumn, or Halloween and Christmas only when it’s time. Your chart’s colours stay as they are.',
+          '**Theme** (at the bottom of the page, beside Help) gives the app seasonal colours in place of the teal: Halloween, Christmas, Winter, Spring, Summer or Autumn, or Halloween and Christmas only when it’s time. New charts start in the theme’s colours; charts you have keep theirs.',
         ],
       },
     ],

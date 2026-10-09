@@ -14,7 +14,7 @@ if (!root) throw new Error('Missing #root element')
 
 createRoot(root).render(
   <StrictMode>
-    <SeasonalTheme base={KNIT}>
+    <SeasonalTheme app="Knit Patterner" base={KNIT}>
       <CssBaseline />
       <KnitApp />
     </SeasonalTheme>

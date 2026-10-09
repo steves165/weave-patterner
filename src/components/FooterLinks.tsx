@@ -1,6 +1,9 @@
 import GitHubIcon from '@mui/icons-material/GitHub'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
+import PaletteIcon from '@mui/icons-material/PaletteOutlined'
 import { Link } from '@mui/material'
+import { useState } from 'react'
+import { ThemeDialog } from '../SeasonalTheme'
 
 interface Props {
   /** The sister app: Knit Patterner from Weave Patterner, and back. */
@@ -12,8 +15,9 @@ interface Props {
   fontSize?: number
 }
 
-/** The links at the foot of the app: the other app, the analytics choice and the source code. */
+/** The links at the foot of the app: help, the colour theme, the other app, the analytics choice and the source. */
 export function FooterLinks({ other, onAnalytics, onHelp, fontSize = 13 }: Props) {
+  const [theme, setTheme] = useState(false)
   return (
     <>
       {onHelp && (
@@ -28,6 +32,16 @@ export function FooterLinks({ other, onAnalytics, onHelp, fontSize = 13 }: Props
           Help
         </Link>
       )}
+      <Link
+        component="button"
+        onClick={() => setTheme(true)}
+        data-tour="theme"
+        sx={{ fontSize, display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}
+      >
+        <PaletteIcon sx={{ fontSize: 16 }} />
+        Theme
+      </Link>
+      <ThemeDialog open={theme} onClose={() => setTheme(false)} />
       <Link href={other.href} sx={{ fontSize }}>
         {other.label}
       </Link>
