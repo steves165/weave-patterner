@@ -1,0 +1,118 @@
+import { expect, type Page, test } from '@playwright/test'
+import { cell, knitSquare, openApp, openKnit, toolbarButton } from './helpers'
+
+const helpDialog = (page: Page, app = 'Weave Patterner') => page.getByRole('dialog', { name: `${app} help` })
+const topic = (page: Page) => page.getByTestId('help-topic')
+
+test('the Help link opens the guides, which can be searched and linked between', async ({ page }) => {
+  await openApp(page)
+  await page.getByRole('button', { name: 'Help' }).click()
+  const help = helpDialog(page)
+  await expect(topic(page)).toContainText('Getting started')
+  await help.getByLabel('Search help').fill('wif')
+  await expect(help.getByRole('navigation', { name: 'Help topics' })).toContainText('Saving, sharing and printing')
+  await help.locator('[data-topic="files"]').click()
+  await expect(topic(page)).toContainText('WIF for weaving software')
+  // Links between topics.
+  await help.getByLabel('Search help').fill('')
+  await help.locator('[data-topic="threading"]').click()
+  await topic(page).getByRole('button', { name: 'Straight draw or Point draw' }).click()
+  await expect(topic(page)).toContainText('Drawing tools')
+  await help.getByRole('button', { name: 'Close help' }).click()
+  await expect(help).toBeHidden()
+})
+
+test('F1 opens help on whatever is being worked on, and ? opens the shortcuts', async ({ page }) => {
+  await openApp(page)
+  await cell(page, 'Pick 3, treadle 2').hover()
+  await page.keyboard.press('F1')
+  await expect(topic(page)).toContainText('Treadling and lift plans')
+  await page.keyboard.press('Escape')
+  // Keyboard focus wins over the pointer.
+  await cell(page, 'End 1, shaft 1').focus()
+  await page.keyboard.press('F1')
+  await expect(topic(page)).toContainText('Putting each warp end on a shaft')
+  await page.keyboard.press('Escape')
+  await page.locator('.drawdown').hover()
+  await page.keyboard.press('?')
+  await expect(topic(page)).toContainText('Keyboard shortcuts')
+})
+
+test('a first visit offers the tour, which walks round the screen; it is not offered again', async ({ page }) => {
+  await openApp(page, { tour: 'new' })
+  const offer = page.getByRole('region', { name: 'Welcome' })
+  await expect(offer).toContainText('New to Weave Patterner?')
+  await offer.getByRole('button', { name: 'Take the tour' }).click()
+  const tour = page.getByTestId('tour')
+  const total = Number((await page.getByTestId('tour-step').innerText()).split(' of ')[1])
+  expect(total).toBeGreaterThan(10)
+  await expect(tour).toContainText('Welcome to Weave Patterner')
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect(tour).toContainText('Threading')
+  for (let i = 2; i < total; i++) await page.getByRole('button', { name: 'Next' }).click()
+  await expect(tour).toContainText('Help is always here')
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await expect(tour).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Welcome' })).toHaveCount(0)
+  // Taken again from help.
+  await page.getByRole('button', { name: 'Help' }).click()
+  await helpDialog(page).getByRole('button', { name: 'Take the tour' }).click()
+  await expect(page.getByTestId('tour')).toContainText('Welcome')
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('tour')).toHaveCount(0)
+})
+
+test('"Not now" turns the tour down for good', async ({ page }) => {
+  await openApp(page, { tour: 'new' })
+  await page.getByRole('region', { name: 'Welcome' }).getByRole('button', { name: 'Not now' }).click()
+  await page.reload()
+  await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Welcome' })).toHaveCount(0)
+})
+
+test('the Tools menu can be searched', async ({ page }) => {
+  await openApp(page)
+  await toolbarButton(page, 'Tools').click()
+  await page.getByLabel('Find a tool').fill('calculator')
+  const items = page.getByRole('menuitem')
+  await expect(items).toHaveCount(1)
+  await expect(items.first()).toContainText('Warp calculator')
+  // Group names count too: "plan the warp" finds the three warp planning tools.
+  await page.getByLabel('Find a tool').fill('plan the warp')
+  await expect(items).toHaveCount(3)
+  await page.getByLabel('Find a tool').fill('nothing like this')
+  await expect(page.getByRole('menu')).toContainText('No tool matches')
+})
+
+test('copies a link that opens the pattern', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openApp(page)
+  await cell(page, 'End 1, shaft 3').click()
+  await toolbarButton(page, 'Export').click()
+  await page.getByRole('menuitem', { name: /Copy a link to this pattern/ }).click()
+  await expect(page.locator('.MuiSnackbarContent-message')).toContainText('Link copied')
+  const url = await page.evaluate(() => navigator.clipboard.readText())
+  expect(url).toMatch(/^https:\/\/steves165\.github\.io\/weave-patterner\/#pattern=/)
+})
+
+test.describe('Knit Patterner', () => {
+  test('help, F1 on the chart, the tour and what you are painting with', async ({ page }) => {
+    await openKnit(page, { tour: 'new' })
+    await expect(page.getByTestId('brush-label')).toHaveText('Painting with Purl (p)')
+    await page.getByRole('button', { name: 'Yarn over', exact: true }).click()
+    await expect(page.getByTestId('brush-label')).toHaveText('Painting with Yarn over (yo)')
+    await page.getByRole('region', { name: 'Welcome' }).getByRole('button', { name: 'Take the tour' }).click()
+    await expect(page.getByTestId('tour')).toContainText('Welcome to Knit Patterner')
+    await page.keyboard.press('ArrowRight')
+    await expect(page.getByTestId('tour')).toContainText('Stitches')
+    await page.keyboard.press('Escape')
+    await knitSquare(page, 2, 3).hover()
+    await page.keyboard.press('F1')
+    await expect(topic(page)).toContainText('Reading a chart')
+    await helpDialog(page, 'Knit Patterner').getByLabel('Search help').fill('nupp')
+    await helpDialog(page, 'Knit Patterner').locator('[data-topic="stitches"]').click()
+    await expect(topic(page)).toContainText('Nupp')
+  })
+})

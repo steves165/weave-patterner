@@ -24,6 +24,8 @@ interface GridProps {
   traced?: (r: number, c: number) => boolean
   /** Columns count from the right (end 1 on the right), so the heavier lines every 4 do too. */
   fromRight?: boolean
+  /** The help topic F1 opens here. */
+  help?: string
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -50,6 +52,7 @@ export function Grid({
   cellColor,
   traced,
   fromRight = false,
+  help,
 }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
   const lastPointer = useRef('mouse')
@@ -130,6 +133,7 @@ export function Grid({
       ref={container}
       role="group"
       aria-label={label}
+      data-help={help}
       className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}`}
       style={{ gridTemplateColumns: `repeat(${cols}, var(--cell))` }}
     >
@@ -152,6 +156,7 @@ interface ColorStripProps {
 export function ColorStrip({ colors, vertical, onChange, labelAt, traced }: ColorStripProps) {
   return (
     <div
+      data-help="colours"
       className="grid strip"
       style={
         vertical

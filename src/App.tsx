@@ -14,6 +14,11 @@ import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
+import { HelpCenter } from './help/HelpCenter'
+import { markTourSeen, Tour, TourOffer, tourSeen } from './help/Tour'
+import { WEAVE_TOUR } from './help/tours'
+import { useHelpKeys } from './help/useHelpKeys'
+import { WEAVE_HELP } from './help/weaveHelp'
 import { findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
@@ -56,6 +61,7 @@ import { draftPng, draftSvg } from './imageExport'
 import { useCompact, usePhone, useRoomForSidebar, useTouch, useViewportWidth } from './layout'
 import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { selvedgeMisses } from './selvedge'
+import { patternUrl } from './share'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, emptyDraft, resizeDraft } from './weave'
 
@@ -136,6 +142,20 @@ export default function App() {
     if (!storeSavedBlocks(next)) setToast("Couldn't save the block store on this device")
   }
   const [blockFocus, setBlockFocus] = useState<number | null>(null)
+  // Help (F1, or the Help link) and the guided tour, offered on a first visit.
+  const [help, setHelp] = useState<{ open: boolean; topic: string | null }>({ open: false, topic: null })
+  const openHelp = (topic: string | null) => setHelp({ open: true, topic })
+  const [touring, setTouring] = useState(false)
+  const [offerTour, setOfferTour] = useState(() => !tourSeen('weave'))
+  const startTour = () => {
+    markTourSeen('weave')
+    setOfferTour(false)
+    setHelp((h) => ({ ...h, open: false }))
+    setDialog(null)
+    setSheetOpen(false)
+    setTouring(true)
+  }
+  useHelpKeys(openHelp, !touring)
   // Whether the next print includes the written-instructions page.
   const [printInstructions, setPrintInstructions] = useState(false)
 
@@ -299,6 +319,13 @@ export default function App() {
                 .catch(fail)
           }}
           onImport={() => setDialog('import')}
+          onHelp={() => openHelp(null)}
+          onShareLink={() => {
+            patternUrl(name ?? 'Shared pattern', draft)
+              .then((url) => navigator.clipboard.writeText(url).then(() => url))
+              .then(() => setToast('Link copied: anyone with it can open this pattern'))
+              .catch(() => setToast("Couldn't copy the link here. Export the pattern file to share it instead."))
+          }}
           onPrint={(instructions) => {
             // Render the print sheet with or without instructions before the print dialog snapshots the page.
             flushSync(() => setPrintInstructions(instructions))
@@ -446,6 +473,7 @@ export default function App() {
                 <FooterLinks
                   other={{ href: './knit/', label: 'Knit Patterner' }}
                   onAnalytics={analyticsChoice}
+                  onHelp={() => openHelp(null)}
                   fontSize={14}
                 />
               )
@@ -461,6 +489,7 @@ export default function App() {
           unwoven={unwoven}
           selvedge={selvedge}
           onAnalytics={analyticsChoice}
+          onHelp={() => openHelp(null)}
           phone={phone}
           sticky={!compact}
           width={pageScroll ? viewportWidth : undefined}
@@ -667,6 +696,26 @@ export default function App() {
           // Above the phone's bottom navigation.
           sx={phone ? { bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))' } : undefined}
         />
+        <HelpCenter
+          open={help.open}
+          app="Weave Patterner"
+          topics={WEAVE_HELP}
+          topic={help.topic}
+          onClose={() => setHelp((h) => ({ ...h, open: false }))}
+          onTour={startTour}
+        />
+        <Tour open={touring} steps={WEAVE_TOUR} onClose={() => setTouring(false)} />
+        {offerTour && !(GA_ID && consent === null) && dialog === null && !help.open && !touring && (
+          <TourOffer
+            app="Weave Patterner"
+            text="Take a one-minute tour of how a weaving draft works and where everything is."
+            onStart={startTour}
+            onDismiss={() => {
+              markTourSeen('weave')
+              setOfferTour(false)
+            }}
+          />
+        )}
         {GA_ID && consent === null && (
           <ConsentBanner
             onChoose={(allow) => {

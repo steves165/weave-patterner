@@ -5,7 +5,9 @@ import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import HandymanIcon from '@mui/icons-material/Handyman'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import ImageIcon from '@mui/icons-material/Image'
+import LinkIcon from '@mui/icons-material/Link'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
@@ -23,11 +25,12 @@ import {
   ListSubheader,
   Menu,
   MenuItem,
+  TextField,
   Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material'
-import { type MouseEvent, useState } from 'react'
+import { type MouseEvent, type ReactNode, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
 import { useMidWidth, useNarrow } from '../layout'
 import { Action, NavTab, PhoneNav, Rule } from './AppBarParts'
@@ -59,6 +62,10 @@ interface Props {
   onExport: (format: ExportFormat) => void
   onExportImage: (format: ImageFormat) => void
   onImport: () => void
+  /** Copies a link that opens this pattern. */
+  onShareLink: () => void
+  /** Opens the help. */
+  onHelp: () => void
   /** Print the draft, optionally with a page of written instructions. */
   onPrint: (instructions: boolean) => void
   onWeave: () => void
@@ -109,6 +116,7 @@ export function AppToolbar(p: Props) {
   const fileCompact = useMidWidth() || p.compact
   // Narrower still, the name drops its wordmark and Tools and 3D cloth lose their labels.
   const narrow = useNarrow() || p.compact
+  const [toolQuery, setToolQuery] = useState('')
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
   const [printAnchor, setPrintAnchor] = useState<HTMLElement | null>(null)
   const close = () => {
@@ -127,6 +135,12 @@ export function AppToolbar(p: Props) {
         <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
+    <MenuItem key="link" onClick={then(p.onShareLink)}>
+      <ListItemIcon>
+        <LinkIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText primary="Copy a link to this pattern" secondary="Anyone with the link can open it" />
+    </MenuItem>,
     ...(['png', 'svg'] as const).map((f) => (
       <MenuItem key={f} onClick={then(() => p.onExportImage(f))}>
         <ListItemIcon>
@@ -147,6 +161,172 @@ export function AppToolbar(p: Props) {
       <ListItemText primary="Print draft and written instructions" secondary="Adds threading and treadling lists" />
     </MenuItem>,
   ]
+
+  // Every tool, by group, so the menu can be searched.
+  const tools: {
+    group: string
+    primary: string
+    secondary: string
+    onClick: () => void
+    icon?: ReactNode
+    href?: string
+  }[] = [
+    {
+      group: 'Edit',
+      primary: 'Sequence tools…',
+      secondary: 'Fill, repeat, mirror, reverse, insert or delete ends and picks',
+      onClick: p.onSequenceTools,
+    },
+    {
+      group: 'Edit',
+      primary: 'Tromp as writ',
+      secondary: 'Treadle as drawn in: copy the threading to the treadling',
+      onClick: p.onTrompAsWrit,
+    },
+    {
+      group: 'Design',
+      primary: 'Colours and presets…',
+      secondary: 'Stripe sequences; houndstooth, log cabin and more',
+      onClick: p.onColors,
+      icon: <PaletteIcon fontSize="small" />,
+    },
+    {
+      group: 'Design',
+      primary: 'Draw the cloth…',
+      secondary: 'Paint the cloth; get the threading, tie-up and treadling',
+      onClick: p.onCloth,
+    },
+    {
+      group: 'Design',
+      primary: 'Block profile…',
+      secondary: 'Design in blocks: overshot, summer and winter, lace, crackle, twill…',
+      onClick: p.onProfile,
+    },
+    {
+      group: 'Design',
+      primary: 'Double cloth…',
+      secondary: 'Two layers: separate, tube, double width or blocks',
+      onClick: p.onDoubleCloth,
+    },
+    {
+      group: 'Design',
+      primary: 'Picture to draft…',
+      secondary: 'Turn a picture into blocks and a draft',
+      onClick: p.onPicture,
+    },
+    {
+      group: 'Design',
+      primary: 'Echo weave…',
+      secondary: 'A design line threaded with its echo, in two colours',
+      onClick: p.onEcho,
+    },
+    {
+      group: 'Design',
+      primary: 'Variations…',
+      secondary: 'Same threading, other tie-ups and treadlings',
+      onClick: p.onVariations,
+    },
+    {
+      group: 'Design',
+      primary: 'Colourways…',
+      secondary: 'The same cloth in other colours, side by side',
+      onClick: p.onColorways,
+    },
+    {
+      group: 'Change the whole draft',
+      primary: 'Transform draft…',
+      secondary: 'Turn 90°, swap face and back, flip, move the repeat',
+      onClick: p.onTransform,
+    },
+    p.isLiftplan
+      ? {
+          group: 'Change the whole draft',
+          primary: 'Convert to tie-up and treadling',
+          secondary: 'One treadle for each different shed, for floor looms',
+          onClick: p.onToTreadling,
+        }
+      : {
+          group: 'Change the whole draft',
+          primary: 'Convert to lift plan',
+          secondary: 'Shafts per pick, for dobby looms',
+          onClick: p.onToLiftplan,
+        },
+    {
+      group: 'Change the whole draft',
+      primary: 'Cloth report…',
+      secondary: 'Warp and weft faces, interlacing, floats, firmness',
+      onClick: p.onReport,
+    },
+    {
+      group: 'Plan the warp',
+      primary: 'Warp winding plan…',
+      secondary: 'Colour order for the warping board, in bouts',
+      onClick: p.onWarpPlan,
+    },
+    {
+      group: 'Plan the warp',
+      primary: 'Warp calculator…',
+      secondary: 'Warp length, width in reed and yarn per colour',
+      onClick: p.onCalculator,
+      icon: <CalculateIcon fontSize="small" />,
+    },
+    {
+      group: 'Plan the warp',
+      primary: 'Yarn library…',
+      secondary: 'Named yarns with grist and price, matched by colour',
+      onClick: p.onYarns,
+    },
+    {
+      group: 'Other looms',
+      primary: 'Rigid heddle…',
+      secondary: 'Weave this draft with a rigid heddle and pick-up stick',
+      onClick: p.onRigidHeddle,
+    },
+    {
+      group: 'Other looms',
+      primary: 'Drawloom…',
+      secondary: 'Damask and other pattern-harness designs, drawn in units',
+      onClick: p.onDrawloom,
+    },
+    { group: 'Other looms', primary: 'Tablet weaving…', secondary: 'Design card-woven bands', onClick: p.onTablet },
+    {
+      group: 'Other crafts',
+      primary: 'Knit Patterner',
+      secondary: 'Knitting charts, written patterns and colourwork',
+      onClick: close,
+      href: './knit/',
+    },
+  ]
+  const words = toolQuery.toLowerCase().split(/\s+/).filter(Boolean)
+  const found = tools.filter((t) =>
+    words.every((w) => `${t.group} ${t.primary} ${t.secondary}`.toLowerCase().includes(w)),
+  )
+  const toolItems = found.flatMap((t, i) => [
+    ...(i === 0 || found[i - 1].group !== t.group
+      ? [
+          <ListSubheader key={`g-${t.group}`} disableSticky>
+            {t.group}
+          </ListSubheader>,
+        ]
+      : []),
+    t.href ? (
+      <MenuItem key={t.primary} component="a" href={t.href} onClick={t.onClick}>
+        <ListItemText primary={t.primary} secondary={t.secondary} />
+      </MenuItem>
+    ) : (
+      <MenuItem
+        key={t.primary}
+        onClick={() => {
+          close()
+          setToolQuery('')
+          t.onClick()
+        }}
+      >
+        {t.icon && <ListItemIcon>{t.icon}</ListItemIcon>}
+        <ListItemText primary={t.primary} secondary={t.secondary} />
+      </MenuItem>
+    ),
+  ])
 
   const fileItems = [
     <MenuItem key="save" onClick={then(p.onSave)}>
@@ -173,6 +353,13 @@ export function AppToolbar(p: Props) {
     <Divider key="d2" />,
     <ListSubheader key="export">Export</ListSubheader>,
     ...exportItems,
+    <Divider key="d3" />,
+    <MenuItem key="help" onClick={then(p.onHelp)}>
+      <ListItemIcon>
+        <HelpOutlineIcon fontSize="small" />
+      </ListItemIcon>
+      Help
+    </MenuItem>,
   ]
   const openTools = (e: MouseEvent<HTMLElement>) => setToolsAnchor(e.currentTarget)
 
@@ -251,6 +438,7 @@ export function AppToolbar(p: Props) {
             <Box
               component="nav"
               aria-label="File"
+              data-help="files"
               sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px', flex: 'none' }}
             >
               <Action compact={fileCompact} icon={<SaveIcon />} label="Save" onClick={p.onSave} />
@@ -282,14 +470,33 @@ export function AppToolbar(p: Props) {
             aria-label="Studio"
             sx={{ display: 'flex', alignItems: 'center', gap: p.compact ? '2px' : 1, flex: 'none' }}
           >
-            {!p.phone && <Action compact={narrow} icon={<HandymanIcon />} label="Tools" onClick={openTools} />}
             {!p.phone && (
-              <Action compact={narrow} variant="outlined" icon={<ViewInArIcon />} label="3D cloth" onClick={p.on3d} />
+              <Action
+                compact={narrow}
+                icon={<HandymanIcon />}
+                label="Tools"
+                onClick={openTools}
+                tour="tools"
+                help="tools"
+              />
+            )}
+            {!p.phone && (
+              <Action
+                compact={narrow}
+                variant="outlined"
+                icon={<ViewInArIcon />}
+                label="3D cloth"
+                onClick={p.on3d}
+                tour="3d"
+                help="3d"
+              />
             )}
             {p.compact ? (
               <Tooltip title="Start weaving" describeChild>
                 <IconButton
                   aria-label="Start weaving"
+                  data-tour="weave"
+                  data-help="weaving"
                   onClick={p.onWeave}
                   sx={{
                     width: 44,
@@ -309,114 +516,42 @@ export function AppToolbar(p: Props) {
                 variant="contained"
                 icon={<PlayArrowIcon />}
                 label="Start weaving"
+                tour="weave"
+                help="weaving"
                 onClick={p.onWeave}
               />
             )}
             <ThemeToggle />
           </Box>
-          <Menu anchorEl={toolsAnchor} open={toolsAnchor !== null} onClose={close}>
-            <ListSubheader disableSticky>Edit</ListSubheader>
-            <MenuItem onClick={then(p.onSequenceTools)}>
-              <ListItemText
-                primary="Sequence tools…"
-                secondary="Fill, repeat, mirror, reverse, insert or delete ends and picks"
+          <Menu
+            anchorEl={toolsAnchor}
+            open={toolsAnchor !== null}
+            onClose={() => {
+              close()
+              setToolQuery('')
+            }}
+            // The search box takes focus, so typing finds a tool rather than jumping to a menu item.
+            autoFocus={false}
+            disableAutoFocusItem
+            slotProps={{ paper: { sx: { maxHeight: '80vh', width: 380, maxWidth: 'calc(100vw - 16px)' } } }}
+          >
+            <Box sx={{ px: 1.5, pt: 0.5, pb: 1 }} onKeyDown={(e) => e.key !== 'Escape' && e.stopPropagation()}>
+              <TextField
+                autoFocus
+                fullWidth
+                size="small"
+                placeholder="Find a tool"
+                value={toolQuery}
+                onChange={(e) => setToolQuery(e.target.value)}
+                slotProps={{ htmlInput: { 'aria-label': 'Find a tool' } }}
               />
-            </MenuItem>
-            <MenuItem onClick={then(p.onTrompAsWrit)}>
-              <ListItemText
-                primary="Tromp as writ"
-                secondary="Treadle as drawn in: copy the threading to the treadling"
-              />
-            </MenuItem>
-            <ListSubheader disableSticky>Design</ListSubheader>
-            <MenuItem onClick={then(p.onColors)}>
-              <ListItemIcon>
-                <PaletteIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Colours and presets…"
-                secondary="Stripe sequences; houndstooth, log cabin and more"
-              />
-            </MenuItem>
-            <MenuItem onClick={then(p.onCloth)}>
-              <ListItemText
-                primary="Draw the cloth…"
-                secondary="Paint the cloth; get the threading, tie-up and treadling"
-              />
-            </MenuItem>
-            <MenuItem onClick={then(p.onProfile)}>
-              <ListItemText
-                primary="Block profile…"
-                secondary="Design in blocks: overshot, summer and winter, lace, crackle, twill…"
-              />
-            </MenuItem>
-            <MenuItem onClick={then(p.onDoubleCloth)}>
-              <ListItemText primary="Double cloth…" secondary="Two layers: separate, tube, double width or blocks" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onPicture)}>
-              <ListItemText primary="Picture to draft…" secondary="Turn a picture into blocks and a draft" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onEcho)}>
-              <ListItemText primary="Echo weave…" secondary="A design line threaded with its echo, in two colours" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onVariations)}>
-              <ListItemText primary="Variations…" secondary="Same threading, other tie-ups and treadlings" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onColorways)}>
-              <ListItemText primary="Colourways…" secondary="The same cloth in other colours, side by side" />
-            </MenuItem>
-            <ListSubheader disableSticky>Change the whole draft</ListSubheader>
-            <MenuItem onClick={then(p.onTransform)}>
-              <ListItemText
-                primary="Transform draft…"
-                secondary="Turn 90°, swap face and back, flip, move the repeat"
-              />
-            </MenuItem>
-            {p.isLiftplan ? (
-              <MenuItem onClick={then(p.onToTreadling)}>
-                <ListItemText
-                  primary="Convert to tie-up and treadling"
-                  secondary="One treadle for each different shed, for floor looms"
-                />
-              </MenuItem>
-            ) : (
-              <MenuItem onClick={then(p.onToLiftplan)}>
-                <ListItemText primary="Convert to lift plan" secondary="Shafts per pick, for dobby looms" />
-              </MenuItem>
+            </Box>
+            {toolItems}
+            {toolItems.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1 }}>
+                No tool matches "{toolQuery}".
+              </Typography>
             )}
-            <MenuItem onClick={then(p.onReport)}>
-              <ListItemText primary="Cloth report…" secondary="Warp and weft faces, interlacing, floats, firmness" />
-            </MenuItem>
-            <ListSubheader disableSticky>Plan the warp</ListSubheader>
-            <MenuItem onClick={then(p.onWarpPlan)}>
-              <ListItemText primary="Warp winding plan…" secondary="Colour order for the warping board, in bouts" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onCalculator)}>
-              <ListItemIcon>
-                <CalculateIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Warp calculator…" secondary="Warp length, width in reed and yarn per colour" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onYarns)}>
-              <ListItemText primary="Yarn library…" secondary="Named yarns with grist and price, matched by colour" />
-            </MenuItem>
-            <ListSubheader disableSticky>Other looms</ListSubheader>
-            <MenuItem onClick={then(p.onRigidHeddle)}>
-              <ListItemText
-                primary="Rigid heddle…"
-                secondary="Weave this draft with a rigid heddle and pick-up stick"
-              />
-            </MenuItem>
-            <MenuItem onClick={then(p.onDrawloom)}>
-              <ListItemText primary="Drawloom…" secondary="Damask and other pattern-harness designs, drawn in units" />
-            </MenuItem>
-            <MenuItem onClick={then(p.onTablet)}>
-              <ListItemText primary="Tablet weaving…" secondary="Design card-woven bands" />
-            </MenuItem>
-            <ListSubheader disableSticky>Other crafts</ListSubheader>
-            <MenuItem component="a" href="./knit/" onClick={close}>
-              <ListItemText primary="Knit Patterner" secondary="Knitting charts, written patterns and colourwork" />
-            </MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>

@@ -52,6 +52,7 @@ export function BlockStrip({ ends, blocks, cellSize, endAt, onAdd, onOpen }: Pro
     <div
       ref={strip}
       className="block-strip"
+      data-help="blocks"
       data-testid="block-strip"
       title={blocks.length ? undefined : 'Drag along here to mark a block of ends'}
       style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}

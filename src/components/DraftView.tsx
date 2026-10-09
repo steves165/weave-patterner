@@ -180,6 +180,7 @@ export function DraftView(p: Props) {
         isOn={(r, c) => draft.threading[endAt(c)] === shaftAt(r)}
         onPaint={(r, c, v, cont) => p.onThreading(shaftAt(r), endAt(c), v, cont)}
         label="Threading"
+        help="threading"
         fromRight={mirrored}
         cellLabel={(r, c) => `End ${endAt(c) + 1}, shaft ${shaftAt(r) + 1}`}
         cellText={view.numbers ? (r) => String(shaftAt(r) + 1) : undefined}
@@ -198,6 +199,7 @@ export function DraftView(p: Props) {
             isOn={(r, t) => draft.tieup[shaftAt(r)][t] !== sinking}
             onPaint={(r, t, v, cont) => p.onTieup(shaftAt(r), t, v !== sinking, cont)}
             label={sinking ? 'Tie-up (sinking shed)' : 'Tie-up'}
+            help="tieup"
             traced={(r, t) => tracedTieup(shaftAt(r), t)}
             cellLabel={(r, t) => `Treadle ${t + 1}, shaft ${shaftAt(r) + 1}${sinking ? ' sinks' : ''}`}
             touchPaint={p.touchPaint}
@@ -212,6 +214,7 @@ export function DraftView(p: Props) {
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: a pointer shortcut; the explanation is shown as text and the same cells are reachable by keyboard in the threading and treadling */}
       <div
         ref={drawdownRef}
+        data-help="drawdown"
         className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}`}
         role="img"
         aria-label={`${view.clothSide === 'face' ? 'Face of the cloth' : view.clothSide === 'back' ? 'Back of the cloth' : 'Woven pattern'}, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
@@ -248,6 +251,7 @@ export function DraftView(p: Props) {
         isOn={(pick, t) => draft.treadling[pick][t]}
         onPaint={p.onTreadling}
         label={liftplan ? 'Lift plan' : 'Treadling'}
+        help="treadling"
         cellLabel={(pick, t) => `Pick ${pick + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
         cellText={view.numbers ? (_, t) => String(t + 1) : undefined}
         cellColor={view.colorBoxes ? (pick) => draft.weftColors[pick] : undefined}
@@ -317,6 +321,7 @@ export function DraftView(p: Props) {
           value={view.clothSide}
           onChange={(_, side) => side && p.onView({ clothSide: side })}
           aria-label="Show the drawdown, or the face or back of the cloth"
+          data-help="drawdown"
         >
           <ToggleButton value="drawdown">Drawdown</ToggleButton>
           <ToggleButton value="face">Face</ToggleButton>
@@ -331,6 +336,7 @@ export function DraftView(p: Props) {
           value={view.drawTool}
           onChange={(_, tool) => tool && p.onView({ drawTool: tool })}
           aria-label="Drawing tool"
+          data-help="drawing"
         >
           <Tooltip title="Click or drag to set boxes one at a time" describeChild>
             <ToggleButton value="click">Click</ToggleButton>
@@ -342,7 +348,13 @@ export function DraftView(p: Props) {
             <ToggleButton value="point">Point draw</ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
-        <Button color="inherit" startIcon={<ViewColumnIcon />} onClick={() => p.onBlocks()} sx={{ height: 40 }}>
+        <Button
+          color="inherit"
+          startIcon={<ViewColumnIcon />}
+          onClick={() => p.onBlocks()}
+          sx={{ height: 40 }}
+          data-help="blocks"
+        >
           Blocks
         </Button>
         {back && (

@@ -8,6 +8,7 @@ import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import GridViewIcon from '@mui/icons-material/GridView'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt'
 import ImageIcon from '@mui/icons-material/Image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
@@ -58,6 +59,11 @@ import { ThemeToggle } from '../components/ThemeToggle'
 import { LoadDialog } from '../dialogs/LoadDialog'
 import { SaveDialog } from '../dialogs/SaveDialog'
 import { download } from '../exportDraft'
+import { HelpCenter } from '../help/HelpCenter'
+import { KNIT_HELP } from '../help/knitHelp'
+import { markTourSeen, Tour, TourOffer, tourSeen } from '../help/Tour'
+import { KNIT_TOUR } from '../help/tours'
+import { useHelpKeys } from '../help/useHelpKeys'
 import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
@@ -173,17 +179,21 @@ function Panel({
   children,
   testId,
   delay = 0,
+  help,
 }: {
   title: string
   children: ReactNode
   testId?: string
   /** When it eases in, in ms after the chart. */
   delay?: number
+  /** The help topic F1 opens here. */
+  help: string
 }) {
   return (
     <Paper
       variant="outlined"
       className="wp-enter"
+      data-help={help}
       style={{ ['--delay' as string]: `${delay}ms` }}
       sx={{ p: 2.5, borderRadius: '20px', bgcolor: 'var(--wp-paper)', boxShadow: '0 1px 2px var(--wp-shadow-soft)' }}
       data-testid={testId}
@@ -197,10 +207,10 @@ function Panel({
 }
 
 /** A heading and its settings, in the sidebar or sheet. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, help, children }: { title: string; help: string; children: ReactNode }) {
   return (
     // Room above each outlined field for its floating label.
-    <Stack component="section" sx={{ gap: 2 }}>
+    <Stack component="section" sx={{ gap: 2 }} data-help={help}>
       <Typography variant="h2" sx={{ fontSize: 17, m: 0 }}>
         {title}
       </Typography>
@@ -478,10 +488,31 @@ export default function KnitApp() {
     setBrush({ kind: 'color', index: 0 })
   }
 
+  // Help (F1, or the Help link) and the guided tour, offered on a first visit.
+  const [help, setHelp] = useState<{ open: boolean; topic: string | null }>({ open: false, topic: null })
+  const openHelp = (topic: string | null) => setHelp({ open: true, topic })
+  const [touring, setTouring] = useState(false)
+  const [offerTour, setOfferTour] = useState(() => !tourSeen('knit'))
+  const startTour = () => {
+    markTourSeen('knit')
+    setOfferTour(false)
+    setHelp((x) => ({ ...x, open: false }))
+    setDialog(null)
+    setSheetOpen(false)
+    setSelecting(false)
+    setSelection(null)
+    setTouring(true)
+  }
+  useHelpKeys(openHelp, !touring)
   const summary = `${w} stitches × ${h} ${chart.mode === 'round' ? 'rounds' : 'rows'} · ${chart.mode === 'round' ? 'in the round' : 'flat'}`
   const analyticsChoice = GA_ID ? () => setConsent(null) : undefined
   const weaveLinks = (fontSize?: number) => (
-    <FooterLinks other={{ href: '../', label: 'Weave Patterner' }} onAnalytics={analyticsChoice} fontSize={fontSize} />
+    <FooterLinks
+      other={{ href: '../', label: 'Weave Patterner' }}
+      onAnalytics={analyticsChoice}
+      onHelp={() => openHelp(null)}
+      fontSize={fontSize}
+    />
   )
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const closeThen = (fn: () => void) => () => {
@@ -491,7 +522,7 @@ export default function KnitApp() {
 
   const settings = (
     <Stack sx={{ gap: 2.5 }} divider={<Divider flexItem />}>
-      <Section title="Chart">
+      <Section title="Chart" help="reading">
         <TextField size="small" label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
         <Box sx={FIELD_GRID}>
           <TextField
@@ -523,7 +554,7 @@ export default function KnitApp() {
           <ToggleButton value="round">In the round</ToggleButton>
         </ToggleButtonGroup>
       </Section>
-      <Section title="Gauge">
+      <Section title="Gauge" help="sizing">
         <Box sx={FIELD_GRID}>
           <TextField
             size="small"
@@ -554,7 +585,7 @@ export default function KnitApp() {
           sx={SWITCH_ROW}
         />
       </Section>
-      <Section title="Colourwork">
+      <Section title="Colourwork" help="colourwork">
         <ToggleButtonGroup
           size="small"
           exclusive
@@ -584,7 +615,7 @@ export default function KnitApp() {
           />
         )}
       </Section>
-      <Section title="View">
+      <Section title="View" help="preview">
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5, minHeight: 40 }}>
           <Typography id="knit-zoom" sx={{ flex: 'none', width: 56, fontWeight: 500 }}>
             Zoom
@@ -606,7 +637,7 @@ export default function KnitApp() {
           </Typography>
         </Stack>
       </Section>
-      <Section title="Change the chart">
+      <Section title="Change the chart" help="repeats">
         <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
           <Button
             size="small"
@@ -700,6 +731,12 @@ export default function KnitApp() {
       </ListItemIcon>
       Import a written pattern…
     </MenuItem>,
+    <MenuItem key="help" onClick={closeThen(() => openHelp(null))}>
+      <ListItemIcon>
+        <HelpOutlineIcon fontSize="small" />
+      </ListItemIcon>
+      Help
+    </MenuItem>,
     <MenuItem key="print" onClick={closeThen(print)}>
       <ListItemIcon>
         <PrintIcon fontSize="small" />
@@ -777,6 +814,7 @@ export default function KnitApp() {
             <Box
               component="nav"
               aria-label="File"
+              data-help="files"
               sx={{ display: 'flex', alignItems: 'center', gap: '2px', flex: 'none' }}
             >
               <Action
@@ -823,6 +861,8 @@ export default function KnitApp() {
               <Tooltip title="Start knitting" describeChild>
                 <IconButton
                   aria-label="Start knitting"
+                  data-tour="knit"
+                  data-help="knitting"
                   onClick={() => setDialog('knitting')}
                   sx={{
                     width: 44,
@@ -842,6 +882,8 @@ export default function KnitApp() {
                 variant="contained"
                 icon={<PlayArrowIcon />}
                 label="Start knitting"
+                tour="knit"
+                help="knitting"
                 onClick={() => setDialog('knitting')}
               />
             )}
@@ -1034,6 +1076,7 @@ export default function KnitApp() {
                   size="small"
                   exclusive
                   aria-label="Stitch to paint"
+                  data-help="painting"
                   value={brush.kind === 'stitch' && !selecting ? brush.id : null}
                   onChange={(_, id) => {
                     if (!id) return
@@ -1062,6 +1105,8 @@ export default function KnitApp() {
                   <ToggleButton
                     size="small"
                     value="select"
+                    data-tour="select"
+                    data-help="selecting"
                     selected={selecting}
                     onChange={() => {
                       setSelecting(!selecting)
@@ -1073,8 +1118,27 @@ export default function KnitApp() {
                     Select
                   </ToggleButton>
                 </Tooltip>
+                <Typography variant="body2" color="text.secondary" aria-live="polite" data-testid="brush-label">
+                  {selecting ? (
+                    'Drag across the chart to select squares'
+                  ) : (
+                    <>
+                      Painting with{' '}
+                      <Box component="strong" sx={{ color: 'text.primary' }}>
+                        {brush.kind === 'stitch'
+                          ? `${STITCHES[brush.id].name}${STITCHES[brush.id].rs ? ` (${STITCHES[brush.id].rs})` : ''}`
+                          : `colour ${colorLetter(brush.index)}`}
+                      </Box>
+                    </>
+                  )}
+                </Typography>
               </Stack>
-              <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Stack
+                direction="row"
+                sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}
+                data-tour="colours"
+                data-help="painting"
+              >
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60, fontWeight: 600 }}>
                   Colours
                 </Typography>
@@ -1197,7 +1261,7 @@ export default function KnitApp() {
                 />
               </Paper>
               <Stack sx={{ gap: 2, flex: 1, minWidth: 0, width: { xs: '100%', xl: 'auto' } }}>
-                <Panel title="Size" testId="knit-size" delay={60}>
+                <Panel title="Size" testId="knit-size" delay={60} help="sizing">
                   <Typography variant="body2">
                     Cast on {cast} stitches. The chart is {w} stitches by {h}{' '}
                     {chart.mode === 'round' ? 'rounds' : 'rows'}: about {dims.width.toFixed(1)} ×{' '}
@@ -1226,10 +1290,10 @@ export default function KnitApp() {
                     </Typography>
                   </Stack>
                 </Panel>
-                <Panel title="Sizes and shaping" testId="knit-sizes" delay={75}>
+                <Panel title="Sizes and shaping" testId="knit-sizes" delay={75} help="sizing">
                   <SizesPanel chart={chart} onChange={(next) => update(next)} />
                 </Panel>
-                <Panel title="Yarn needed" testId="knit-yarn" delay={90}>
+                <Panel title="Yarn needed" testId="knit-yarn" delay={90} help="sizing">
                   <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>
                     <TextField
                       size="small"
@@ -1289,7 +1353,7 @@ export default function KnitApp() {
                   </Typography>
                 </Panel>
                 {chart.colorwork === 'intarsia' && usedColors(chart).length > 1 && (
-                  <Panel title="Intarsia" testId="knit-intarsia" delay={100}>
+                  <Panel title="Intarsia" testId="knit-intarsia" delay={100} help="colourwork">
                     {(() => {
                       const plan = intarsia(chart)
                       return (
@@ -1314,7 +1378,7 @@ export default function KnitApp() {
                     })()}
                   </Panel>
                 )}
-                <Panel title="Knitted preview" delay={120}>
+                <Panel title="Knitted preview" delay={120} help="preview">
                   <FabricPreview chart={chart} repeats={view.repeats} />
                   <FormControlLabel
                     sx={{ display: 'flex', mt: 1.5 }}
@@ -1323,7 +1387,7 @@ export default function KnitApp() {
                   />
                 </Panel>
                 <Box id="knit-written-pattern" sx={{ scrollMarginTop: 80 }}>
-                  <Panel title="Written pattern" testId="knit-written" delay={180}>
+                  <Panel title="Written pattern" testId="knit-written" delay={180} help="written">
                     <Stack direction="row" sx={{ gap: 1, mb: 1 }}>
                       <Button
                         size="small"
@@ -1395,7 +1459,7 @@ export default function KnitApp() {
             {settings}
           </SettingsSheet>
         )}
-        <StatusFrame sticky={!compact} links={!phone && weaveLinks()}>
+        <StatusFrame sticky={!compact} links={!phone && weaveLinks()} help="checks">
           <Typography component="span" sx={{ fontSize: 13 }}>
             Cast on{' '}
             <Box component="span" sx={{ fontFamily: MONO_FONT, fontWeight: 500, color: 'text.primary' }}>
@@ -1437,6 +1501,26 @@ export default function KnitApp() {
         <pre>{writtenPattern(chart, fileBase)}</pre>
       </div>
 
+      <HelpCenter
+        open={help.open}
+        app="Knit Patterner"
+        topics={KNIT_HELP}
+        topic={help.topic}
+        onClose={() => setHelp((x) => ({ ...x, open: false }))}
+        onTour={startTour}
+      />
+      <Tour open={touring} steps={KNIT_TOUR} onClose={() => setTouring(false)} />
+      {offerTour && !(GA_ID && consent === null) && dialog === null && !help.open && !touring && (
+        <TourOffer
+          app="Knit Patterner"
+          text="Take a one-minute tour of designing a chart, the written pattern and where everything is."
+          onStart={startTour}
+          onDismiss={() => {
+            markTourSeen('knit')
+            setOfferTour(false)
+          }}
+        />
+      )}
       {GA_ID && consent === null && (
         <ConsentBanner app="Knit Patterner" onChoose={(allow) => setConsent(allow ? 'granted' : 'denied')} />
       )}

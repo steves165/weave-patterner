@@ -8,12 +8,24 @@ export const sampleText = () => readFileSync(SAMPLE, 'utf8')
 /** Google Analytics' servers: tests must never send hits to the real analytics. */
 export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|analytics\.google\.com/
 
+/** A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way. */
+async function tourSeen(page: Page) {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('wp-tour-seen')) localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true}')
+  })
+}
+
 /**
  * Opens the app. Requests to Google Analytics are always blocked. Unless `analytics` says otherwise, the visitor
- * has already said "No thanks", so the consent banner doesn't get in the way.
+ * has already said "No thanks", so the consent banner doesn't get in the way; and has seen the tour offer, unless
+ * `tour` is "new".
  */
-export async function openApp(page: Page, { analytics = 'denied' }: { analytics?: 'denied' | 'unset' } = {}) {
+export async function openApp(
+  page: Page,
+  { analytics = 'denied', tour = 'seen' }: { analytics?: 'denied' | 'unset'; tour?: 'seen' | 'new' } = {},
+) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  if (tour === 'seen') await tourSeen(page)
   if (analytics === 'denied')
     await page.addInitScript(() => {
       if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
@@ -81,8 +93,9 @@ export async function openTool(page: Page, item: RegExp) {
 export const toast = (page: Page) => page.locator('.MuiSnackbarContent-message')
 
 /** Opens Knit Patterner, with analytics blocked and already declined as for openApp. */
-export async function openKnit(page: Page) {
+export async function openKnit(page: Page, { tour = 'seen' }: { tour?: 'seen' | 'new' } = {}) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  if (tour === 'seen') await tourSeen(page)
   await page.addInitScript(() => {
     if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
   })

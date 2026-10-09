@@ -16,6 +16,8 @@ interface Props {
   selvedge: Miss[]
   /** Shown when analytics is set up: lets visitors change their analytics choice. */
   onAnalytics?: () => void
+  /** Opens the help. */
+  onHelp?: () => void
   /** Phone: leaves the links out (they're in the settings sheet). */
   phone: boolean
   /** Stays in view at the bottom of the screen (wide screens; narrow ones have the settings bar there). */
@@ -67,11 +69,14 @@ export function StatusFrame(p: {
   width?: number
   /** The links at the right; left out on phones, where they're in the settings sheet. */
   links?: ReactNode
+  /** The help topic F1 opens here. */
+  help?: string
   children: ReactNode
 }) {
   return (
     <Box
       component="footer"
+      data-help={p.help ?? 'checks'}
       sx={{
         position: p.sticky ? 'sticky' : 'static',
         bottom: 0,
@@ -123,7 +128,13 @@ export function StatusBar(p: Props) {
       sticky={p.sticky}
       width={p.width}
       links={
-        !p.phone && <FooterLinks other={{ href: './knit/', label: 'Knit Patterner' }} onAnalytics={p.onAnalytics} />
+        !p.phone && (
+          <FooterLinks
+            other={{ href: './knit/', label: 'Knit Patterner' }}
+            onAnalytics={p.onAnalytics}
+            onHelp={p.onHelp}
+          />
+        )
       }
     >
       <Typography

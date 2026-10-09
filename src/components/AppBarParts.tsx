@@ -11,13 +11,17 @@ export function Action(props: {
   iconOnly?: boolean
   /** Outlined or filled pills stand out from the plain text buttons. */
   variant?: 'text' | 'outlined' | 'contained'
+  /** Marks it for the guided tour and for F1 help. */
+  tour?: string
+  help?: string
 }) {
-  const { compact, icon, label, onClick, disabled, iconOnly, variant = 'text' } = props
+  const { compact, icon, label, onClick, disabled, iconOnly, variant = 'text', tour, help } = props
+  const marks = { 'data-tour': tour, 'data-help': help }
   return compact || iconOnly ? (
     <Tooltip title={label} describeChild>
       {/* span keeps the tooltip working while the button is disabled */}
       <span>
-        <IconButton color="inherit" aria-label={label} onClick={onClick} disabled={disabled}>
+        <IconButton color="inherit" aria-label={label} onClick={onClick} disabled={disabled} {...marks}>
           {icon}
         </IconButton>
       </span>
@@ -30,6 +34,7 @@ export function Action(props: {
       startIcon={icon}
       onClick={onClick}
       disabled={disabled}
+      {...marks}
       sx={{ height: 40, px: 1.5, fontWeight: variant === 'text' ? 500 : 600, flex: 'none' }}
     >
       {label}
@@ -49,6 +54,7 @@ export function NavTab(props: {
 }) {
   return (
     <ButtonBase
+      data-nav={props.label}
       aria-current={props.current ? 'page' : undefined}
       onClick={props.onClick}
       sx={{

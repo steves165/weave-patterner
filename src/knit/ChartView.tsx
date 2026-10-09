@@ -254,6 +254,7 @@ export function ChartView({
     <div
       role="grid"
       aria-label="Knitting chart"
+      data-help="reading"
       aria-rowcount={rows}
       aria-colcount={w}
       tabIndex={0}

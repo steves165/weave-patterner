@@ -117,10 +117,10 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
 ]
 
 /** A heading and its settings. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, help, children }: { title: string; help: string; children: ReactNode }) {
   return (
     // Room above each outlined field for its floating label.
-    <Stack component="section" sx={{ gap: 2 }}>
+    <Stack component="section" sx={{ gap: 2 }} data-help={help}>
       <Typography variant="h2" sx={{ fontSize: 17, m: 0 }}>
         {title}
       </Typography>
@@ -179,7 +179,7 @@ export function SettingsPanel(p: Props) {
 
   return (
     <Stack sx={{ gap: 2.5 }} divider={<Divider flexItem />}>
-      <Section title="Loom">
+      <Section title="Loom" help="settings">
         <Box sx={FIELD_GRID}>
           {(Object.keys(LIMITS) as Dim[])
             // Without a tie-up there's a lift plan column per shaft, so no separate treadle count.
@@ -197,7 +197,7 @@ export function SettingsPanel(p: Props) {
         </Box>
       </Section>
 
-      <Section title="Colours">
+      <Section title="Colours" help="colours">
         <ColorRow
           label="Warp"
           hint="Sets every end"
@@ -219,7 +219,7 @@ export function SettingsPanel(p: Props) {
         </Button>
       </Section>
 
-      <Section title="View">
+      <Section title="View" help="settings">
         <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', minHeight: 40 }}>
           <Typography id="cell-size-label" sx={{ flex: 'none', width: 70, fontWeight: 500 }}>
             Cell size
@@ -256,14 +256,14 @@ export function SettingsPanel(p: Props) {
         </Stack>
       </Section>
 
-      <Section title="Floats">
+      <Section title="Floats" help="checks">
         <SwitchRow label="Highlight floats longer than" checked={p.highlightFloats} onChange={p.onHighlightFloats} />
         <Box sx={FIELD_GRID}>
           <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} />
         </Box>
       </Section>
 
-      <Section title="Pattern">
+      <Section title="Pattern" help="settings">
         <Typography sx={{ color: 'var(--wp-body)' }} data-testid="repeat">
           Repeat: {p.repeat.ends} ends × {p.repeat.picks} picks
         </Typography>

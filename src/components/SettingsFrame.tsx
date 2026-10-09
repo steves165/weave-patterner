@@ -25,6 +25,7 @@ export function SettingsSidebar({
     <Box
       component="aside"
       aria-label="Pattern settings"
+      data-tour="settings"
       sx={{
         flex: 'none',
         width: open ? 340 : 52,
@@ -123,6 +124,7 @@ export function SettingsSheet(props: {
     <>
       <ButtonBase
         aria-haspopup="dialog"
+        data-tour="settings"
         onClick={() => props.onOpen(true)}
         sx={{
           position: 'sticky',

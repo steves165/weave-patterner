@@ -108,3 +108,20 @@ test('the toolbar and logo fit the screen, so nothing is pushed off the side', a
   expect(overflow).toBeLessThanOrEqual(0)
   await expect(page.getByRole('link', { name: 'Weave Patterner' })).toBeVisible()
 })
+
+test('the tour works on a small screen, and help is in the File menu', async ({ page }) => {
+  // A first visit (an empty record, which the test setup leaves alone).
+  await page.evaluate(() => localStorage.setItem('wp-tour-seen', '{}'))
+  await page.reload()
+  await page.getByRole('region', { name: 'Welcome' }).getByRole('button', { name: 'Take the tour' }).tap()
+  const total = Number((await page.getByTestId('tour-step').innerText()).split(' of ')[1])
+  for (let i = 1; i < total; i++) await page.getByRole('button', { name: 'Next' }).tap()
+  await page.getByRole('button', { name: 'Finish' }).tap()
+  await expect(page.getByTestId('tour')).toHaveCount(0)
+  const nav = page.getByRole('navigation', { name: 'Main' })
+  if (await nav.isVisible()) {
+    await nav.getByRole('button', { name: 'File' }).tap()
+    await page.getByRole('menuitem', { name: 'Help' }).tap()
+  } else await page.getByRole('button', { name: 'Help' }).tap()
+  await expect(page.getByRole('dialog', { name: 'Weave Patterner help' })).toBeVisible()
+})
