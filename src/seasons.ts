@@ -24,8 +24,11 @@ export interface Season {
   emoji: string
   /** What it looks like, in a few words. */
   blurb: string
-  /** The colours new patterns start in: warp and weft, and a new knitting chart's colours A and B. */
-  pattern: { warp: string; weft: string; knit: [string, string] }
+  /**
+   * The colours new patterns start in: warp and weft, and a new knitting chart's colours A and B. The accent is a
+   * third colour for presets that need one (gun club check, tattersall).
+   */
+  pattern: { warp: string; weft: string; accent: string; knit: [string, string] }
   light: Scheme
   dark: Scheme
 }
@@ -40,7 +43,7 @@ export const SEASONS: Season[] = [
     blurb: 'Pumpkin orange on midnight purple',
     name: 'Halloween',
     emoji: '🎃',
-    pattern: { warp: '#e8590c', weft: '#24132e', knit: ['#f28c28', '#24132e'] },
+    pattern: { warp: '#e8590c', weft: '#24132e', accent: '#f4ead5', knit: ['#f28c28', '#24132e'] },
     light: {
       accent: '#C2410C',
       onAccent: '#FFFFFF',
@@ -70,7 +73,7 @@ export const SEASONS: Season[] = [
     blurb: 'Holly red and pine green',
     name: 'Christmas',
     emoji: '🎄',
-    pattern: { warp: '#b71c1c', weft: '#1b5e20', knit: ['#f5ebdd', '#b71c1c'] },
+    pattern: { warp: '#b71c1c', weft: '#1b5e20', accent: '#d4a017', knit: ['#f5ebdd', '#b71c1c'] },
     light: {
       accent: '#B71C1C',
       onAccent: '#FFFFFF',
@@ -101,7 +104,7 @@ export const SEASONS: Season[] = [
     blurb: 'Icy blues',
     name: 'Winter',
     emoji: '❄️',
-    pattern: { warp: '#1e4e8c', weft: '#e8f1fa', knit: ['#e8f1fa', '#1e4e8c'] },
+    pattern: { warp: '#1e4e8c', weft: '#e8f1fa', accent: '#9aa9b8', knit: ['#e8f1fa', '#1e4e8c'] },
     light: {
       accent: '#1565C0',
       onAccent: '#FFFFFF',
@@ -130,7 +133,7 @@ export const SEASONS: Season[] = [
     blurb: 'Lilac and fresh green',
     name: 'Spring',
     emoji: '🌸',
-    pattern: { warp: '#7b3fb8', weft: '#e6f4d8', knit: ['#f3eafb', '#7b3fb8'] },
+    pattern: { warp: '#7b3fb8', weft: '#e6f4d8', accent: '#f6d743', knit: ['#f3eafb', '#7b3fb8'] },
     light: {
       accent: '#7B3FB8',
       onAccent: '#FFFFFF',
@@ -159,7 +162,7 @@ export const SEASONS: Season[] = [
     blurb: 'Sunshine gold and sea blue',
     name: 'Summer',
     emoji: '☀️',
-    pattern: { warp: '#f2a900', weft: '#0277bd', knit: ['#fff4cc', '#0277bd'] },
+    pattern: { warp: '#f2a900', weft: '#0277bd', accent: '#ff6f61', knit: ['#fff4cc', '#0277bd'] },
     light: {
       accent: '#9A5800',
       onAccent: '#FFFFFF',
@@ -189,7 +192,7 @@ export const SEASONS: Season[] = [
     blurb: 'Russet and golden leaves',
     name: 'Autumn',
     emoji: '🍂',
-    pattern: { warp: '#a0441a', weft: '#e9c46a', knit: ['#e9c46a', '#7a2e10'] },
+    pattern: { warp: '#a0441a', weft: '#e9c46a', accent: '#4e2a14', knit: ['#e9c46a', '#7a2e10'] },
     light: {
       accent: '#A0441A',
       onAccent: '#FFFFFF',
@@ -256,6 +259,14 @@ export function activeSeason(choice: SeasonChoice, date = new Date()): Season | 
 /** The colours a new pattern starts in, for the theme chosen now: the season's, or the apps' own. */
 export function patternColours(date = new Date()): Season['pattern'] | null {
   return activeSeason(loadSeasonChoice(), date)?.pattern ?? null
+}
+
+/** Weave Patterner's own pattern colours: magenta warp, blush weft, deep plum accent. */
+export const PINK_PATTERN = { warp: '#d6246e', weft: '#ffd3e4', accent: '#3b1730' }
+
+/** The warp, weft and accent colours to start from, for the theme chosen now (pink when there's none). */
+export function themeColours(date = new Date()): { warp: string; weft: string; accent: string } {
+  return patternColours(date) ?? PINK_PATTERN
 }
 
 /** Mixes `amount` (0–1) of colour a into colour b. Both #rrggbb. */

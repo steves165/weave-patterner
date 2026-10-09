@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { activeSeason, holidayOn, mix, SEASONS, seasonBrand, seasonCss, seasonVars } from './seasons'
+import {
+  activeSeason,
+  holidayOn,
+  mix,
+  PINK_PATTERN,
+  SEASONS,
+  seasonBrand,
+  seasonCss,
+  seasonVars,
+  themeColours,
+} from './seasons'
 
 /** WCAG contrast ratio between two #rrggbb colours. */
 function contrast(a: string, b: string) {
@@ -44,6 +54,11 @@ describe('seasonal themes', () => {
     expect(css).toContain(':root:root.season-halloween {')
     expect(css).toContain(':root:root.season-halloween.dark {')
     expect(seasonBrand(SEASONS[0]).accent.light).toBe(SEASONS[0].light.accent)
+  })
+
+  it('give new patterns three colours, falling back to the pink', () => {
+    for (const x of SEASONS) for (const c of Object.values(x.pattern).flat()) expect(c).toMatch(/^#[0-9a-f]{6}$/)
+    expect(themeColours()).toEqual(PINK_PATTERN)
   })
 
   it('mixes colours', () => {

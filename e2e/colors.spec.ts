@@ -29,15 +29,15 @@ test('adds and removes stripes and works on a weft range', async ({ page }) => {
   await dialog(page).getByRole('button', { name: 'Weft (picks)' }).click()
   await dialog(page).getByRole('button', { name: 'Add stripe' }).click()
   await dialog(page).getByLabel('Stripe 3 colour').fill('#00ff00')
-  // Stripes are now navy ×4, white ×4, green ×1; drop the white one.
+  // Stripes start in the theme's warp and weft (magenta ×4, blush ×4); add green ×1 and drop the blush.
   await dialog(page).getByRole('button', { name: 'Remove stripe 2' }).click()
   await expect(dialog(page).getByLabel('Stripe 3 colour')).toHaveCount(0)
   await dialog(page).getByLabel('From', { exact: true }).fill('5')
   await dialog(page).getByLabel('To', { exact: true }).fill('6')
   await dialog(page).getByRole('button', { name: 'Apply stripe to weft' }).click()
   await expect(weft(page, 4)).toHaveValue('#ffd3e4')
-  await expect(weft(page, 5)).toHaveValue('#1a237e')
-  await expect(weft(page, 6)).toHaveValue('#1a237e')
+  await expect(weft(page, 5)).toHaveValue('#d6246e')
+  await expect(weft(page, 6)).toHaveValue('#d6246e')
   await expect(weft(page, 7)).toHaveValue('#ffd3e4')
 })
 
@@ -64,4 +64,33 @@ test('a colour-and-weave preset replaces the draft and can be undone', async ({ 
   await toolbarButton(page, 'Undo').click()
   await expect(warp(page, 1)).toHaveValue('#d6246e')
   await expect(page.getByLabel('Treadles', { exact: true })).toHaveValue('4')
+})
+
+test("stripes and presets start in the seasonal theme's colours, with an accent for three-colour checks", async ({
+  page,
+}) => {
+  await page.evaluate(() => localStorage.setItem('wp-season', 'christmas'))
+  await page.reload()
+  await openTool(page, /Colours and presets/)
+  // Christmas: red warp, green weft.
+  await expect(dialog(page).getByLabel('Stripe 1 colour')).toHaveValue('#b71c1c')
+  await expect(dialog(page).getByLabel('Stripe 2 colour')).toHaveValue('#1b5e20')
+  await dialog(page)
+    .getByRole('tab', { name: /presets/ })
+    .click()
+  // The darker of the two is "dark".
+  await expect(dialog(page).getByLabel('Dark colour')).toHaveValue('#1b5e20')
+  await expect(dialog(page).getByLabel('Light colour')).toHaveValue('#b71c1c')
+  await expect(dialog(page).getByLabel('Accent colour')).toHaveValue('#d4a017')
+  // Every preset has a preview.
+  const presets = dialog(page).getByRole('button', { name: /^Use / })
+  expect(await presets.count()).toBeGreaterThanOrEqual(16)
+  await expect(dialog(page).locator('canvas')).toHaveCount(await presets.count())
+
+  await dialog(page).getByRole('button', { name: 'Use Tattersall' }).click()
+  await expect(toast(page)).toContainText('Applied the Tattersall preset')
+  // 2 dark, 6 light, 2 accent, 6 light.
+  await expect(warp(page, 1)).toHaveValue('#1b5e20')
+  await expect(warp(page, 3)).toHaveValue('#b71c1c')
+  await expect(warp(page, 9)).toHaveValue('#d4a017')
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyStripes, expandRuns, PRESETS, textOn, toRuns } from './colors'
+import { applyStripes, darkAndLight, expandRuns, PRESETS, textOn, toRuns } from './colors'
 import { ascii } from './testUtils'
 
 describe('stripes', () => {
@@ -81,5 +81,29 @@ describe('textOn', () => {
     ['#808080', '#000000'],
   ])('puts readable text on %s', (bg, text) => {
     expect(textOn(bg)).toBe(text)
+  })
+})
+
+describe('more presets', () => {
+  it('include the standard checks and stripes, with unique ids', () => {
+    const ids = PRESETS.map((p) => p.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const id of ['puppytooth', 'glen-check', 'gun-club', 'windowpane', 'tattersall', 'herringbone', 'birds-eye'])
+      expect(ids).toContain(id)
+  })
+
+  it('fill the whole draft with whole repeats, using the accent only where they say so', () => {
+    for (const p of PRESETS) {
+      const d = p.build('#000000', '#ffffff', '#ff0000')
+      expect(d.warpColors).toHaveLength(d.ends)
+      expect(d.threading.every((s) => s >= 0 && s < d.shafts)).toBe(true)
+      const usesAccent = [...d.warpColors, ...d.weftColors].includes('#ff0000')
+      expect(usesAccent, p.name).toBe(Boolean(p.accent))
+    }
+  })
+
+  it('puts the darker colour first', () => {
+    expect(darkAndLight('#ffd3e4', '#d6246e')).toEqual(['#d6246e', '#ffd3e4'])
+    expect(darkAndLight('#000000', '#ffffff')).toEqual(['#000000', '#ffffff'])
   })
 })

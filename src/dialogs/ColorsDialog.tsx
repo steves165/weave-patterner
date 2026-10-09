@@ -20,9 +20,11 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
-import { applyStripes, type ColorRun, expandRuns, PRESETS, toRuns } from '../colors'
+import { useEffect, useMemo, useState } from 'react'
+import { applyStripes, type ColorRun, darkAndLight, expandRuns, PRESETS, toRuns } from '../colors'
+import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
+import { themeColours } from '../seasons'
 import type { Draft } from '../weave'
 
 interface Props {
@@ -35,21 +37,39 @@ interface Props {
 
 type Side = 'warp' | 'weft'
 
-const DEFAULT_RUNS: ColorRun[] = [
-  { color: '#1a237e', count: 4 },
-  { color: '#ffffff', count: 4 },
-]
+/** A stripe to start from, in the theme's warp and weft colours. */
+const defaultRuns = (): ColorRun[] => {
+  const { warp, weft } = themeColours()
+  return [
+    { color: warp, count: 4 },
+    { color: weft, count: 4 },
+  ]
+}
+
+/** The presets' starting colours: the theme's warp and weft (the darker as dark), and its accent. */
+function presetColours() {
+  const { warp, weft, accent } = themeColours()
+  const [dark, light] = darkAndLight(warp, weft)
+  return { dark, light, accent }
+}
 
 /** Stripe sequences for the warp or weft, and colour-and-weave presets. */
 export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
   const phone = usePhone()
   const [tab, setTab] = useState(0)
   const [side, setSide] = useState<Side>('warp')
-  const [runs, setRuns] = useState<ColorRun[]>(DEFAULT_RUNS)
+  const [runs, setRuns] = useState<ColorRun[]>(defaultRuns)
   const [from, setFrom] = useState('1')
   const [to, setTo] = useState('')
-  const [dark, setDark] = useState('#1a237e')
-  const [light, setLight] = useState('#ffffff')
+  const [{ dark, light, accent }, setColours] = useState(presetColours)
+  const setDark = (dark: string) => setColours((c) => ({ ...c, dark }))
+  const setLight = (light: string) => setColours((c) => ({ ...c, light }))
+  const setAccent = (accent: string) => setColours((c) => ({ ...c, accent }))
+  // Each preset in the chosen colours, for its preview and to use.
+  const built = useMemo(
+    () => PRESETS.map((preset) => ({ preset, draft: preset.build(dark, light, accent) })),
+    [dark, light, accent],
+  )
   const [error, setError] = useState<string | null>(null)
   const colors = side === 'warp' ? draft.warpColors : draft.weftColors
 
@@ -57,7 +77,7 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
   useEffect(() => {
     if (!open) return
     const current = toRuns(side === 'warp' ? draft.warpColors : draft.weftColors)
-    setRuns(current.length >= 2 && current.length <= 8 ? current : DEFAULT_RUNS)
+    setRuns(current.length >= 2 && current.length <= 8 ? current : defaultRuns())
     setFrom('1')
     setTo(String(side === 'warp' ? draft.ends : draft.picks))
     setError(null)
@@ -203,28 +223,39 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
                 />
                 <Typography>Light</Typography>
               </Stack>
+              <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+                <input
+                  type="color"
+                  className="picker"
+                  aria-label="Accent colour"
+                  value={accent}
+                  onChange={(e) => setAccent(e.target.value)}
+                />
+                <Typography>Accent</Typography>
+              </Stack>
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              A preset replaces the whole draft (undo brings it back).
+              They start in the theme's colours. A preset replaces the whole draft (undo brings it back); some use the
+              accent too.
             </Typography>
-            {PRESETS.map((p) => (
+            {built.map(({ preset: p, draft: d }) => (
               <Card key={p.id} variant="outlined">
-                <CardContent sx={{ pb: 0 }}>
-                  <Typography variant="subtitle1" component="h3">
-                    {p.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {p.description}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button
-                    aria-label={`Use ${p.name}`}
-                    onClick={() => onApply(p.build(dark, light), `Applied the ${p.name} preset`)}
-                  >
-                    Use
-                  </Button>
-                </CardActions>
+                <Stack direction="row" sx={{ gap: 2, alignItems: 'center', p: 1.5 }}>
+                  <PatternThumb draft={d} size={64} />
+                  <CardContent sx={{ p: 0, flex: 1, minWidth: 0, '&:last-child': { pb: 0 } }}>
+                    <Typography variant="subtitle1" component="h3">
+                      {p.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {p.description}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ p: 0 }}>
+                    <Button aria-label={`Use ${p.name}`} onClick={() => onApply(d, `Applied the ${p.name} preset`)}>
+                      Use
+                    </Button>
+                  </CardActions>
+                </Stack>
               </Card>
             ))}
           </Stack>
