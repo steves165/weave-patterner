@@ -1,4 +1,7 @@
+import { type Brand, KNIT, WEAVE } from '../brands'
 import type { Block } from '../help/types'
+import { markSvg } from '../marks'
+import { holidayOn, SEASONS, seasonBrand } from '../seasons'
 
 /**
  * The static pages built alongside the apps (guides and patterns), for search engines and anyone who lands on them:
@@ -65,10 +68,8 @@ export interface App {
   name: string
   /** Path of the app from the site root: "" or "knit/". */
   path: string
-  accent: string
-  accentDark: string
-  bg: string
-  bgDark: string
+  /** Its own colours (seasonal themes chosen in the app replace them). */
+  brand: Brand
   /** The other app, linked from the footer. */
   other: { name: string; path: string }
 }
@@ -77,10 +78,7 @@ export const WEAVE_APP: App = {
   id: 'weave',
   name: 'Weave Patterner',
   path: '',
-  accent: '#d6246e',
-  accentDark: '#e36a9c',
-  bg: '#fff0f6',
-  bgDark: '#170b13',
+  brand: WEAVE,
   other: { name: 'Knit Patterner', path: 'knit/' },
 }
 
@@ -88,10 +86,7 @@ export const KNIT_APP: App = {
   id: 'knit',
   name: 'Knit Patterner',
   path: 'knit/',
-  accent: '#00796b',
-  accentDark: '#4db6ac',
-  bg: '#eef8f6',
-  bgDark: '#0b1716',
+  brand: KNIT,
   other: { name: 'Weave Patterner', path: '' },
 }
 
@@ -151,7 +146,7 @@ export function render(app: App, page: Page): string {
 <meta name="description" content="${esc(page.description)}" />
 <link rel="canonical" href="${url}" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
-<meta name="theme-color" content="${app.accent}" />
+<meta name="theme-color" content="${app.brand.accent.light}" />
 <link rel="icon" href="${root}${app.path}favicon.svg" type="image/svg+xml" />
 <meta property="og:type" content="article" />
 <meta property="og:site_name" content="${app.name}" />
@@ -162,12 +157,13 @@ export function render(app: App, page: Page): string {
 <meta property="og:locale" content="en_GB" />
 <meta name="twitter:card" content="summary_large_image" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>
-<style>${css(app)}</style>
+<style>${css(app, root)}</style>
+<script>${themeScript(app)}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to the content</a>
 <header>
-<a class="brand" href="${root}${app.path}"><span class="mark" aria-hidden="true"></span>${app.name}</a>
+<a class="brand" href="${root}${app.path}">${markSvg(app.id, 'var(--accent)', 'var(--on-accent)')}${app.name}</a>
 <nav aria-label="Site">
 <a href="${root}${app.path}guide/">Guides</a>
 <a href="${root}${app.path}patterns/">Patterns</a>
@@ -194,21 +190,56 @@ ${content}
 `
 }
 
-const css = (a: App) => `
-:root{--accent:${a.accent};--bg:${a.bg};--paper:#fff;--ink:#22161d;--muted:#5f4a55;--line:#e8d9e0;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root{--accent:${a.accentDark};--bg:${a.bgDark};--paper:#1f1a1d;--ink:#f6eef2;--muted:#c8b8c0;--line:#3a3036}}
+/** The colours a page needs, from an app's (or a seasonal theme's) colours, in light or dark mode. */
+function palette(b: Brand, dark: boolean): Record<string, string> {
+  const m = dark ? 'dark' : 'light'
+  return {
+    accent: b.accent[m],
+    'on-accent': dark ? b.accent.onDark : '#ffffff',
+    bg: b.background[m],
+    paper: b.paper[m],
+    ink: b.text[m],
+    muted: b.muted[m],
+    line: b.divider[m],
+  }
+}
+
+const vars = (p: Record<string, string>) =>
+  Object.entries(p)
+    .map(([k, v]) => `--${k}:${v}`)
+    .join(';')
+
+/**
+ * Before the page draws: the colour theme and light or dark mode chosen in the apps (saved in this browser), so the
+ * guides look like the app they belong to.
+ */
+function themeScript(a: App): string {
+  const both = (b: Brand) => ({ light: palette(b, false), dark: palette(b, true) })
+  const themes = {
+    base: both(a.brand),
+    seasons: Object.fromEntries(SEASONS.map((s) => [s.id, both(seasonBrand(s))])),
+  }
+  return `(function(){var T=${JSON.stringify(themes)};var holidayOn=${holidayOn.toString()};var r=document.documentElement,s=null,m=null;try{s=localStorage.getItem('wp-season');m=localStorage.getItem('mui-mode')}catch(e){}var dark=m==='dark'||(m!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);if(s==='holidays')s=holidayOn(new Date());var t=T.seasons[s]||T.base,p=t[dark?'dark':'light'];r.classList.add(dark?'dark':'light');if(s&&T.seasons[s])r.classList.add('season-'+s);for(var k in p)r.style.setProperty('--'+k,p[k]);var c=document.querySelector('meta[name=theme-color]');if(c)c.setAttribute('content',t.light.accent)})()`
+}
+
+const css = (a: App, root: string) => `
+@font-face{font-family:Nunito;font-weight:200 1000;font-display:swap;src:url(${root}fonts/nunito-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:Fredoka;font-weight:600;font-display:swap;src:url(${root}fonts/fredoka-latin-600-normal.woff2) format("woff2")}
+:root{${vars(palette(a.brand, false))};color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not(.light){${vars(palette(a.brand, true))};color-scheme:dark}}
+:root.dark{color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 Nunito,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,.brand{font-family:Fredoka,Nunito,system-ui,sans-serif;font-weight:600}
 a{color:var(--accent)}
-.skip{position:absolute;left:8px;top:-60px;background:var(--accent);color:#fff;padding:8px 16px;border-radius:999px}
+.skip{position:absolute;left:8px;top:-60px;background:var(--accent);color:var(--on-accent);padding:8px 16px;border-radius:999px}
 .skip:focus{top:8px}
 header{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--paper);border-bottom:1px solid var(--line)}
-.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:20px;text-decoration:none;color:var(--accent)}
-.mark{width:26px;height:26px;border-radius:8px;background:var(--accent)}
+.brand{display:flex;gap:10px;align-items:center;font-size:24px;line-height:1;letter-spacing:-0.01em;text-decoration:none;color:var(--accent)}
+.brand svg{flex:none}
 header nav{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 header nav a{text-decoration:none;font-weight:600}
-.open{background:var(--accent);color:#fff!important;padding:6px 14px;border-radius:999px}
-@media (prefers-color-scheme:dark){.open{color:#111!important}}
+.open{background:var(--accent);color:var(--on-accent)!important;padding:6px 14px;border-radius:999px}
 main{max-width:46rem;margin:0 auto;padding:16px 20px 40px;outline:none}
 .crumbs ol{list-style:none;display:flex;flex-wrap:wrap;gap:4px;padding:0;margin:8px 0;font-size:14px;color:var(--muted)}
 .crumbs li+li::before{content:"›";margin-right:4px}
@@ -229,7 +260,6 @@ figure{margin:1rem 0;background:var(--paper);border:1px solid var(--line);border
 figure svg{display:block;max-width:100%;height:auto}
 figcaption{font-size:14px;color:var(--muted);margin-top:8px}
 pre{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px}
-.button{display:inline-block;background:var(--accent);color:#fff;padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;margin:8px 0}
-@media (prefers-color-scheme:dark){.button{color:#111}}
+.button{display:inline-block;background:var(--accent);color:var(--on-accent);padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;margin:8px 0}
 footer{max-width:46rem;margin:0 auto;padding:16px 20px 40px;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
 `

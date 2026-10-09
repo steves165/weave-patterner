@@ -1,5 +1,5 @@
 import { textOn } from '../colors'
-import { isRightSide, type KnitChart, rowsOf, widthOf } from '../knit/chart'
+import { cablesIn, isRightSide, type KnitChart, rowsOf, widthOf } from '../knit/chart'
 import { STITCHES } from '../knit/stitches'
 import { computeDrawdown, type Draft } from '../weave'
 import { esc } from './html'
@@ -92,6 +92,21 @@ export function chartSvg(k: KnitChart, label: string, cell = 22): string {
         `<text x="${margin + x * cell + cell / 2}" y="${i * cell + cell / 2}" font-size="${size}" fill="${fill}" text-anchor="middle" dominant-baseline="central">${esc(symbol)}</text>`,
       )
     })
+    // Cables are drawn across their squares, as on a printed chart: the stitches that cross in front as the line on
+    // top (rising to the right for a right cross, to the left for a left one).
+    for (const cable of cablesIn(k.stitch[r])) {
+      const stitch = STITCHES[cable.id]
+      const x0 = margin + cable.start * cell
+      const x1 = x0 + cable.width * cell
+      const y0 = i * cell + cell * 0.15
+      const y1 = (i + 1) * cell - cell * 0.15
+      const rising = `M${x0 + 3} ${y1}L${x1 - 3} ${y0}`
+      const falling = `M${x0 + 3} ${y0}L${x1 - 3} ${y1}`
+      const [back, front] = stitch.cross === 'left' ? [rising, falling] : [falling, rising]
+      symbols.push(
+        `<g><title>${esc(stitch.rs)}</title><rect x="${x0 + 0.5}" y="${i * cell + 0.5}" width="${cable.width * cell - 1}" height="${cell - 1}" fill="${colors[i][cable.start]}"/><path d="${back}" stroke="#2b1622" stroke-width="${cell * 0.12}" fill="none"/><path d="${front}" stroke="${colors[i][cable.start]}" stroke-width="${cell * 0.32}" fill="none"/><path d="${front}" stroke="#2b1622" stroke-width="${cell * 0.12}" fill="none"/></g>`,
+      )
+    }
     // Right-side rows (every round in the round) start at the right.
     const rightSide = isRightSide(k, r)
     numbers.push(

@@ -1,4 +1,4 @@
-import type { Brand } from './theme'
+import type { Brand } from './brands'
 
 /** One colour scheme of a seasonal theme: a few chosen colours; the rest are worked out from them. */
 interface Scheme {

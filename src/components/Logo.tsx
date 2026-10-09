@@ -1,16 +1,5 @@
+import { TWILL_STEPS } from '../marks'
 import { DISPLAY_FONT } from '../theme'
-
-/** The steps of a twill line, as [x, y] of each little square in the 30 × 30 mark. */
-const STEPS = [
-  [7, 7],
-  [11, 7],
-  [11, 11],
-  [15, 11],
-  [15, 15],
-  [19, 15],
-  [19, 19],
-  [7, 19],
-]
 
 /**
  * The Weave Patterner mark: a rounded square in the accent colour with a twill line stepping down it in light
@@ -29,7 +18,7 @@ export function WeaveMark({ size = 30 }: { size?: number }) {
     >
       <rect width={30} height={30} rx={9} fill="var(--wp-accent, #D6246E)" />
       <g fill="var(--mui-palette-primary-contrastText, #FFFFFF)">
-        {STEPS.map(([x, y], i) => (
+        {TWILL_STEPS.map(([x, y], i) => (
           <rect
             key={`${x}-${y}`}
             className="stitch"

@@ -1,7 +1,5 @@
+import { KNIT_VS } from '../marks'
 import { DISPLAY_FONT } from '../theme'
-
-/** Each knit V of the mark: two columns of three stitches, as [x, y] of the V's top left in the 30 × 30 mark. */
-const VS = [7, 15].flatMap((x) => [6.5, 12.5, 18.5].map((y) => [x, y]))
 
 /**
  * The Knit Patterner mark, in the same style as Weave Patterner's: a rounded square in the accent colour with two
@@ -26,7 +24,7 @@ export function KnitMark({ size = 30 }: { size?: number }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {VS.map(([x, y], i) => (
+        {KNIT_VS.map(([x, y], i) => (
           <path
             key={`${x}-${y}`}
             className="stitch"

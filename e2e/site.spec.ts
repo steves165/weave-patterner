@@ -63,3 +63,31 @@ test('the pages fit a phone screen', async ({ page }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), path).toBe(true)
   }
 })
+
+test("the pages show the app's logo and fonts, and follow the colour theme and mode chosen in the app", async ({
+  page,
+}) => {
+  const accent = () =>
+    page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim().toLowerCase())
+  await page.goto('./guide/')
+  // The twill mark: a rounded square with eight steps.
+  await expect(page.getByRole('banner').locator('svg rect')).toHaveCount(9)
+  expect(await accent()).toBe('#d6246e')
+  await expect.poll(() => page.evaluate(() => document.fonts.check('600 24px Fredoka'))).toBe(true)
+
+  await page.evaluate(() => {
+    localStorage.setItem('wp-season', 'halloween')
+    localStorage.setItem('mui-mode', 'dark')
+  })
+  await page.goto('./knit/patterns/')
+  expect(await accent()).toBe('#ff8a3d')
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(17, 11, 23)')
+  // Knit's mark: knit Vs.
+  await expect(page.getByRole('banner').locator('svg path')).toHaveCount(6)
+  expect(await a11yProblems(page)).toEqual([])
+
+  await page.evaluate(() => localStorage.setItem('mui-mode', 'light'))
+  await page.reload()
+  expect(await accent()).toBe('#c2410c')
+})
