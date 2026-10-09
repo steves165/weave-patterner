@@ -49,6 +49,9 @@ console.log(
 if (!process.env.E2E_BASE_URL && !process.env.E2E_DEV) {
   const build = spawnSync('npx', ['vite', 'build', '--logLevel', 'warn'], { stdio: 'inherit' })
   if (build.status !== 0) process.exit(build.status ?? 1)
+  // The guide and pattern pages.
+  const site = spawnSync('npm', ['run', '--silent', 'site'], { stdio: 'inherit' })
+  if (site.status !== 0) process.exit(site.status ?? 1)
 }
 const playwright = (extra) =>
   spawnSync('npx', ['playwright', 'test', ...extra, ...rest], { stdio: 'inherit' }).status ?? 1

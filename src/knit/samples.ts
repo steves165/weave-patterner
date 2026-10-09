@@ -87,3 +87,11 @@ export const SAMPLES: Sample[] = [
     }),
   },
 ]
+
+/** A sample's name for links (#sample=cable-panel) and its page: lower case, words joined by hyphens. */
+export const sampleSlug = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/×/g, 'x')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')

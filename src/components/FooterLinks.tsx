@@ -42,6 +42,9 @@ export function FooterLinks({ other, onAnalytics, onHelp, fontSize = 13 }: Props
         Theme
       </Link>
       <ThemeDialog open={theme} onClose={() => setTheme(false)} />
+      <Link href="./guide/" sx={{ fontSize }}>
+        Guides
+      </Link>
       <Link href={other.href} sx={{ fontSize }}>
         {other.label}
       </Link>

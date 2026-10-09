@@ -107,7 +107,7 @@ import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
 import { SizesPanel } from './SizesPanel'
-import { SAMPLES } from './samples'
+import { SAMPLES, sampleSlug } from './samples'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import { yarnNeeded } from './yarn'
 import './knit.css'
@@ -318,6 +318,18 @@ export default function KnitApp() {
     update(next)
     if (newName !== undefined) setName(newName)
   }
+
+  // A link to a sample (#sample=cable-panel, from the pattern pages) opens it, as a change that can be undone.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, on opening
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.hash.slice(1)).get('sample')
+    if (!slug) return
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    const sample = SAMPLES.find((s) => sampleSlug(s.name) === slug)
+    if (!sample) return setToast("That sample chart wasn't found")
+    replace(sample.chart(), sample.name)
+    setToast(`Opened the ${sample.name} chart. Undo with Ctrl+Z.`)
+  }, [])
 
   // Shortcuts for the selection: copy, cut, paste, clear and done.
   useEffect(() => {

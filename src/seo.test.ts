@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { buildSite } from './site/pages'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 const html = read('index.html')
@@ -35,15 +36,29 @@ describe('search and sharing metadata', () => {
   })
 
   it('points only at icons and files that exist', () => {
-    for (const [, href] of html.matchAll(/href="\.\/([^"]+)"/g)) expect(existsSync(`public/${href}`), href).toBe(true)
+    // (The guides and patterns are built after the app: see below.)
+    for (const [, href] of html.matchAll(/href="\.\/([^"]+)"/g))
+      if (!/^(guide|patterns)\//.test(href)) expect(existsSync(`public/${href}`), href).toBe(true)
     const manifest = JSON.parse(read('public/manifest.webmanifest'))
     for (const icon of manifest.icons) expect(existsSync(`public/${icon.src}`), icon.src).toBe(true)
-    expect(read('public/sitemap.xml')).toContain('<loc>https://steves165.github.io/weave-patterner/</loc>')
   })
 
   it('has a crawlable summary of the features for search engines', () => {
     expect(html).toMatch(/<h1>Weave Patterner: free online weaving draft designer<\/h1>/)
     expect(html).toMatch(/overshot, summer and winter/)
+    expect(html).toMatch(/jacquard/)
+  })
+
+  it('links the guides and drafts, and every link goes to a page that is built', async () => {
+    const paths = new Set((await buildSite()).map((p) => p.path))
+    for (const [page, base] of [
+      [html, ''],
+      [read('knit/index.html'), 'knit/'],
+    ] as const) {
+      const links = [...page.matchAll(/<a href="\.\/((?:guide|patterns)\/[^"]*)"/g)].map((m) => base + m[1])
+      expect(links.length).toBeGreaterThan(5)
+      for (const link of links) expect(paths.has(link), link).toBe(true)
+    }
   })
 })
 
@@ -64,10 +79,9 @@ describe('Knit Patterner page metadata', () => {
     expect(data.name).toBe('Knit Patterner')
     expect(data.url).toBe('https://steves165.github.io/weave-patterner/knit/')
     for (const [, href] of knit.matchAll(/href="\.\/([^"]+)"/g))
-      expect(existsSync(`public/knit/${href}`), href).toBe(true)
+      if (!/^(guide|patterns)\//.test(href)) expect(existsSync(`public/knit/${href}`), href).toBe(true)
     const manifest = JSON.parse(read('public/knit/manifest.webmanifest'))
     for (const icon of manifest.icons) expect(existsSync(`public/knit/${icon.src}`), icon.src).toBe(true)
-    expect(read('public/sitemap.xml')).toContain('<loc>https://steves165.github.io/weave-patterner/knit/</loc>')
     expect(knit).toContain('<a href="../">Weave Patterner</a>')
     expect(html).toContain('<a href="./knit/">Knit Patterner</a>')
   })
