@@ -78,6 +78,8 @@ interface Props {
   onTrimToRepeat: () => void
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
+  /** The longest float in the draft, warp or weft, in threads. */
+  longestFloat: number
   floatLimit: number
   onFloatLimit: (n: number) => void
   view: ViewOptions
@@ -262,6 +264,13 @@ export function SettingsPanel(p: Props) {
         <Box sx={FIELD_GRID}>
           <CommitField label="Threads" value={p.floatLimit} min={1} max={99} onCommit={p.onFloatLimit} />
         </Box>
+        {p.highlightFloats && (
+          <Typography variant="body2" color="text.secondary" role="status" data-testid="float-note" sx={{ mt: 1 }}>
+            {p.longestFloat > p.floatLimit
+              ? `Striped in the drawdown: floats up to ${p.longestFloat} threads long.`
+              : `Nothing to mark: the longest float here is ${p.longestFloat} ${p.longestFloat === 1 ? 'thread' : 'threads'}.`}
+          </Typography>
+        )}
       </Section>
 
       <Section title="Pattern" help="settings">

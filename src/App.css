@@ -288,11 +288,21 @@
   outline-offset: -1px;
 }
 
-/* Long-float highlighting: an inset orange ring that reads on any thread colour. */
+/* Long-float highlighting: black and white stripes over the thread, with a black and white ring, so it shows on
+   any thread colour and in every theme (a single colour disappears on threads of that colour). */
 .drawdown .cell.float {
+  position: relative;
+}
+.drawdown .cell.float::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.55) 0 2px, rgba(255, 255, 255, 0.55) 2px 4px);
   box-shadow:
-    inset 0 0 0 1px #fff,
-    inset 0 0 0 3px #ff6d00;
+    inset 0 0 0 1px #000,
+    inset 0 0 0 2px #fff;
+  border-radius: inherit;
 }
 
 /* Rulers: red ticks and numbers every few threads. */

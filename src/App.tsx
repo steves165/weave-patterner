@@ -242,6 +242,7 @@ export default function App() {
       onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
       highlightFloats={highlightFloats}
       onHighlightFloats={(on) => setView({ highlightFloats: on })}
+      longestFloat={Math.max(floats.warp, floats.weft)}
       floatLimit={floatLimit}
       onFloatLimit={(n) => setView({ floatLimit: n })}
       view={view}

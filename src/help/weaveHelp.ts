@@ -255,7 +255,7 @@ export const WEAVE_HELP: Topic[] = [
       { p: 'The bar along the bottom checks the cloth as you design:' },
       {
         list: [
-          '**Longest floats**: the most ends (warp) or picks (weft) a thread passes over without interlacing. Long floats snag. Turn on **Highlight floats longer than** in the settings to see them in the drawdown.',
+          '**Longest floats**: the most ends (warp) or picks (weft) a thread passes over without interlacing. Long floats snag. Turn on **Highlight floats longer than** in the settings to see them striped black and white in the drawdown.',
           '**Not woven in**: threads that never go over and under, so would fall out.',
           '**Edges**: whether the weft catches the edge end at each turn. If not, use a floating selvedge or change the edge threading.',
         ],
