@@ -134,6 +134,15 @@ test('remembers the chart, and saves, opens and exports it', async ({ page }) =>
   const saved = readFileSync((await (await file).path()) ?? '', 'utf8')
 
   await page.getByRole('button', { name: 'Export' }).click()
+  const bmp = page.waitForEvent('download')
+  await page.getByRole('menuitem', { name: /^Bitmap \(BMP\)/ }).click()
+  expect((await bmp).suggestedFilename()).toBe('My swatch.bmp')
+  const bitmap = readFileSync((await (await bmp).path()) ?? '')
+  // One pixel per stitch: 24 × 24, in the chart's two colours.
+  expect(bitmap.subarray(0, 2).toString()).toBe('BM')
+  expect([bitmap.readInt32LE(18), bitmap.readInt32LE(22), bitmap.readUInt16LE(28)]).toEqual([24, 24, 1])
+
+  await page.getByRole('button', { name: 'Export' }).click()
   const png = page.waitForEvent('download')
   await page.getByRole('menuitem', { name: 'Chart image (PNG)' }).click()
   expect((await png).suggestedFilename()).toBe('My swatch.png')

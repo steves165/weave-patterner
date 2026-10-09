@@ -61,3 +61,30 @@ test('exports the draft as SVG and PNG images', async ({ page }) => {
     }
   }
 })
+
+test('exports bitmaps: black and white for jacquard looms, and in the thread colours', async ({ page }) => {
+  const ends = Number(await page.getByLabel('Ends', { exact: true }).inputValue())
+  const picks = Number(await page.getByLabel('Picks', { exact: true }).inputValue())
+  for (const [label, file, bits] of [
+    [/^Bitmap \(BMP\), black and white/, 'Green blocks.bmp', 1],
+    [/^Bitmap \(BMP\), colours/, 'Green blocks (colours).bmp', 1],
+  ] as const) {
+    await toolbarButton(page, 'Export').click()
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('menuitem', { name: label }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe(file)
+    const bytes = readFileSync((await download.path()) ?? '')
+    expect(bytes.subarray(0, 2).toString()).toBe('BM')
+    expect(bytes.readUInt32LE(2)).toBe(bytes.length)
+    // One pixel per crossing.
+    expect([bytes.readInt32LE(18), bytes.readInt32LE(22), bytes.readUInt16LE(28)]).toEqual([ends, picks, bits])
+    // Black and white, or the pattern's two thread colours (the green warp first).
+    expect(bytes.subarray(54, 62)).toEqual(
+      Buffer.from(
+        file.includes('colours') ? [0, 0x66, 0, 0, ...bytes.subarray(58, 62)] : [255, 255, 255, 0, 0, 0, 0, 0],
+      ),
+    )
+  }
+})

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { chartBitmap } from './bitmap'
 import { blankChart, castOn, castOnFor, longFloats, mirror, paint, parseChart, problems, resize, size } from './chart'
 import { writeRow, writtenPattern, writtenRows } from './instructions'
 import { pictureColors } from './picture'
@@ -146,5 +147,20 @@ describe('a picture as colourwork', () => {
       [1, 1],
       [0, 0],
     ])
+  })
+})
+
+describe('bitmap export', () => {
+  it('is one pixel per stitch, row 1 at the bottom, indexed in the chart colours', () => {
+    // Row 1, the rightmost stitch shown (stitch 1) in colour B.
+    const chart = paint(blankChart(3, 2), 0, 2, { color: 1 })
+    const b = chartBitmap(chart)
+    const v = new DataView(b.buffer)
+    expect([v.getInt32(18, true), v.getInt32(22, true), v.getUint16(28, true)]).toEqual([3, 2, 1])
+    // Palette: colour A then B.
+    expect([...b.slice(54, 57)]).toEqual([0xd8, 0xea, 0xf2])
+    // Bitmaps store the bottom row first: row 1, with only the last pixel set.
+    expect(b[62]).toBe(0b0010_0000)
+    expect(b[66]).toBe(0)
   })
 })

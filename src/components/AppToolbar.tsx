@@ -110,6 +110,21 @@ const EXPORTS: { format: ExportFormat; primary: string; secondary: string }[] = 
   },
 ]
 
+const IMAGES: { format: ImageFormat; primary: string; secondary: string }[] = [
+  { format: 'png', primary: 'Image (PNG)', secondary: 'Picture of the draft to share' },
+  { format: 'svg', primary: 'Image (SVG)', secondary: 'Scalable picture for printing or editing' },
+  {
+    format: 'bmp',
+    primary: 'Bitmap (BMP), black and white',
+    secondary: 'One pixel per crossing, black where the warp is up: for jacquard looms such as the TC2',
+  },
+  {
+    format: 'bmp-color',
+    primary: 'Bitmap (BMP), colours',
+    secondary: 'One pixel per crossing, in the thread colours',
+  },
+]
+
 export function AppToolbar(p: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null)
@@ -144,15 +159,12 @@ export function AppToolbar(p: Props) {
       </ListItemIcon>
       <ListItemText primary="Copy a link to this pattern" secondary="Anyone with the link can open it" />
     </MenuItem>,
-    ...(['png', 'svg'] as const).map((f) => (
-      <MenuItem key={f} onClick={then(() => p.onExportImage(f))}>
+    ...IMAGES.map((x) => (
+      <MenuItem key={x.format} onClick={then(() => p.onExportImage(x.format))}>
         <ListItemIcon>
           <ImageIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText
-          primary={`Image (${f.toUpperCase()})`}
-          secondary={f === 'png' ? 'Picture of the draft to share' : 'Scalable picture for printing or editing'}
-        />
+        <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
   ]

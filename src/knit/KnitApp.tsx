@@ -69,6 +69,7 @@ import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTou
 import { patternColours } from '../seasons'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
+import { chartBitmap } from './bitmap'
 import { bookletPdf } from './booklet'
 import { ChartView } from './ChartView'
 import {
@@ -417,7 +418,7 @@ export default function KnitApp() {
   }
   const fileBase = name.trim() || 'Knitting chart'
 
-  const exportAs = (format: 'png' | 'text' | 'file' | 'pdf') => {
+  const exportAs = (format: 'png' | 'bmp' | 'text' | 'file' | 'pdf') => {
     setExportAnchor(null)
     track('export', { format: `knit-${format}` })
     if (format === 'pdf') {
@@ -439,7 +440,10 @@ export default function KnitApp() {
         'application/json',
       )
     else if (format === 'text') download(`${fileBase}.txt`, writtenPattern(chart, fileBase), 'text/plain')
-    else
+    else if (format === 'bmp') {
+      download(`${fileBase}.bmp`, new Blob([chartBitmap(chart)], { type: 'image/bmp' }), 'image/bmp')
+      setToast(`Exported ${fileBase}.bmp`)
+    } else
       chartPng().toBlob((blob) => {
         if (blob) download(`${fileBase}.png`, blob, 'image/png')
       })
@@ -751,6 +755,9 @@ export default function KnitApp() {
     <MenuItem key="png" onClick={closeThen(() => exportAs('png'))}>
       Chart image (PNG)
     </MenuItem>,
+    <MenuItem key="bmp" onClick={closeThen(() => exportAs('bmp'))}>
+      Bitmap (BMP), for knitting machines
+    </MenuItem>,
     <MenuItem key="pdf" onClick={closeThen(() => exportAs('pdf'))}>
       Pattern booklet (PDF)
     </MenuItem>,
@@ -1021,6 +1028,12 @@ export default function KnitApp() {
       </Menu>
       <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
         <MenuItem onClick={() => exportAs('png')}>Chart image (PNG)</MenuItem>
+        <MenuItem onClick={() => exportAs('bmp')}>
+          <ListItemText
+            primary="Bitmap (BMP)"
+            secondary="One pixel per stitch in the chart's colours (A, B…), for knitting machines and AYAB"
+          />
+        </MenuItem>
         <MenuItem onClick={() => exportAs('pdf')}>
           <ListItemText
             primary="Pattern booklet (PDF)"

@@ -51,7 +51,7 @@ const WeavingMode = lazyDialog(() => import('./dialogs/WeavingMode'), 'WeavingMo
 const YarnsDialog = lazyDialog(() => import('./dialogs/YarnsDialog'), 'YarnsDialog')
 
 import { addBlock, loadSavedBlocks, type SavedBlock, storeSavedBlocks } from './endBlocks'
-import { download, exportDraft, fileBase } from './exportDraft'
+import { download, draftBitmap, exportDraft, fileBase } from './exportDraft'
 import { longestFloats, longFloatMask, unwovenThreads } from './floats'
 import { useDraftHistory } from './hooks/useDraftHistory'
 import { useRememberCurrent } from './hooks/useRememberCurrent'
@@ -308,10 +308,15 @@ export default function App() {
             setToast(`Exported ${fileName}`)
           }}
           onExportImage={(format) => {
-            const fileName = `${fileBase(name)}.${format}`
+            const fileName = format === 'bmp-color' ? `${fileBase(name)} (colours).bmp` : `${fileBase(name)}.${format}`
             const done = () => setToast(`Exported ${fileName}`)
             const fail = (e: unknown) => setToast(`Couldn't export the image: ${e instanceof Error ? e.message : e}`)
-            if (format === 'svg') {
+            track('export', { format })
+            if (format === 'bmp' || format === 'bmp-color') {
+              const bitmap = draftBitmap(draft, format === 'bmp' ? 'structure' : 'colors', view.endOneRight)
+              download(fileName, new Blob([bitmap], { type: 'image/bmp' }), 'image/bmp')
+              done()
+            } else if (format === 'svg') {
               try {
                 download(fileName, draftSvg(1), 'image/svg+xml')
                 done()
