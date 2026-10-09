@@ -29,6 +29,14 @@ test('a draft page shows the draft written out, and opens it in the app', async 
   await expect(page.getByRole('img', { name: /Houndstooth draft/ })).toBeVisible()
   await expect(page.getByText('Ends 1–4: 1 2 3 4')).toBeVisible()
   expect(await a11yProblems(page)).toEqual([])
+  // Its own pictures, for link previews and Pinterest.
+  const pin = new URL((await page.getByRole('link', { name: 'Save to Pinterest' }).getAttribute('href')) ?? '')
+  expect(pin.searchParams.get('media')).toMatch(/\/patterns\/houndstooth\/pin\.jpg$/)
+  for (const picture of ['preview.jpg', 'pin.jpg']) {
+    const response = await page.request.get(`./patterns/houndstooth/${picture}`)
+    expect(response.ok(), picture).toBe(true)
+    expect(response.headers()['content-type']).toBe('image/jpeg')
+  }
   await page.getByRole('link', { name: 'Open this draft in Weave Patterner' }).click()
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
   await expect(page.getByRole('banner')).toContainText('Houndstooth')
@@ -43,7 +51,7 @@ test('a knitting chart page writes the pattern out, and opens the chart in Knit 
   await page.getByRole('link', { name: 'Open this chart in Knit Patterner' }).click()
   await expect(page.getByLabel('Name')).toHaveValue('Cable panel')
   await expect(page.getByText('Opened the Cable panel chart')).toBeVisible()
-  expect(new URL(page.url()).hash).toBe('')
+  expect(new URL(page.url()).search).toBe('')
 })
 
 test('the apps link to the guides, and the sitemap lists them', async ({ page }) => {

@@ -47,14 +47,14 @@ describe('guide and pattern pages', () => {
     for (const p of pages)
       for (const [, href] of p.html.matchAll(/href="([^"]+)"/g)) {
         if (/^https?:/.test(href)) continue
-        const target = resolve(p.path, href).replace(/#.*$/, '')
+        const target = resolve(p.path, href).replace(/[?#].*$/, '')
         expect(paths.has(target) || apps.has(target), `${p.path} → ${href}`).toBe(true)
       }
   })
 
   it('opens each draft in Weave Patterner from its page', async () => {
     const page = pages.find((p) => p.path === 'patterns/houndstooth/')
-    const link = page?.html.match(/href="\.\.\/\.\.\/#pattern=([^"]+)"/)?.[1] ?? ''
+    const link = page?.html.match(/href="\.\.\/\.\.\/\?pattern=([^"]+)"/)?.[1] ?? ''
     const { name, draft } = await decodePattern(link)
     expect(name).toBe('Houndstooth')
     expect(draft.warpColors.slice(0, 8)).toEqual([...Array(4).fill('#1f2a44'), ...Array(4).fill('#f3ead8')])
@@ -62,8 +62,25 @@ describe('guide and pattern pages', () => {
 
   it('opens each knitting chart in Knit Patterner from its page', () => {
     const page = pages.find((p) => p.path === 'knit/patterns/cable-panel/')
-    expect(page?.html).toContain('href="../../../knit/#sample=cable-panel"')
+    expect(page?.html).toContain('href="../../../knit/?sample=cable-panel"')
     expect(page?.html).toContain('Written pattern')
+  })
+
+  it('gives each pattern page its own pictures, for link previews and Pinterest', () => {
+    const patterns = pages.filter((p) => /patterns\/[^/]+\/$/.test(p.path))
+    expect(patterns.length).toBeGreaterThan(20)
+    for (const p of patterns) {
+      expect(p.picture?.title, p.path).toBeTruthy()
+      expect(p.html).toContain(`<meta property="og:image" content="${SITE_URL}${p.path}preview.jpg" />`)
+      const pin = p.html.match(/href="(https:\/\/www\.pinterest\.com\/pin\/create\/button\/[^"]+)"/)?.[1] ?? ''
+      const url = new URL(pin.replaceAll('&amp;', '&'))
+      expect(url.searchParams.get('url')).toBe(SITE_URL + p.path)
+      expect(url.searchParams.get('media')).toBe(`${SITE_URL}${p.path}pin.jpg`)
+      expect(url.searchParams.get('description')).toContain(p.picture?.title)
+    }
+    // Pages without pictures of their own use the app's.
+    expect(pages.find((p) => p.path === 'guide/')?.html).toContain(`content="${SITE_URL}og-image.png"`)
+    expect(pages.find((p) => p.path === 'patterns/')?.picture).toBeUndefined()
   })
 
   it('lists every page in the sitemap with the date it last changed', () => {

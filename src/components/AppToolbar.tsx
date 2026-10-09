@@ -7,7 +7,7 @@ import GridOnIcon from '@mui/icons-material/GridOn'
 import HandymanIcon from '@mui/icons-material/Handyman'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import ImageIcon from '@mui/icons-material/Image'
-import LinkIcon from '@mui/icons-material/Link'
+import IosShareIcon from '@mui/icons-material/IosShare'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
@@ -63,8 +63,8 @@ interface Props {
   onExport: (format: ExportFormat) => void
   onExportImage: (format: ImageFormat) => void
   onImport: () => void
-  /** Copies a link that opens this pattern. */
-  onShareLink: () => void
+  /** Opens Share: a link to this pattern, or a picture of it. */
+  onShare: () => void
   /** Opens the help. */
   onHelp: () => void
   /** Print the draft, optionally with a page of written instructions. */
@@ -153,12 +153,6 @@ export function AppToolbar(p: Props) {
         <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
-    <MenuItem key="link" onClick={then(p.onShareLink)}>
-      <ListItemIcon>
-        <LinkIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText primary="Copy a link to this pattern" secondary="Anyone with the link can open it" />
-    </MenuItem>,
     ...IMAGES.map((x) => (
       <MenuItem key={x.format} onClick={then(() => p.onExportImage(x.format))}>
         <ListItemIcon>
@@ -344,6 +338,12 @@ export function AppToolbar(p: Props) {
   ])
 
   const fileItems = [
+    <MenuItem key="share" onClick={then(p.onShare)}>
+      <ListItemIcon>
+        <IosShareIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText primary="Share…" secondary="A link, or a picture for Instagram and Pinterest" />
+    </MenuItem>,
     <MenuItem key="save" onClick={then(p.onSave)}>
       <ListItemIcon>
         <SaveIcon fontSize="small" />
@@ -477,6 +477,7 @@ export function AppToolbar(p: Props) {
               <Menu anchorEl={printAnchor} open={printAnchor !== null} onClose={close}>
                 {printItems}
               </Menu>
+              <Action compact={fileCompact} icon={<IosShareIcon />} label="Share" onClick={p.onShare} />
             </Box>
           )}
           {!p.compact && <Rule />}

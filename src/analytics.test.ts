@@ -17,6 +17,11 @@ beforeEach(() => {
     createElement: () => ({}),
     head: { appendChild: (el: unknown) => head.push(el) },
   } as unknown as Document
+  globalThis.location = {
+    origin: 'https://example.org',
+    pathname: '/weave-patterner/',
+    search: '?pattern=secret',
+  } as Location
   window.dataLayer = undefined
   window.gtag = undefined
   resetAnalyticsForTests()
@@ -44,7 +49,7 @@ describe('analytics', () => {
     expect(analyticsStarted()).toBe(false)
   })
 
-  it('loads Google Analytics once, without ad features, then records events', () => {
+  it('loads Google Analytics once, without ad features or the pattern in the address, then records events', () => {
     startAnalytics('G-TEST123')
     startAnalytics('G-TEST123')
     expect(head).toHaveLength(1)
@@ -53,7 +58,11 @@ describe('analytics', () => {
     expect(config).toEqual([
       'config',
       'G-TEST123',
-      { allow_google_signals: false, allow_ad_personalization_signals: false },
+      {
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+        page_location: 'https://example.org/weave-patterner/',
+      },
     ])
     track('export', { format: 'wif' })
     expect([...((window.dataLayer ?? []).at(-1) as unknown[])]).toEqual(['event', 'export', { format: 'wif' }])

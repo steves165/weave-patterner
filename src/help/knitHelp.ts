@@ -268,7 +268,7 @@ export const KNIT_HELP: Topic[] = [
   {
     id: 'files',
     title: 'Saving, sharing and printing',
-    summary: 'Save, load, import, export, booklets and printing',
+    summary: 'Save, load, import, export, share, booklets and printing',
     keywords: [
       'save',
       'load',
@@ -284,6 +284,11 @@ export const KNIT_HELP: Topic[] = [
       'bitmap',
       'machine',
       'ayab',
+      'share',
+      'link',
+      'instagram',
+      'pinterest',
+      'social',
     ],
     body: [
       {
@@ -292,6 +297,7 @@ export const KNIT_HELP: Topic[] = [
           'The chart you are working on is kept automatically.',
           '**Import**: a chart file, or a **written pattern** you paste in (Row 1: k2, p2…).',
           '**Export**: a **pattern booklet (PDF)** with gauge, materials, the chart and key, and the written rows; the chart as a picture with its key; the written pattern as text; or a chart file to open again.',
+          '**Share** makes a link that opens the chart for anyone, to copy or send to Pinterest, Facebook, X, WhatsApp or email (on a phone, through its share menu). It also makes a picture of the knitted fabric: square for Instagram, tall for Pinterest.',
           '**Export › Bitmap (BMP)**: the chart one pixel per stitch, row 1 at the bottom, in its colours (A first, then B…). Knitting machine software such as AYAB and img2track opens these.',
           '**Print** prints the chart and the written pattern.',
         ],

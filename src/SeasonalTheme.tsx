@@ -174,3 +174,10 @@ export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => v
     </Dialog>
   )
 }
+
+/** The colours the apps are showing now: the chosen season's, or the app's own. */
+export function useThemeBrand(): Brand {
+  const { choice, base } = useContext(Choice)
+  const season = activeSeason(choice)
+  return season ? seasonBrand(season) : base
+}

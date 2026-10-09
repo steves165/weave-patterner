@@ -5,7 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { longestFloats } from '../src/floats'
-import { decodePattern, patternFromHash } from '../src/share'
+import { decodePattern, patternFromLink } from '../src/share'
 import { greenBlocks } from '../src/testUtils'
 import { computeDrawdown } from '../src/weave'
 import { toWif } from '../src/wif'
@@ -55,7 +55,7 @@ describe('MCP server', () => {
     expect(text).toContain('"Twill": 4 shafts, 4 treadles, 16 ends × 16 picks.')
     expect(text).toContain('Longest floats: warp 2, weft 2 threads.')
     const link = /https:\/\/\S+/.exec(text)?.[0] ?? ''
-    const shared = await decodePattern(patternFromHash(new URL(link).hash) ?? '')
+    const shared = await decodePattern(patternFromLink(new URL(link).search) ?? '')
     expect(shared).toEqual({ name: 'Twill', draft: specToDraft(twill) })
     expect(r.content[1]).toMatchObject({ type: 'image', mimeType: 'image/png' })
     expect(

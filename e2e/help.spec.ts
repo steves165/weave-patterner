@@ -86,17 +86,6 @@ test('the Tools menu can be searched', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('No tool matches')
 })
 
-test('copies a link that opens the pattern', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-  await openApp(page)
-  await cell(page, 'End 1, shaft 3').click()
-  await toolbarButton(page, 'Export').click()
-  await page.getByRole('menuitem', { name: /Copy a link to this pattern/ }).click()
-  await expect(page.locator('.MuiSnackbarContent-message')).toContainText('Link copied')
-  const url = await page.evaluate(() => navigator.clipboard.readText())
-  expect(url).toMatch(/^https:\/\/steves165\.github\.io\/weave-patterner\/#pattern=/)
-})
-
 test.describe('Knit Patterner', () => {
   test('help, F1 on the chart, the tour and what you are painting with', async ({ page }) => {
     await openKnit(page, { tour: 'new' })

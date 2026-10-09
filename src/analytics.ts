@@ -51,8 +51,13 @@ export function startAnalytics(id = GA_ID) {
     window.dataLayer?.push(arguments)
   }
   window.gtag('js', new Date())
-  // No ad features, and IP addresses anonymised.
-  window.gtag('config', id, { allow_google_signals: false, allow_ad_personalization_signals: false })
+  // No ad features, and IP addresses anonymised. The page is sent without its query or hash: a shared link carries
+  // the whole pattern there, and that stays private.
+  window.gtag('config', id, {
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+    page_location: `${location.origin}${location.pathname}`,
+  })
   const script = document.createElement('script')
   script.async = true
   script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`

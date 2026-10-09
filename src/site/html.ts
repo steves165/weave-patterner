@@ -103,6 +103,17 @@ export interface Page {
   content: string
   /** schema.org type of the page's main thing: TechArticle for guides, CreativeWork for patterns, and so on. */
   type: string
+  /** The page has its own pictures beside it (preview.jpg for link previews, pin.jpg for Pinterest). */
+  pictures?: boolean
+}
+
+/** The pictures made for a page with `pictures`, beside its index.html. */
+export const PICTURES = { preview: 'preview.jpg', pin: 'pin.jpg' } as const
+
+/** A "Save to Pinterest" link for a page with pictures: Pinterest's own page, with the tall picture filled in. */
+export function pinLink(path: string, description: string): string {
+  const e = encodeURIComponent
+  return `https://www.pinterest.com/pin/create/button/?url=${e(SITE_URL + path)}&media=${e(SITE_URL + path + PICTURES.pin)}&description=${e(description)}`
 }
 
 /** A full HTML page in an app's look. Links in the content written `{root}x/` become relative to this page. */
@@ -136,7 +147,7 @@ export function render(app: App, page: Page): string {
       })),
     },
   ]
-  const image = `${SITE_URL}${app.path}og-image.png`
+  const image = page.pictures ? `${url}${PICTURES.preview}` : `${SITE_URL}${app.path}og-image.png`
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -154,7 +165,7 @@ export function render(app: App, page: Page): string {
 <meta property="og:description" content="${esc(page.description)}" />
 <meta property="og:url" content="${url}" />
 <meta property="og:image" content="${image}" />
-<meta property="og:locale" content="en_GB" />
+${page.pictures ? `<meta property="og:image:width" content="1200" />\n<meta property="og:image:height" content="630" />\n<meta property="og:image:alt" content="${esc(page.heading)}" />\n` : ''}<meta property="og:locale" content="en_GB" />
 <meta name="twitter:card" content="summary_large_image" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>
 <style>${css(app, root)}</style>
@@ -260,6 +271,7 @@ figure{margin:1rem 0;background:var(--paper);border:1px solid var(--line);border
 figure svg{display:block;max-width:100%;height:auto}
 figcaption{font-size:14px;color:var(--muted);margin-top:8px}
 pre{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px}
-.button{display:inline-block;background:var(--accent);color:var(--on-accent);padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;margin:8px 0}
+.button{display:inline-block;background:var(--accent);color:var(--on-accent);padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;margin:8px 8px 8px 0;border:2px solid var(--accent)}
+.button.plain{background:transparent;color:var(--accent)}
 footer{max-width:46rem;margin:0 auto;padding:16px 20px 40px;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
 `

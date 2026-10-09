@@ -6,10 +6,24 @@ import { threadingLines, tieupLines, treadlingLines } from '../instructions'
 import { colorLetter, type KnitChart, usedColors } from '../knit/chart'
 import { castOnText, writtenRows } from '../knit/instructions'
 import { SAMPLES, sampleSlug } from '../knit/samples'
+import { SAMPLE_KEY } from '../knit/share'
 import { STITCHES, type StitchId } from '../knit/stitches'
 import { findRepeat } from '../repeat'
 import { encodePattern, SHARE_KEY } from '../share'
-import { type App, blocks, describe, esc, KNIT_APP, type Page, plain, render, SITE_URL, WEAVE_APP } from './html'
+import type { Draft } from '../weave'
+import {
+  type App,
+  blocks,
+  describe,
+  esc,
+  KNIT_APP,
+  type Page,
+  pinLink,
+  plain,
+  render,
+  SITE_URL,
+  WEAVE_APP,
+} from './html'
 import { chartSvg, clothSvg, draftSvg } from './pictures'
 
 /** The colours the pattern pages show the presets in: navy, cream and a brick-red accent. */
@@ -19,6 +33,8 @@ const PATTERN_COLOURS = { dark: '#1f2a44', light: '#f3ead8', accent: '#b23a48' }
 export interface Built {
   path: string
   html: string
+  /** What to draw the page's pictures of (see PICTURES), for a pattern page. */
+  picture?: { title: string } & ({ app: 'weave'; draft: Draft } | { app: 'knit'; chart: KnitChart })
 }
 
 const craft = (app: App) => (app.id === 'weave' ? 'weaving' : 'knitting')
@@ -164,9 +180,10 @@ async function weavePatterns(): Promise<Built[]> {
         heading: `${p.name} weaving draft`,
         crumbs: [...crumbs, { name: 'Patterns', path: base }],
         type: 'CreativeWork',
+        pictures: true,
         content: `<p>${esc(p.description)}. ${d.shafts} shafts and ${d.treadles} treadles; the pattern repeats every ${repeat.ends} ends and ${repeat.picks} picks.</p>
 <figure>${draftSvg(d, `${p.name} draft: threading, tie-up, treadling and drawdown`)}<figcaption>The draft: threading at the top, tie-up at the top right, treadling at the right (pick 1 at the top) and the drawdown, the cloth they make.</figcaption></figure>
-<p><a class="button" href="{root}#${SHARE_KEY}=${share}">Open this draft in Weave Patterner</a></p>
+<p><a class="button" href="{root}?${SHARE_KEY}=${share}">Open this draft in Weave Patterner</a><a class="button plain" href="${esc(pinLink(`${base}${p.id}/`, `${p.name} weaving draft, free, with threading, tie-up and treadling`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Threading</h2>
 <p>The shaft each end goes on, from end 1; repeat it across the warp:</p>
 <pre>${threadingLines({ ...d, threading: d.threading.slice(0, period(d.threading)) })
@@ -197,7 +214,14 @@ async function weavePatterns(): Promise<Built[]> {
       }
     }),
   )
-  return [index, ...pages].map((p) => ({ path: p.path, html: render(app, p) }))
+  return [
+    { path: index.path, html: render(app, index) },
+    ...pages.map((page, i) => ({
+      path: page.path,
+      html: render(app, page),
+      picture: { app: 'weave' as const, title: built[i].p.name, draft: built[i].d },
+    })),
+  ]
 }
 
 /** The stitches a chart uses, with what they mean. */
@@ -243,9 +267,10 @@ function knitPatterns(): Built[] {
       heading: `${s.name} knitting chart`,
       crumbs: [...crumbs, { name: 'Patterns', path: base }],
       type: 'CreativeWork',
+      pictures: true,
       content: `<p>${esc(s.about)}</p>
 <figure>${chartSvg(k, `${s.name} chart`)}<figcaption>Read the chart from the bottom: row 1 is at the bottom, and each row starts at the side its number is on.${colours.length > 1 ? ` Colours: ${colours.map((c) => `${colorLetter(c)} ${esc(k.colors[c])}`).join(', ')}.` : ''}</figcaption></figure>
-<p><a class="button" href="{root}${app.path}#sample=${slug}">Open this chart in Knit Patterner</a></p>
+<p><a class="button" href="{root}${app.path}?${SAMPLE_KEY}=${slug}">Open this chart in Knit Patterner</a><a class="button plain" href="${esc(pinLink(`${base}${slug}/`, `${s.name} knitting chart, free, with written instructions`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Written pattern</h2>
 <p>${esc(castOnText(k))}</p>
 <ul>${writtenRows(k)
@@ -260,7 +285,14 @@ ${abbreviations(k)}
 <p><a href="{root}${base}">All knitting charts</a></p>`,
     }
   })
-  return [index, ...pages].map((p) => ({ path: p.path, html: render(app, p) }))
+  return [
+    { path: index.path, html: render(app, index) },
+    ...pages.map((page, i) => ({
+      path: page.path,
+      html: render(app, page),
+      picture: { app: 'knit' as const, title: built[i].s.name, chart: built[i].k },
+    })),
+  ]
 }
 
 /** Every static page. */

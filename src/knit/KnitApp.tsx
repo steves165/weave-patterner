@@ -12,6 +12,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt'
 import ImageIcon from '@mui/icons-material/Image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
+import IosShareIcon from '@mui/icons-material/IosShare'
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import NotesIcon from '@mui/icons-material/Notes'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -53,6 +54,7 @@ import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
 import { FIELD_GRID, SWITCH_ROW } from '../components/SettingsPanel'
+import { ShareDialog } from '../components/ShareDialog'
 import { StatusFrame, Warning } from '../components/StatusBar'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { LoadDialog } from '../dialogs/LoadDialog'
@@ -67,6 +69,7 @@ import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
 import { patternColours } from '../seasons'
+import { linkParam, withoutParam } from '../share'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
 import { chartBitmap } from './bitmap'
@@ -108,6 +111,8 @@ import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
 import { SizesPanel } from './SizesPanel'
 import { SAMPLES, sampleSlug } from './samples'
+import { CHART_KEY, chartUrl, decodeChart, SAMPLE_KEY } from './share'
+import { fabricPainter } from './sharePicture'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import { yarnNeeded } from './yarn'
 import './knit.css'
@@ -262,9 +267,9 @@ export default function KnitApp() {
   const [toast, setToast] = useState<string | null>(null)
   const [samplesAnchor, setSamplesAnchor] = useState<HTMLElement | null>(null)
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
-  const [dialog, setDialog] = useState<'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | '3d' | 'written' | null>(
-    null,
-  )
+  const [dialog, setDialog] = useState<
+    'save' | 'load' | 'knitting' | 'panels' | 'mosaic' | '3d' | 'written' | 'share' | null
+  >(null)
   const [importAnchor, setImportAnchor] = useState<HTMLElement | null>(null)
   // Panels saved to use again, and the panel the Panels dialog opens at.
   const [panelStore, setPanelStoreState] = useState<SavedPanel[]>(loadSavedPanels)
@@ -319,12 +324,24 @@ export default function KnitApp() {
     if (newName !== undefined) setName(newName)
   }
 
-  // A link to a sample (#sample=cable-panel, from the pattern pages) opens it, as a change that can be undone.
+  // A link to a chart (?chart=…, from Share) or a sample (?sample=cable-panel, from the pattern pages; #sample= in
+  // older links) opens it, as a change that can be undone.
   // biome-ignore lint/correctness/useExhaustiveDependencies: once, on opening
   useEffect(() => {
-    const slug = new URLSearchParams(window.location.hash.slice(1)).get('sample')
-    if (!slug) return
-    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    const { pathname, search, hash } = window.location
+    const data = linkParam(CHART_KEY, search, hash)
+    const slug = linkParam(SAMPLE_KEY, search, hash)
+    if (!data && !slug) return
+    window.history.replaceState(null, '', withoutParam([CHART_KEY, SAMPLE_KEY], pathname, search, hash))
+    if (data) {
+      decodeChart(data)
+        .then((shared) => {
+          replace(shared.chart, shared.name)
+          setToast(`Opened “${shared.name}” from the link. Undo with Ctrl+Z.`)
+        })
+        .catch((e: Error) => setToast(e.message))
+      return
+    }
     const sample = SAMPLES.find((s) => sampleSlug(s.name) === slug)
     if (!sample) return setToast("That sample chart wasn't found")
     replace(sample.chart(), sample.name)
@@ -717,6 +734,12 @@ export default function KnitApp() {
   )
 
   const fileMenuItems = [
+    <MenuItem key="share" onClick={closeThen(() => setDialog('share'))}>
+      <ListItemIcon>
+        <IosShareIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText primary="Share…" secondary="A link, or a picture for Instagram and Pinterest" />
+    </MenuItem>,
     <MenuItem
       key="new"
       onClick={closeThen(() => replace(blankChart(undefined, undefined, patternColours()?.knit), 'Untitled'))}
@@ -867,6 +890,7 @@ export default function KnitApp() {
                 onClick={(e) => setExportAnchor(e.currentTarget)}
               />
               <Action compact={fileCompact} icon={<PrintIcon />} label="Print" onClick={print} />
+              <Action compact={fileCompact} icon={<IosShareIcon />} label="Share" onClick={() => setDialog('share')} />
             </Box>
           )}
           {!compact && <Rule />}
@@ -949,6 +973,15 @@ export default function KnitApp() {
           setDialog(null)
           setToast(`Saved "${n}"`)
         }}
+      />
+      <ShareDialog
+        open={dialog === 'share'}
+        app="knit"
+        title={name.trim() && name !== 'Untitled' ? name.trim() : 'My knitting chart'}
+        link={() => chartUrl(name.trim() || 'Shared chart', chart)}
+        design={fabricPainter(chart, () => document.createElement('canvas'))}
+        onClose={() => setDialog(null)}
+        onToast={setToast}
       />
       {dialog === '3d' && (
         <Suspense fallback={null}>

@@ -70,13 +70,20 @@ test('rejects a file that is not a pattern', async ({ page }) => {
 
 test('opens a pattern from a share link', async ({ page }) => {
   const { draft } = parsePattern(sampleText())
-  await page.goto(`./#pattern=${await encodePattern('Linked', draft)}`)
+  await page.goto(`./?pattern=${await encodePattern('Linked', draft)}`)
   await expect(title(page)).toContainText('Linked')
   await expect(toast(page)).toContainText('Opened "Linked" from link')
-  expect(new URL(page.url()).hash).toBe('')
+  expect(new URL(page.url()).search).toBe('')
   expect(await ends(page)).toBe('96')
   // sanity-check the helper the MCP server uses
   expect((await decodePattern(await encodePattern('x', draft))).draft).toEqual(draft)
+})
+
+test('still opens older links with the pattern in the hash', async ({ page }) => {
+  const { draft } = parsePattern(sampleText())
+  await page.goto(`./#pattern=${await encodePattern('Old link', draft)}`)
+  await expect(title(page)).toContainText('Old link')
+  expect(new URL(page.url()).hash).toBe('')
 })
 
 test('print shows only the framed draft', async ({ page }) => {

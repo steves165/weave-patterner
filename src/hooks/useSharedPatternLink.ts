@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { decodePattern, patternFromHash } from '../share'
+import { decodePattern, patternFromLink, SHARE_KEY, withoutParam } from '../share'
 import type { Draft } from '../weave'
 
 /**
- * Opens a pattern passed in the URL (`#pattern=…`, e.g. from the MCP server) on load and whenever the hash
- * changes, then tidies the URL.
+ * Opens a pattern passed in the URL (`?pattern=…`, or `#pattern=…` in older links and from the MCP server) on load
+ * and whenever the hash changes, then tidies the URL.
  */
 export function useSharedPatternLink(onOpen: (name: string, draft: Draft) => void, onError: (message: string) => void) {
   // Keep the latest callbacks without re-subscribing.
@@ -13,12 +13,13 @@ export function useSharedPatternLink(onOpen: (name: string, draft: Draft) => voi
 
   useEffect(() => {
     const load = () => {
-      const data = patternFromHash(window.location.hash)
+      const { pathname, search, hash } = window.location
+      const data = patternFromLink(search, hash)
       if (!data) return
       decodePattern(data)
         .then(({ name, draft }) => handlers.current.onOpen(name, draft))
         .catch((e: Error) => handlers.current.onError(e.message))
-        .finally(() => history.replaceState(null, '', window.location.pathname + window.location.search))
+        .finally(() => history.replaceState(null, '', withoutParam(SHARE_KEY, pathname, search, hash)))
     }
     load()
     window.addEventListener('hashchange', load)

@@ -33,6 +33,7 @@ function lazyDialog<K extends string, C extends ComponentType<any>>(load: () => 
   return lazy(async () => ({ default: (await load())[name] }))
 }
 const BlocksDialog = lazyDialog(() => import('./dialogs/BlocksDialog'), 'BlocksDialog')
+const ShareDialog = lazyDialog(() => import('./components/ShareDialog'), 'ShareDialog')
 const CalculatorDialog = lazyDialog(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
 const ClothDialog = lazyDialog(() => import('./dialogs/ClothDialog'), 'ClothDialog')
 const ClothReportDialog = lazyDialog(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
@@ -64,6 +65,7 @@ import { isDirectTieup, toLiftplan, toTreadling } from './liftplan'
 import { patternColours } from './seasons'
 import { selvedgeMisses } from './selvedge'
 import { patternUrl } from './share'
+import { clothPainter } from './shareImage'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
 import { computeDrawdown, type Draft, defaultDraft, emptyDraft, resizeDraft } from './weave'
 
@@ -91,6 +93,7 @@ type DialogName =
   | 'drawloom'
   | 'yarns'
   | 'blocks'
+  | 'share'
 
 export default function App() {
   const phone = usePhone()
@@ -333,12 +336,7 @@ export default function App() {
           }}
           onImport={() => setDialog('import')}
           onHelp={() => openHelp(null)}
-          onShareLink={() => {
-            patternUrl(name ?? 'Shared pattern', draft)
-              .then((url) => navigator.clipboard.writeText(url).then(() => url))
-              .then(() => setToast('Link copied: anyone with it can open this pattern'))
-              .catch(() => setToast("Couldn't copy the link here. Export the pattern file to share it instead."))
-          }}
+          onShare={() => setDialog('share')}
           onPrint={(instructions) => {
             // Render the print sheet with or without instructions before the print dialog snapshots the page.
             flushSync(() => setPrintInstructions(instructions))
@@ -571,6 +569,19 @@ export default function App() {
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
+            />
+          </Suspense>
+        )}
+        {seen.has('share') && (
+          <Suspense fallback={null}>
+            <ShareDialog
+              open={dialog === 'share'}
+              app="weave"
+              title={name ?? 'My weaving draft'}
+              link={() => patternUrl(name ?? 'Shared pattern', draft)}
+              design={clothPainter(draft)}
+              onClose={() => setDialog(null)}
+              onToast={setToast}
             />
           </Suspense>
         )}

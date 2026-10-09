@@ -35,7 +35,7 @@ test.describe('Weave Patterner: axe finds no accessibility problems', () => {
 
   test('the file dialogs and menus, weaving mode, help and the tour', async ({ page }) => {
     await openApp(page)
-    for (const name of ['Save', 'Load']) {
+    for (const name of ['Save', 'Load', 'Share']) {
       await toolbarButton(page, name).click()
       expect(await a11yProblems(page, '[role="dialog"]'), name).toEqual([])
       await closeDialog(page)
@@ -77,7 +77,7 @@ test.describe('Knit Patterner: axe finds no accessibility problems', () => {
 
   test('the dialogs and menus', async ({ page }) => {
     await openKnit(page)
-    for (const name of ['Save', 'Load', 'Start knitting']) {
+    for (const name of ['Save', 'Load', 'Share', 'Start knitting']) {
       await toolbarButton(page, name).click()
       expect(await a11yProblems(page, '[role="dialog"]'), name).toEqual([])
       await closeDialog(page)
