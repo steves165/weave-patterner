@@ -180,7 +180,24 @@ export const WEAVE_HELP: Topic[] = [
     id: 'settings',
     title: 'Pattern settings',
     summary: 'Size, colours, view options and the pattern itself',
-    keywords: ['size', 'shafts', 'treadles', 'ends', 'picks', 'view', 'cell size', 'ruler', 'reset', 'trim', 'clear'],
+    keywords: [
+      'size',
+      'shafts',
+      'treadles',
+      'ends',
+      'picks',
+      'view',
+      'cell size',
+      'ruler',
+      'reset',
+      'trim',
+      'clear',
+      'theme',
+      'halloween',
+      'christmas',
+      'seasonal',
+      'colour theme',
+    ],
     body: [
       {
         p: 'The settings are in the sidebar on the right (fold it away with **Hide**), or on phones and tablets in the **Pattern settings** sheet at the bottom.',
@@ -190,6 +207,10 @@ export const WEAVE_HELP: Topic[] = [
       { h: 'View' },
       {
         terms: [
+          [
+            'Colour theme',
+            'Seasonal colours for the app in place of the pink: Halloween, Christmas, Winter, Spring, Summer or Autumn, or Halloween and Christmas only when it’s time. Your pattern’s colours stay as they are. Knit Patterner uses the same choice.',
+          ],
           ['Cell size', 'How big the boxes are.'],
           ['Ruler every', 'Number every this many ends and picks (0 for none).'],
           ['No tie-up', 'Show a lift plan instead of a tie-up and treadling.'],

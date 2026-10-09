@@ -1,7 +1,8 @@
-import { CssBaseline, ThemeProvider } from '@mui/material'
+import { CssBaseline } from '@mui/material'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { knitTheme } from '../theme'
+import { SeasonalTheme } from '../SeasonalTheme'
+import { KNIT } from '../theme'
 import KnitApp from './KnitApp'
 import '../App.css'
 
@@ -13,9 +14,9 @@ if (!root) throw new Error('Missing #root element')
 
 createRoot(root).render(
   <StrictMode>
-    <ThemeProvider theme={knitTheme} defaultMode="system">
+    <SeasonalTheme base={KNIT}>
       <CssBaseline />
       <KnitApp />
-    </ThemeProvider>
+    </SeasonalTheme>
   </StrictMode>,
 )

@@ -66,6 +66,7 @@ import { useHelpKeys } from '../help/useHelpKeys'
 import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
+import { SeasonPicker } from '../SeasonalTheme'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
 import { bookletPdf } from './booklet'
@@ -615,6 +616,7 @@ export default function KnitApp() {
         )}
       </Section>
       <Section title="View" help="preview">
+        <SeasonPicker app="Knit Patterner" />
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5, minHeight: 40 }}>
           <Typography id="knit-zoom" sx={{ flex: 'none', width: 56, fontWeight: 500 }}>
             Zoom

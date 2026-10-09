@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
+import { SeasonPicker } from '../SeasonalTheme'
 import { MONO_FONT } from '../theme'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
@@ -220,6 +221,7 @@ export function SettingsPanel(p: Props) {
       </Section>
 
       <Section title="View" help="settings">
+        <SeasonPicker app="Weave Patterner" />
         <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', minHeight: 40 }}>
           <Typography id="cell-size-label" sx={{ flex: 'none', width: 70, fontWeight: 500 }}>
             Cell size

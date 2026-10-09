@@ -11,7 +11,7 @@ import '@fontsource/ibm-plex-mono/500.css'
  * The same colours are CSS variables (--wp-*) in App.css, for the grids and the parts outside MUI.
  */
 /** An app's colours: its accent, the background and text, light and dark. The rest are CSS variables in App.css. */
-interface Brand {
+export interface Brand {
   accent: { light: string; dark: string; onDark: string }
   secondary: { light: string; dark: string }
   background: { light: string; dark: string }
@@ -173,6 +173,3 @@ export const makeTheme = (b: Brand) =>
       },
     },
   })
-
-export const theme = makeTheme(WEAVE)
-export const knitTheme = makeTheme(KNIT)
