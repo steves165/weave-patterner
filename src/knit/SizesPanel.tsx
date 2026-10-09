@@ -114,7 +114,9 @@ export function SizesPanel({ chart, onChange }: { chart: KnitChart; onChange: (n
               <th>Gives</th>
               <th>Rows</th>
               <th>Yarn</th>
-              <th />
+              <th>
+                <span className="sr-only">Remove</span>
+              </th>
             </tr>
           </thead>
           <tbody>

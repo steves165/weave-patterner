@@ -220,7 +220,7 @@ export function CalculatorDialog({ open, draft, yarns, onClose }: Props) {
                 <Table size="small" aria-label="Yarn needed">
                   <TableHead>
                     <TableRow>
-                      <TableCell />
+                      <TableCell>Thread</TableCell>
                       <TableCell>Colour</TableCell>
                       <TableCell align="right">Length</TableCell>
                       {showWeight && <TableCell align="right">Weight</TableCell>}

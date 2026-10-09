@@ -31,7 +31,6 @@ import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  ListSubheader,
   Menu,
   MenuItem,
   Paper,
@@ -48,7 +47,7 @@ import {
 } from '@mui/material'
 import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
-import { Action, NavTab, PhoneNav, Rule } from '../components/AppBarParts'
+import { Action, MenuHeading, NavTab, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
@@ -744,7 +743,7 @@ export default function KnitApp() {
       Print…
     </MenuItem>,
     <Divider key="d" />,
-    <ListSubheader key="export">Export</ListSubheader>,
+    <MenuHeading key="export">Export</MenuHeading>,
     <MenuItem key="png" onClick={closeThen(() => exportAs('png'))}>
       Chart image (PNG)
     </MenuItem>,
@@ -761,6 +760,7 @@ export default function KnitApp() {
 
   return (
     <>
+      <SkipLink target="main">Skip to the chart</SkipLink>
       <AppBar position="sticky" className="screen-only">
         <Toolbar
           sx={{
@@ -1062,10 +1062,8 @@ export default function KnitApp() {
         }}
       >
         <Box sx={{ flex: '1 0 auto', display: 'flex', alignItems: 'stretch' }}>
-          <Box component="main" sx={{ flex: '1 1 auto', minWidth: 0 }}>
-            <Typography variant="h5" component="h1" sx={{ position: 'absolute', left: -10000 }}>
-              Knit Patterner: knitting chart designer
-            </Typography>
+          <Box component="main" id="main" tabIndex={-1} sx={{ flex: '1 1 auto', minWidth: 0, outline: 'none' }}>
+            <h1 className="sr-only">Knit Patterner: knitting chart designer</h1>
             {/* The palette: the stitch or colour to paint with. */}
             <Stack sx={{ gap: 1.25, px: { xs: 1.75, sm: 3 }, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
               <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1459,7 +1457,20 @@ export default function KnitApp() {
             {settings}
           </SettingsSheet>
         )}
-        <StatusFrame sticky={!compact} links={!phone && weaveLinks()} help="checks">
+        <StatusFrame
+          sticky={!compact}
+          links={!phone && weaveLinks()}
+          help="checks"
+          announce={
+            [
+              issues.length > 0 &&
+                `${issues.length} ${issues.length === 1 ? 'row' : 'rows'} with a stitch count problem`,
+              floats.length > 0 && `${floats.length} ${floats.length === 1 ? 'row' : 'rows'} with long floats`,
+            ]
+              .filter(Boolean)
+              .join('; ') || 'Stitch counts add up, row to row'
+          }
+        >
           <Typography component="span" sx={{ fontSize: 13 }}>
             Cast on{' '}
             <Box component="span" sx={{ fontFamily: MONO_FONT, fontWeight: 500, color: 'text.primary' }}>

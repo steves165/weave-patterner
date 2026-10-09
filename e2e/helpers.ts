@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page } from '@playwright/test'
 
 export const SAMPLE = fileURLToPath(new URL('../samples/Green blocks.weave.json', import.meta.url))
@@ -123,4 +124,19 @@ export function drawdownPicture(page: Page): Promise<string> {
         .map((c) => `${c.classList.contains('warp') ? 'w' : 'f'}${c.style.backgroundColor}`)
         .join('|'),
     )
+}
+
+/**
+ * Accessibility problems axe-core finds on the page, or only in `within` (a dialog or menu), as readable lines.
+ * Colour contrast isn't checked: the palette is the design's. Pop-ups (menus, tooltips) open outside the page's
+ * landmarks by design, so landmark checks are left out when scanning one.
+ */
+export async function a11yProblems(page: Page, within?: string): Promise<string[]> {
+  let scan = new AxeBuilder({ page }).disableRules(['color-contrast'])
+  if (within) {
+    await expect(page.locator(within).first()).toBeVisible()
+    scan = scan.include(within).disableRules(['color-contrast', 'region'])
+  }
+  const { violations } = await scan.analyze()
+  return violations.flatMap((v) => v.nodes.map((n) => `${v.id}: ${v.help} — ${n.html.slice(0, 160)}`))
 }

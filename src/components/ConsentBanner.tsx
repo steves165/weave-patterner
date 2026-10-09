@@ -23,7 +23,9 @@ export function ConsentBanner({ onChoose, app = 'Weave Patterner' }: Props) {
         p: 2,
       }}
     >
-      <Typography variant="subtitle2">Help improve {app}?</Typography>
+      <Typography variant="subtitle2" component="h2">
+        Help improve {app}?
+      </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         With your OK, Google Analytics counts visits and which tools get used, using cookies. It never sees your
         patterns, and there are no ads.

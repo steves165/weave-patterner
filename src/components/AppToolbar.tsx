@@ -22,18 +22,19 @@ import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  ListSubheader,
   Menu,
   MenuItem,
+  MenuList,
+  Popover,
   TextField,
   Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material'
-import { type MouseEvent, type ReactNode, useState } from 'react'
+import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
 import { useMidWidth, useNarrow } from '../layout'
-import { Action, NavTab, PhoneNav, Rule } from './AppBarParts'
+import { Action, MenuHeading, NavTab, PhoneNav, Rule } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -112,6 +113,8 @@ const EXPORTS: { format: ExportFormat; primary: string; secondary: string }[] = 
 export function AppToolbar(p: Props) {
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null)
   const [toolsAnchor, setToolsAnchor] = useState<HTMLElement | null>(null)
+  const toolList = useRef<HTMLUListElement>(null)
+  const toolSearch = useRef<HTMLInputElement>(null)
   // Between tablet and big desktop widths, the file buttons are icons only so the app bar fits on one line.
   const fileCompact = useMidWidth() || p.compact
   // Narrower still, the name drops its wordmark and Tools and 3D cloth lose their labels.
@@ -304,9 +307,9 @@ export function AppToolbar(p: Props) {
   const toolItems = found.flatMap((t, i) => [
     ...(i === 0 || found[i - 1].group !== t.group
       ? [
-          <ListSubheader key={`g-${t.group}`} disableSticky>
+          <MenuHeading key={`g-${t.group}`} sticky={false}>
             {t.group}
-          </ListSubheader>,
+          </MenuHeading>,
         ]
       : []),
     t.href ? (
@@ -348,10 +351,10 @@ export function AppToolbar(p: Props) {
       Import
     </MenuItem>,
     <Divider key="d1" />,
-    <ListSubheader key="print">Print</ListSubheader>,
+    <MenuHeading key="print">Print</MenuHeading>,
     ...printItems,
     <Divider key="d2" />,
-    <ListSubheader key="export">Export</ListSubheader>,
+    <MenuHeading key="export">Export</MenuHeading>,
     ...exportItems,
     <Divider key="d3" />,
     <MenuItem key="help" onClick={then(p.onHelp)}>
@@ -523,36 +526,58 @@ export function AppToolbar(p: Props) {
             )}
             <ThemeToggle />
           </Box>
-          <Menu
+          {/* A popover rather than a menu: the search box sits above the menu of tools, not inside it. */}
+          <Popover
             anchorEl={toolsAnchor}
             open={toolsAnchor !== null}
             onClose={() => {
               close()
               setToolQuery('')
             }}
-            // The search box takes focus, so typing finds a tool rather than jumping to a menu item.
-            autoFocus={false}
-            disableAutoFocusItem
-            slotProps={{ paper: { sx: { maxHeight: '80vh', width: 380, maxWidth: 'calc(100vw - 16px)' } } }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            // The search box takes focus as it opens, not the popover itself.
+            disableAutoFocus
+            slotProps={{
+              transition: { onEntering: () => toolSearch.current?.focus() },
+              paper: {
+                sx: {
+                  maxHeight: '80vh',
+                  width: 380,
+                  maxWidth: 'calc(100vw - 16px)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                },
+              },
+            }}
           >
-            <Box sx={{ px: 1.5, pt: 0.5, pb: 1 }} onKeyDown={(e) => e.key !== 'Escape' && e.stopPropagation()}>
+            <Box sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
               <TextField
-                autoFocus
+                inputRef={toolSearch}
                 fullWidth
                 size="small"
                 placeholder="Find a tool"
                 value={toolQuery}
                 onChange={(e) => setToolQuery(e.target.value)}
-                slotProps={{ htmlInput: { 'aria-label': 'Find a tool' } }}
+                onKeyDown={(e) => {
+                  // Down arrow (or Enter) goes from the search to the tools found.
+                  if (e.key !== 'ArrowDown' && e.key !== 'Enter') return
+                  e.preventDefault()
+                  toolList.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+                }}
+                slotProps={{ htmlInput: { 'aria-label': 'Find a tool', 'aria-controls': 'tool-list' } }}
               />
             </Box>
-            {toolItems}
-            {toolItems.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ px: 2, py: 1 }}>
+            {toolItems.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 1.5 }} role="status">
                 No tool matches "{toolQuery}".
               </Typography>
+            ) : (
+              <MenuList id="tool-list" ref={toolList} aria-label="Tools" sx={{ overflowY: 'auto', pt: 0 }}>
+                {toolItems}
+              </MenuList>
             )}
-          </Menu>
+          </Popover>
         </Toolbar>
       </AppBar>
       {p.phone && (

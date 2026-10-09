@@ -1,4 +1,4 @@
-import { Box, Button, ButtonBase, IconButton, Tooltip } from '@mui/material'
+import { Box, Button, ButtonBase, IconButton, ListSubheader, Tooltip } from '@mui/material'
 import type { MouseEvent, ReactNode } from 'react'
 
 /** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
@@ -99,5 +99,38 @@ export function PhoneNav({ children }: { children: ReactNode }) {
     >
       {children}
     </Box>
+  )
+}
+
+/**
+ * A heading between groups of menu items. Not a list item: a menu may only hold menu items, so screen readers read
+ * it as plain text before the group.
+ */
+export function MenuHeading({ children, sticky = true }: { children: ReactNode; sticky?: boolean }) {
+  return (
+    <ListSubheader role="presentation" disableSticky={!sticky}>
+      {children}
+    </ListSubheader>
+  )
+}
+
+/**
+ * "Skip to the draft": the first thing Tab reaches, so keyboard users can jump past the toolbar. It moves focus
+ * rather than following a #link, which would clash with shared pattern links in the address.
+ */
+export function SkipLink({ target, children }: { target: string; children: ReactNode }) {
+  return (
+    <a
+      className="skip-link"
+      href={`#${target}`}
+      onClick={(e) => {
+        e.preventDefault()
+        const el = document.getElementById(target)
+        el?.focus({ preventScroll: true })
+        el?.scrollIntoView({ block: 'start' })
+      }}
+    >
+      {children}
+    </a>
   )
 }

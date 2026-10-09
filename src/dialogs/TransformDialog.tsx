@@ -103,7 +103,9 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
             onClick={() => run(() => flipDraft(draft, 'vertical'), 'Flipped the draft top to bottom')}
           />
           <Divider />
-          <Typography variant="subtitle2">Move the repeat</Typography>
+          <Typography variant="subtitle2" component="h3">
+            Move the repeat
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             Shift the pattern round so it starts somewhere else. Threads moved off one edge come back on the other; use
             negative numbers to go left or up.
@@ -150,7 +152,9 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
             }}
           />
           <Divider />
-          <Typography variant="subtitle2">Tabby</Typography>
+          <Typography variant="subtitle2" component="h3">
+            Tabby
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             Put a plain-weave pick (odd shafts, then even shafts) after every pattern pick, as overshot and summer and
             winter are woven, or take tabby picks out.

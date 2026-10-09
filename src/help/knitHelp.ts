@@ -293,6 +293,28 @@ export const KNIT_HELP: Topic[] = [
     ],
   },
   {
+    id: 'accessibility',
+    title: 'Accessibility',
+    summary: 'Using Knit Patterner with a keyboard, a screen reader or high contrast',
+    keywords: ['accessibility', 'a11y', 'screen reader', 'keyboard', 'contrast', 'motion', 'zoom', 'blind'],
+    body: [
+      {
+        p: 'Everything in Knit Patterner can be done from the keyboard, and it is tested with automated accessibility checks.',
+      },
+      {
+        list: [
+          '**Skip to the chart:** the first thing Tab reaches. Press Enter to jump past the toolbar.',
+          '**The chart:** Tab to it, move with the arrow keys, and press Space to paint the square. Each square is read out with its row, stitch and colour.',
+          '**Screen readers:** every control is named, and the checks at the bottom are read out when they change.',
+          '**High contrast:** in a Windows contrast theme the pattern keeps its own colours, so it still shows, and focus is outlined in your highlight colour.',
+          '**Less motion:** if your device is set to reduce motion, the animations are turned off.',
+          '**Zoom:** the page reflows when zoomed in, and on narrow screens the settings move to a sheet.',
+        ],
+      },
+      { p: 'See [[shortcuts|keyboard shortcuts]] for the keys, and [[phone|phones and tablets]] for touch screens.' },
+    ],
+  },
+  {
     id: 'phone',
     title: 'On a phone or tablet',
     summary: 'Tapping, swiping and where things are',

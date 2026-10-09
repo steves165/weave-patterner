@@ -84,7 +84,7 @@ export function WarpPlanDialog({ open, draft, yarns, onClose }: Props) {
           {plan.map((bout) => (
             <Box key={bout.number} component="section" aria-label={`Bout ${bout.number}`}>
               {plan.length > 1 && (
-                <Typography variant="subtitle2">
+                <Typography variant="subtitle2" component="h3">
                   Bout {bout.number}: ends {bout.from}–{bout.to} ({bout.to - bout.from + 1} ends)
                 </Typography>
               )}
@@ -115,7 +115,9 @@ export function WarpPlanDialog({ open, draft, yarns, onClose }: Props) {
             </Box>
           ))}
           <Box>
-            <Typography variant="subtitle2">Totals</Typography>
+            <Typography variant="subtitle2" component="h3">
+              Totals
+            </Typography>
             <Stack sx={{ gap: 0.5 }} data-testid="warp-totals">
               {totals.map((t) => (
                 <Stack key={t.color} direction="row" sx={{ gap: 1, alignItems: 'center' }}>

@@ -94,7 +94,9 @@ export function ColorwaysDialog({ open, draft, onClose, onApply }: Props) {
       </Stack>
       {photoError && <Alert severity="error">{photoError}</Alert>}
       <Stack component="section" aria-label="Your own colours" sx={{ gap: 1 }}>
-        <Typography variant="subtitle1">Your own colours</Typography>
+        <Typography variant="subtitle1" component="h3">
+          Your own colours
+        </Typography>
         <Stack direction="row" sx={{ gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           {colors.map((c, i) => (
             <Stack key={c} direction="row" sx={{ gap: 0.5, alignItems: 'center' }}>

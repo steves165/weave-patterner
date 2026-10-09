@@ -10,6 +10,7 @@ import {
   InputAdornment,
   Link,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
   Stack,
@@ -234,18 +235,20 @@ export function HelpCenter({ open, app, topics, topic, onClose, onTour }: Props)
             </Box>
             <List dense sx={{ overflowY: 'auto', flex: 1, pt: 0 }}>
               {shown.map((x) => (
-                <ListItemButton
-                  key={x.id}
-                  selected={!phone && x.id === t.id}
-                  onClick={() => go(x.id)}
-                  data-topic={x.id}
-                  sx={{ borderRadius: 3, mx: 1 }}
-                >
-                  <ListItemText primary={x.title} secondary={x.summary} />
-                </ListItemButton>
+                <ListItem key={x.id} disablePadding>
+                  <ListItemButton
+                    selected={!phone && x.id === t.id}
+                    aria-current={!phone && x.id === t.id ? 'page' : undefined}
+                    onClick={() => go(x.id)}
+                    data-topic={x.id}
+                    sx={{ borderRadius: 3, mx: 1 }}
+                  >
+                    <ListItemText primary={x.title} secondary={x.summary} />
+                  </ListItemButton>
+                </ListItem>
               ))}
               {shown.length === 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ px: 2.5, py: 1 }}>
+                <Typography component="li" variant="body2" color="text.secondary" sx={{ px: 2.5, py: 1 }}>
                   Nothing matches "{query}". Try another word, or browse the topics.
                 </Typography>
               )}
@@ -257,6 +260,7 @@ export function HelpCenter({ open, app, topics, topic, onClose, onTour }: Props)
             ref={content}
             component="article"
             aria-label={t.title}
+            tabIndex={0}
             data-testid="help-topic"
             sx={{ flex: 1, minWidth: 0, overflowY: 'auto', px: { xs: 2.5, sm: 4 }, py: 3 }}
           >

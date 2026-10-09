@@ -526,3 +526,56 @@
     transform: translateY(-2px) scale(1.12);
   }
 }
+
+/* Read by screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* "Skip to the draft": the first thing Tab reaches, shown only when it has focus. */
+.skip-link {
+  position: fixed;
+  z-index: 2000;
+  top: 8px;
+  left: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--mui-palette-primary-main);
+  color: var(--mui-palette-primary-contrastText);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip-link:focus {
+  transform: none;
+  outline: 3px solid var(--wp-ink);
+  outline-offset: 2px;
+}
+
+/*
+ * High contrast modes (Windows contrast themes) replace page colours with the system's. The pattern's own colours
+ * are the content, so the grids, swatches and chart keep theirs; focus rings use the system highlight.
+ */
+@media (forced-colors: active) {
+  .grid,
+  .knit-chart,
+  input[type="color"] {
+    forced-color-adjust: none;
+  }
+  .grid .cell:focus-visible,
+  .knit-chart:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+  .skip-link:focus {
+    outline-color: Highlight;
+  }
+}

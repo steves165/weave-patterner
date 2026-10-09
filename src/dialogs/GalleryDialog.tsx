@@ -53,7 +53,9 @@ export function GalleryDialog({ open, title, intro, sections, onClose, onUse, ch
           </Typography>
           {sections.map((section) => (
             <Stack key={section.title} component="section" aria-label={section.title} sx={{ gap: 1 }}>
-              <Typography variant="subtitle1">{section.title}</Typography>
+              <Typography variant="subtitle1" component="h3">
+                {section.title}
+              </Typography>
               {section.items.length === 0 && (
                 <Typography variant="body2" color="text.secondary">
                   {section.empty}

@@ -77,7 +77,7 @@ test.describe('tablet weaving', () => {
 
     // Thread card 1, hole A in red.
     await dialog(page).getByRole('radio', { name: 'Colour 3' }).click()
-    await dialog(page).getByRole('gridcell', { name: 'Card 1, hole A' }).click()
+    await dialog(page).getByRole('button', { name: 'Card 1, hole A' }).click()
     await expect(dialog(page).getByTestId('tablet-warp')).toContainText('1 × #b71c1c')
 
     await dialog(page).getByRole('button', { name: 'Card 1 threaded S' }).click()

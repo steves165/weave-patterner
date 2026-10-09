@@ -83,7 +83,7 @@ test('the Tools menu can be searched', async ({ page }) => {
   await page.getByLabel('Find a tool').fill('plan the warp')
   await expect(items).toHaveCount(3)
   await page.getByLabel('Find a tool').fill('nothing like this')
-  await expect(page.getByRole('menu')).toContainText('No tool matches')
+  await expect(page.getByRole('status')).toContainText('No tool matches')
 })
 
 test('copies a link that opens the pattern', async ({ page, context }) => {

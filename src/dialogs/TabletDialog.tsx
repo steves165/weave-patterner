@@ -231,7 +231,7 @@ export default function TabletDialog({ open, onClose }: Props) {
 
         <Box sx={{ overflowX: 'auto' }}>
           <Box
-            role="grid"
+            role="group"
             aria-label="Card threading"
             sx={{ display: 'grid', gridTemplateColumns: `40px repeat(${design.cards.length}, 28px)`, gap: '2px' }}
           >
@@ -242,16 +242,16 @@ export default function TabletDialog({ open, onClose }: Props) {
               </Typography>
             ))}
             {HOLES.map((hole, h) => (
-              <Box key={hole} sx={{ display: 'contents' }} role="row">
+              <Box key={hole} sx={{ display: 'contents' }}>
                 <Typography variant="caption" sx={{ alignSelf: 'center' }}>
                   {hole}
                 </Typography>
                 {design.cards.map((card, c) => (
                   <Box
                     key={c}
-                    role="gridcell"
+                    component="button"
+                    type="button"
                     aria-label={`Card ${c + 1}, hole ${hole}`}
-                    tabIndex={0}
                     onClick={() => {
                       const holes = [...card.holes] as Card['holes']
                       holes[h] = palette[paint]
@@ -265,6 +265,7 @@ export default function TabletDialog({ open, onClose }: Props) {
                       border: 1,
                       borderColor: 'divider',
                       cursor: 'pointer',
+                      p: 0,
                     }}
                   />
                 ))}
@@ -343,7 +344,7 @@ export default function TabletDialog({ open, onClose }: Props) {
 
         <Stack direction={{ xs: 'column', md: 'row' }} sx={{ gap: 3 }}>
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
               The band ({rows.length} rows)
             </Typography>
             <BandPreview
@@ -357,7 +358,9 @@ export default function TabletDialog({ open, onClose }: Props) {
             </Typography>
           </Box>
           <Box>
-            <Typography variant="subtitle2">Warp</Typography>
+            <Typography variant="subtitle2" component="h3">
+              Warp
+            </Typography>
             <Typography variant="body2" data-testid="tablet-warp">
               {design.cards.length * 4} ends: {counts.map((c) => `${c.count} × ${c.color}`).join(', ')}
             </Typography>

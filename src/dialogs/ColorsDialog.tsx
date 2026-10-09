@@ -145,7 +145,8 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
             </Button>
             <Box
               data-testid="stripe-preview"
-              aria-label="Preview"
+              role="img"
+              aria-label="Preview of the stripes"
               sx={{ display: 'flex', height: 20, border: 1, borderColor: 'divider', overflow: 'hidden' }}
             >
               {Array.from({ length: Math.min(64, Math.max(preview.length, 1) * 4) }, (_, i) => (
@@ -209,7 +210,9 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
             {PRESETS.map((p) => (
               <Card key={p.id} variant="outlined">
                 <CardContent sx={{ pb: 0 }}>
-                  <Typography variant="subtitle1">{p.name}</Typography>
+                  <Typography variant="subtitle1" component="h3">
+                    {p.name}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {p.description}
                   </Typography>

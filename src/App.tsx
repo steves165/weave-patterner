@@ -2,6 +2,7 @@ import { Box, Snackbar } from '@mui/material'
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
+import { SkipLink } from './components/AppBarParts'
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
@@ -267,6 +268,7 @@ export default function App() {
           pb: phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
         }}
       >
+        <SkipLink target="main">Skip to the draft</SkipLink>
         <AppToolbar
           width={pageScroll ? viewportWidth : undefined}
           name={name}
@@ -388,7 +390,13 @@ export default function App() {
             minWidth: '100%',
           }}
         >
-          <Box component="main" sx={pageScroll ? { flex: '1 0 auto' } : { flex: '1 1 auto', minWidth: 0 }}>
+          <Box
+            component="main"
+            id="main"
+            tabIndex={-1}
+            sx={{ ...(pageScroll ? { flex: '1 0 auto' } : { flex: '1 1 auto', minWidth: 0 }), outline: 'none' }}
+          >
+            <h1 className="sr-only">Weave Patterner: weaving draft designer</h1>
             <DraftView
               draft={draft}
               onView={changeView}

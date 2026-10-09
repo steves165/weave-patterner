@@ -345,6 +345,28 @@ export const WEAVE_HELP: Topic[] = [
     ],
   },
   {
+    id: 'accessibility',
+    title: 'Accessibility',
+    summary: 'Using Weave Patterner with a keyboard, a screen reader or high contrast',
+    keywords: ['accessibility', 'a11y', 'screen reader', 'keyboard', 'contrast', 'motion', 'zoom', 'blind'],
+    body: [
+      {
+        p: 'Everything in Weave Patterner can be done from the keyboard, and it is tested with automated accessibility checks.',
+      },
+      {
+        list: [
+          '**Skip to the draft:** the first thing Tab reaches. Press Enter to jump past the toolbar.',
+          '**Grids:** Tab into the threading, tie-up or treadling, move with the arrow keys, and press Space to set or clear a box. Each box is read out as, say, “End 3, shaft 2, checked”.',
+          '**Screen readers:** every control is named, and the checks at the bottom are read out when they change.',
+          '**High contrast:** in a Windows contrast theme the pattern keeps its own colours, so it still shows, and focus is outlined in your highlight colour.',
+          '**Less motion:** if your device is set to reduce motion, the animations are turned off.',
+          '**Zoom:** the page reflows when zoomed in, and on narrow screens the settings move to a sheet.',
+        ],
+      },
+      { p: 'See [[shortcuts|keyboard shortcuts]] for the keys, and [[phone|phones and tablets]] for touch screens.' },
+    ],
+  },
+  {
     id: 'phone',
     title: 'On a phone or tablet',
     summary: 'Tapping, swiping and where things are',

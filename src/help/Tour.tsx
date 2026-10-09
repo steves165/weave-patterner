@@ -92,7 +92,13 @@ export function Tour({ open, steps, onClose }: { open: boolean; steps: TourStep[
     if (!open) return
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowRight') setIndex((i) => Math.min(i + 1, shown.length - 1))
+      else if (e.key === 'Tab') {
+        // Focus stays in the card while the tour runs: the rest of the page is dimmed and out of reach.
+        const stops = [...(card.current?.querySelectorAll<HTMLElement>('button') ?? [])]
+        if (!stops.length) return
+        const at = stops.indexOf(document.activeElement as HTMLElement)
+        stops[(at + (e.shiftKey ? -1 : 1) + stops.length + (at < 0 && e.shiftKey ? 1 : 0)) % stops.length].focus()
+      } else if (e.key === 'ArrowRight') setIndex((i) => Math.min(i + 1, shown.length - 1))
       else if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0))
       else return
       e.preventDefault()
@@ -142,6 +148,7 @@ export function Tour({ open, steps, onClose }: { open: boolean; steps: TourStep[
         <Paper
           ref={card}
           role="dialog"
+          aria-modal="true"
           aria-labelledby="tour-title"
           aria-describedby="tour-text"
           tabIndex={-1}
@@ -221,7 +228,7 @@ export function TourOffer({
       <Stack direction="row" sx={{ gap: 1.5, alignItems: 'flex-start' }}>
         <ExploreIcon color="primary" sx={{ mt: 0.25 }} />
         <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 700 }}>
             New to {app}?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5 }}>

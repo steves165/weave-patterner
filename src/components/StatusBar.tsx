@@ -71,6 +71,8 @@ export function StatusFrame(p: {
   links?: ReactNode
   /** The help topic F1 opens here. */
   help?: string
+  /** A short summary of the checks, read out by screen readers when it changes. */
+  announce: string
   children: ReactNode
 }) {
   return (
@@ -98,6 +100,9 @@ export function StatusFrame(p: {
         color: 'var(--wp-body)',
       }}
     >
+      <span className="sr-only" role="status">
+        {p.announce}
+      </span>
       {p.children}
       {p.links && (
         <>
@@ -123,8 +128,18 @@ export function StatusFrame(p: {
 export function StatusBar(p: Props) {
   const longest = Math.max(p.floats.warp, p.floats.weft)
   const num = { fontFamily: MONO_FONT, fontWeight: 500, color: 'text.primary' }
+  const unwoven = p.unwoven.ends.length + p.unwoven.picks.length
+  const announce =
+    [
+      unwoven > 0 && `${unwoven} ${unwoven === 1 ? 'thread is' : 'threads are'} not woven in`,
+      p.selvedge.length > 0 && `the weft won't catch the edge at ${p.selvedge.length} turns`,
+      longest > p.floatLimit && `floats up to ${longest} long`,
+    ]
+      .filter(Boolean)
+      .join('; ') || 'Edges catch on every turn and every thread is woven in'
   return (
     <StatusFrame
+      announce={announce}
       sticky={p.sticky}
       width={p.width}
       links={

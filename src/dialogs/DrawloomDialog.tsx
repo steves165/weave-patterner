@@ -230,7 +230,7 @@ export default function DrawloomDialog({ open, onClose, onApply }: Props) {
         {error && <Alert severity="warning">{error}</Alert>}
         <Stack direction={{ xs: 'column', lg: 'row' }} sx={{ gap: 3, alignItems: 'flex-start' }}>
           <Box sx={{ overflow: 'auto', maxWidth: '100%' }} style={{ ['--cell' as string]: '14px' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
               Pattern ({cols} × {rows} units)
             </Typography>
             <Grid
@@ -248,14 +248,16 @@ export default function DrawloomDialog({ open, onClose, onApply }: Props) {
             />
           </Box>
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
               The cloth ({cols * design.unit} ends × {rows * design.unit} picks)
             </Typography>
             <ClothPreview design={design} />
           </Box>
         </Stack>
         <Box>
-          <Typography variant="subtitle2">Setting up</Typography>
+          <Typography variant="subtitle2" component="h3">
+            Setting up
+          </Typography>
           <Typography variant="body2" data-testid="drawloom-setup">
             Pattern harness: {cols} draw cords, each lifting {design.unit} ends. Ground harness: {shafts} shafts,
             threaded in a straight draw ({cols * design.unit} ends). {GROUNDS[design.ground].name}.
@@ -267,10 +269,14 @@ export default function DrawloomDialog({ open, onClose, onApply }: Props) {
           </Typography>
         </Box>
         <Box>
-          <Typography variant="subtitle2">Drawing sequence</Typography>
+          <Typography variant="subtitle2" component="h3">
+            Drawing sequence
+          </Typography>
           <Box
             component="ol"
             data-testid="drawloom-sequence"
+            aria-label="Cords to draw, row by row"
+            tabIndex={0}
             sx={{ maxHeight: 260, overflow: 'auto', m: 0, pl: 4, fontSize: '0.875rem' }}
           >
             {sequence.map((s) => (
