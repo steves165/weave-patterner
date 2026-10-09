@@ -27,7 +27,8 @@ function contrast(a: string, b: string) {
 describe('seasonal themes', () => {
   it('include Halloween and Christmas, with unique ids', () => {
     const ids = SEASONS.map((s) => s.id)
-    expect(ids).toEqual(expect.arrayContaining(['halloween', 'christmas']))
+    expect(ids).toEqual(expect.arrayContaining(['halloween', 'christmas', 'rachel']))
+    expect(SEASONS.find((s) => s.id === 'rachel')?.name).toBe('Rachel’s Theme <3')
     expect(new Set(ids).size).toBe(ids.length)
   })
 

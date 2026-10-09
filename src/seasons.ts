@@ -216,6 +216,35 @@ export const SEASONS: Season[] = [
       on: '#FFC6A3',
     },
   },
+  {
+    id: 'rachel',
+    name: 'Rachel’s Theme <3',
+    emoji: '💚',
+    blurb: 'Every shade of green, with a little pink for love',
+    pattern: { warp: '#2e7d32', weft: '#c8e6c9', accent: '#f48fb1', knit: ['#e8f5e9', '#2e7d32'] },
+    light: {
+      accent: '#2E7D32',
+      onAccent: '#FFFFFF',
+      secondary: '#A0446C',
+      bg: '#F1F8EF',
+      panel: '#F8FCF6',
+      paper: '#FFFFFF',
+      ink: '#11261A',
+      muted: '#466250',
+      on: '#11261A',
+    },
+    dark: {
+      accent: '#7BD88F',
+      onAccent: '#08240F',
+      secondary: '#F0A8C8',
+      bg: '#0A160E',
+      panel: '#102016',
+      paper: '#15281C',
+      ink: '#ECF7EE',
+      muted: '#A9C8B1',
+      on: '#A8EBB5',
+    },
+  },
 ]
 
 /** Whether the dates of the year are Halloween (late October) or Christmas (December): for "Holidays only". */

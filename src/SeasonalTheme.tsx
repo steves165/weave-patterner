@@ -135,7 +135,8 @@ export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => v
       <DialogTitle id="theme-title">Colour theme</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Seasonal colours for {app}. New patterns start in the theme's colours; patterns you already have keep theirs.
+          Seasonal and other colour themes for {app}. New patterns start in the theme's colours; patterns you already
+          have keep theirs.
         </Typography>
         <RadioGroup
           aria-labelledby="theme-title"

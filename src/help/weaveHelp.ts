@@ -219,7 +219,7 @@ export const WEAVE_HELP: Topic[] = [
       { h: 'Loom' },
       { p: 'Shafts, treadles, ends (warp threads) and picks (weft threads). Up to 128 shafts and treadles.' },
       {
-        tip: '**Colour themes** are under **Theme** at the bottom of the page, beside Help (on phones, at the bottom of this sheet): Halloween, Christmas, Winter, Spring, Summer or Autumn in place of the pink, or Halloween and Christmas only when it’s time. New patterns start in the theme’s colours; patterns you have keep theirs. Knit Patterner uses the same choice.',
+        tip: '**Colour themes** are under **Theme** at the bottom of the page, beside Help (on phones, at the bottom of this sheet): Halloween, Christmas, Winter, Spring, Summer, Autumn or the green Rachel’s Theme <3 in place of the pink, or Halloween and Christmas only when it’s time. New patterns start in the theme’s colours; patterns you have keep theirs. Knit Patterner uses the same choice.',
       },
       { h: 'View' },
       {
