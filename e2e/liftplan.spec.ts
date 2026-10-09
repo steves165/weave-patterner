@@ -94,3 +94,32 @@ test('no tie-up: a pick can lift several shafts, whichever draw tool is chosen',
       await expect(box(s), `${tool}: shaft ${s}`).toHaveAttribute('aria-checked', on)
   }
 })
+
+test('with a drawing tool, clicks that slip into the next box still add lifts to the pick', async ({ page }) => {
+  await page.getByLabel('No tie-up (lift plan)').check()
+  await page.getByRole('button', { name: 'Straight draw', exact: true }).click()
+  const grid = page.getByRole('group', { name: 'Lift plan' })
+  const box = (s: number) => grid.getByRole('checkbox', { name: `Pick 3, shaft ${s}`, exact: true })
+  for (let s = 1; s <= 4; s++) {
+    if ((await box(s).getAttribute('aria-checked')) === 'true') continue
+    const b = await box(s).boundingBox()
+    if (!b) throw new Error('no box')
+    // Press near the right edge, and let the hand drift a few pixels into the next box before letting go.
+    await page.mouse.move(b.x + b.width - 2, b.y + b.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(b.x + b.width + 4, b.y + b.height / 2)
+    await page.mouse.up()
+  }
+  for (let s = 1; s <= 4; s++) await expect(box(s)).toHaveAttribute('aria-checked', 'true')
+
+  // Dragging down onto other picks still draws a run, one shaft per pick.
+  const start = await grid.getByRole('checkbox', { name: 'Pick 5, shaft 1', exact: true }).boundingBox()
+  const end = await grid.getByRole('checkbox', { name: 'Pick 8, shaft 4', exact: true }).boundingBox()
+  if (!start || !end) throw new Error('no boxes')
+  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 })
+  await page.mouse.up()
+  for (let p = 5; p <= 8; p++)
+    await expect(grid.getByRole('checkbox', { name: new RegExp(`^Pick ${p}, shaft`), checked: true })).toHaveCount(1)
+})

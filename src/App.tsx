@@ -184,13 +184,18 @@ export default function App() {
   /**
    * Straight and point drawing: pressing a threading (or treadling) box starts a draw there, and dragging along the
    * ends (or picks) fills them in, climbing if the drag goes up the shafts (treadles) and descending if it goes down.
-   * The whole drag is one undo step, redrawn from the draft as it was when the drag began.
+   * The whole drag is one undo step, redrawn from the draft as it was when the drag began. It only becomes a run once
+   * it reaches another end (or pick): a hand that slips into the next box of the same pick while clicking would
+   * otherwise redraw that pick with one treadle, losing the other lifts just set on it.
    */
-  const stroke = useRef<{ base: Draft; from: number; start: number; direction: 1 | -1 } | null>(null)
+  const stroke = useRef<{ base: Draft; from: number; start: number; direction: 1 | -1; moved: boolean } | null>(null)
   const drawStroke = (target: Target, index: number, position: number, continuing: boolean) => {
     if (view.drawTool === 'click') return
-    if (!continuing || !stroke.current) stroke.current = { base: draft, from: index, start: position, direction: 1 }
+    if (!continuing || !stroke.current)
+      stroke.current = { base: draft, from: index, start: position, direction: 1, moved: false }
     const s = stroke.current
+    if (continuing && !s.moved && index === s.from) return
+    s.moved = true
     if (position !== s.start) s.direction = position > s.start ? 1 : -1
     const tool = view.drawTool
     update(() => drawAlong(s.base, target, tool, s.from, index, s.start, s.direction), { merge: continuing })
@@ -431,7 +436,8 @@ export default function App() {
                 // A pick can use several treadles (or lift several shafts), so pressing a box always toggles it, adding
                 // to the pick; with a draw tool, dragging on from there draws a run with one treadle per pick.
                 if (view.drawTool !== 'click' && continuing) return drawStroke('treadling', pick, t, continuing)
-                if (view.drawTool !== 'click') stroke.current = { base: draft, from: pick, start: t, direction: 1 }
+                if (view.drawTool !== 'click')
+                  stroke.current = { base: draft, from: pick, start: t, direction: 1, moved: false }
                 update(
                   (d) => ({
                     ...d,
