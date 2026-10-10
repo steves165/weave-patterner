@@ -241,7 +241,7 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
           Split the threading into blocks of ends, lettered A, B, C … from end 1, and name each one: the names show
           above the threading. Drag along the strip above the threading to mark a block. Each block's picks are the weft
           that weaves it (the same numbers as its ends unless you set them). Save any block to the block store, warp and
-          weft, to use it again here or in another pattern, or weave a block as any preset.
+          weft, to use it again here or in another pattern, or thread a block from any preset (only its columns change).
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -339,7 +339,7 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                     tryIt(() => {
                       const next = presetIntoBlock(draft, i, choice.draft)
                       onChange(() => next)
-                      onMessage(`Block ${blockLetter(i)} is now woven as ${choice.name}`)
+                      onMessage(`Block ${blockLetter(i)} is now threaded as ${choice.name}`)
                     })
                 }}
                 sx={{ width: 160 }}

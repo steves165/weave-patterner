@@ -228,7 +228,7 @@ describe('blocks with their weft', () => {
 })
 
 describe('weaving a block as a preset', () => {
-  it('fills the block’s ends and picks with the preset, on the block’s own shafts', () => {
+  it('threads only the block’s columns from the preset, on the block’s own shafts', () => {
     // Block B on shafts 5-8.
     let d = resizeDraft(draft(), { shafts: 8, treadles: 8 })
     d = { ...d, threading: d.threading.map((s, e) => (e >= 8 && e < 16 ? s + 4 : s)) }
@@ -251,7 +251,10 @@ describe('weaving a block as a preset', () => {
     expect(next.ends).toBe(32)
     expect(next.threading.slice(8, 16)).toEqual([4, 5, 4, 5, 4, 5, 4, 5])
     expect(next.warpColors.slice(8, 16)).toEqual(Array(4).fill(['#111111', '#222222']).flat())
-    expect(next.weftColors.slice(8, 16)).toEqual(Array(4).fill(['#333333', '#444444']).flat())
+    // Only the block's columns change: the treadling, tie-up and weft are the pattern's own.
+    expect(next.treadling).toEqual(d.treadling)
+    expect(next.tieup).toEqual(d.tieup)
+    expect(next.weftColors).toEqual(d.weftColors)
     expect(next.picks).toBe(32)
     // Block A is untouched.
     expect(next.threading.slice(0, 8)).toEqual(d.threading.slice(0, 8))

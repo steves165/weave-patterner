@@ -186,7 +186,7 @@ export const WEAVE_HELP: Topic[] = [
           'Each block has **picks** too: the weft that weaves it. They follow its ends (ends 1–4, picks 1–4) until you set them with **From pick** and **To pick**.',
           '**Save to store** keeps the block on this device, warp and weft: its threading and warp colours, and its picks’ treadling, tie-up and weft colours. Unnamed blocks are called "Saved block 1" and so on.',
           '**Put in** adds a saved block anywhere, its ends and its picks: treadles tied the same way are reused, and any others added. **Swap in** replaces a block (and its picks) with a saved one.',
-          '**Weave as preset** fills a block’s ends and picks with any preset, built in or your own, on the block’s own shafts, so blocks on different shafts stay apart.',
+          '**Weave as preset** threads a block’s ends from any preset, built in or your own: just the part of it that fills the block’s columns, with its warp colours, on the block’s own shafts. The treadling and the rest of the pattern stay as they are.',
           'To make your own presets, save a pattern, then star it under **Load**.',
         ],
       },

@@ -115,7 +115,9 @@ test('weave a block as a preset, built in or your own', async ({ page }) => {
   await dialog(page).getByLabel('Weave as preset').first().click()
   await expect(page.getByRole('option', { name: 'My basket' })).toBeVisible()
   await page.getByRole('option', { name: 'Basket check' }).click()
-  await expect(toast(page)).toContainText('Block A is now woven as Basket check')
+  await expect(toast(page)).toContainText('Block A is now threaded as Basket check')
+  // Only the block's columns change: still 32 picks.
+  expect(await picks(page)).toBe('32')
   await dialog(page).getByRole('button', { name: 'Done' }).click()
   // Basket weave threads in pairs: 1 1 2 2.
   expect((await threading(page)).slice(0, 8)).toBe('11221234')

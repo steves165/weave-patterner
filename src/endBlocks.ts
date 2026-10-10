@@ -413,9 +413,10 @@ export function putSavedBlock(store: SavedBlock[], block: SavedBlock): SavedBloc
 const fill = <T>(xs: T[], n: number): T[] => Array.from({ length: n }, (_, i) => xs[i % xs.length])
 
 /**
- * Block i woven in a preset (or any pattern): the preset's threading repeated across the block's ends, on shafts from
- * `offset` (the block's lowest shaft unless given, so blocks on their own shafts stay apart), and its treadling over
- * the block's picks, with its colours unless `colours` is false.
+ * Block i threaded from a preset (or any pattern): only the part of the preset that fills the block's columns, its
+ * threading repeated across the block's ends on shafts from `offset` (the block's lowest shaft unless given, so
+ * blocks on their own shafts stay apart), and its warp colours unless `colours` is false. Nothing outside the block
+ * changes: the treadling, tie-up and weft are the pattern's own.
  */
 export function presetIntoBlock(
   d: Draft,
@@ -429,25 +430,13 @@ export function presetIntoBlock(
   const own = d.threading.slice(b.from, b.to + 1).filter((s) => s >= 0)
   const offset = Math.max(0, Math.min(opts.offset ?? (own.length ? Math.min(...own) : 0), 128 - preset.shafts))
   const colours = opts.colours !== false
-  const threading = fill(
-    preset.threading.map((s) => (s < 0 ? -1 : s + offset)),
-    width,
-  )
-  const r = blockPicks(d, i)
-  const presetWeft = weftOf(preset, 0, preset.picks - 1)
-  const count = r ? r.to - r.from + 1 : 0
-  const weft: SavedWeft | undefined = r
-    ? {
-        treadles: presetWeft.treadles.map((shafts) => shafts.map((s) => s + offset)),
-        treadling: fill(presetWeft.treadling, count),
-        weftColors: colours ? fill(presetWeft.weftColors, count) : d.weftColors.slice(r.from, r.to + 1),
-      }
-    : undefined
   return replaceBlock(d, i, {
     name: b.name,
-    threading,
+    threading: fill(
+      preset.threading.map((s) => (s < 0 ? -1 : s + offset)),
+      width,
+    ),
     warpColors: colours ? fill(preset.warpColors, width) : d.warpColors.slice(b.from, b.to + 1),
-    ...(weft ? { weft } : {}),
     updatedAt: 0,
   })
 }
