@@ -114,7 +114,7 @@ test('warns about threads that are never woven in', async ({ page }) => {
   await page.getByRole('checkbox', { name: 'Treadle 3, shaft 4', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Treadle 4, shaft 4', exact: true }).click()
   await expect(page.getByTestId('unwoven')).toHaveText(
-    'Not woven in: ends 4, 8, 12, 16, 20, 24 and 2 more (they never cross over and under)',
+    'Not woven in: ends 4, 8, 12, 16, 20, 24 and 2 more (they never cross over and under) Fix…',
   )
 })
 

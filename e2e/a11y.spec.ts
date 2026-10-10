@@ -191,6 +191,14 @@ test.describe('keyboard and screen readers', () => {
   })
 })
 
+test('Weave Patterner: the status bar’s fix popups', async ({ page }) => {
+  await openApp(page)
+  await page.getByTestId('selvedge').click()
+  expect(await a11yProblems(page, '[role="dialog"]')).toEqual([])
+  await closeDialog(page)
+  expect(await a11yProblems(page)).toEqual([])
+})
+
 test.describe('Sew Patterner: axe finds no accessibility problems', () => {
   test('the app, with each design', async ({ page }) => {
     await openSew(page)

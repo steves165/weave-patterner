@@ -24,6 +24,8 @@ describe('parseViewOptions', () => {
       cellSize: 10,
       highlightFloats: true,
       floatLimit: 5,
+      floatingSelvedge: true,
+      shuttleStart: 'right',
       settingsOpen: false,
     }
     expect(parseViewOptions(saved)).toEqual(saved)

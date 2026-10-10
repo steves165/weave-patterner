@@ -33,7 +33,7 @@ test('warp winding plan lists colour runs by bout, with tick boxes and yarn name
 test('warns when the weft will not catch the edge ends', async ({ page }) => {
   // A 2/2 twill misses the edge end on some turns.
   await expect(page.getByTestId('selvedge')).toContainText("the weft won't catch the edge end")
-  await expect(page.getByTestId('selvedge')).toContainText('floating selvedge')
+  await expect(page.getByTestId('selvedge')).toContainText('Fix…')
   // Plain weave catches it every time.
   await setField(page.getByLabel('Shafts', { exact: true }), '2')
   await setField(page.getByLabel('Treadles', { exact: true }), '2')

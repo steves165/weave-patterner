@@ -168,7 +168,10 @@ export default function App() {
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
   const repeat = useMemo(() => findRepeat(draft, drawdown), [draft, drawdown])
-  const selvedge = useMemo(() => selvedgeMisses(draft, 'left', drawdown), [draft, drawdown])
+  const selvedge = useMemo(
+    () => selvedgeMisses(draft, view.shuttleStart, drawdown),
+    [draft, view.shuttleStart, drawdown],
+  )
   const floatMask = useMemo(
     () => (highlightFloats ? longFloatMask(draft, floatLimit, drawdown) : null),
     [highlightFloats, draft, floatLimit, drawdown],
@@ -510,6 +513,16 @@ export default function App() {
           floatLimit={floatLimit}
           unwoven={unwoven}
           selvedge={selvedge}
+          view={view}
+          onFix={(fix) => {
+            track('fix', { fix: fix.id })
+            if (fix.view) setView(fix.view)
+            if (fix.draft) {
+              const next = fix.draft
+              update(() => keepLiftplan(next))
+              setToast(`${fix.title}: done. Undo with Ctrl+Z or the undo button.`)
+            } else setToast(`${fix.title}: done.`)
+          }}
           onAnalytics={analyticsChoice}
           onHelp={() => openHelp(null)}
           phone={phone}

@@ -250,7 +250,18 @@ export const WEAVE_HELP: Topic[] = [
     id: 'checks',
     title: 'Floats, edges and repeats',
     summary: 'What the status bar at the bottom tells you',
-    keywords: ['floats', 'selvedge', 'edges', 'unwoven', 'repeat', 'status'],
+    keywords: [
+      'floats',
+      'selvedge',
+      'edges',
+      'unwoven',
+      'repeat',
+      'status',
+      'fix',
+      'warning',
+      'floating selvedge',
+      'shuttle',
+    ],
     body: [
       { p: 'The bar along the bottom checks the cloth as you design:' },
       {
@@ -259,6 +270,19 @@ export const WEAVE_HELP: Topic[] = [
           '**Not woven in**: threads that never go over and under, so would fall out.',
           '**Edges**: whether the weft catches the edge end at each turn. If not, use a floating selvedge or change the edge threading.',
         ],
+      },
+      {
+        p: 'Click a warning (it says **Fix…**) to see why it happens, how to fix it by hand, and suggested fixes to apply in one step:',
+      },
+      {
+        list: [
+          '**Not woven in**: rethread the ends onto a shaft that weaves, following on from the threading; leave them unthreaded; or move picks onto a treadle that weaves.',
+          '**Edges**: start the shuttle from the other side, weave with floating selvedges, or add a selvedge end at each edge threaded to catch the weft, leaving the pattern as it is.',
+          '**Long floats**: show them in the drawdown, or allow floats that long.',
+        ],
+      },
+      {
+        tip: 'Fixes that change the draft can be undone with **Ctrl+Z**. With floating selvedges on, the bar says so; click it to turn them off.',
       },
       {
         p: 'The repeat (the smallest part that repeats) is shown in the Pattern settings, with **Trim to one repeat**.',

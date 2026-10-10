@@ -27,6 +27,10 @@ export interface ViewOptions {
   /** Highlight floats longer than `floatLimit` threads. */
   highlightFloats: boolean
   floatLimit: number
+  /** Weaving with floating selvedges, so the weft always catches the edges (the edge check is off). */
+  floatingSelvedge: boolean
+  /** The edge the shuttle starts from, for the edge check. */
+  shuttleStart: 'left' | 'right'
   /** Whether the settings panel is open; null follows the screen size (open on desktop, folded on phones). */
   settingsOpen: boolean | null
 }
@@ -49,6 +53,8 @@ export const DEFAULT_VIEW: ViewOptions = {
   cellSize: CELL_DEFAULT,
   highlightFloats: false,
   floatLimit: 7,
+  floatingSelvedge: false,
+  shuttleStart: 'left',
   settingsOpen: null,
 }
 
@@ -70,6 +76,8 @@ const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   cellSize: intIn(CELL_MIN, CELL_MAX),
   highlightFloats: isBool,
   floatLimit: intIn(1, 99),
+  floatingSelvedge: isBool,
+  shuttleStart: (v) => v === 'left' || v === 'right',
   settingsOpen: (v) => v === null || isBool(v),
 }
 
