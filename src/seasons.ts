@@ -130,61 +130,64 @@ export const SEASONS: Season[] = [
   },
   {
     id: 'spring',
-    blurb: 'Lilac and fresh green',
+    blurb: 'Daffodil yellow, new leaves and blossom pink',
     name: 'Spring',
-    emoji: '🌸',
-    pattern: { warp: '#7b3fb8', weft: '#e6f4d8', accent: '#f6d743', knit: ['#f3eafb', '#7b3fb8'] },
+    emoji: '🌷',
+    pattern: { warp: '#4f8f2a', weft: '#fbe38e', accent: '#f4a7c0', knit: ['#fdf6c8', '#4f8f2a'] },
     light: {
-      accent: '#7B3FB8',
+      accent: '#3F7A1E',
       onAccent: '#FFFFFF',
-      secondary: '#3F7A3A',
-      bg: '#F7F3FC',
-      panel: '#FBF9FE',
-      paper: '#FFFEFF',
-      ink: '#21162E',
-      muted: '#66557A',
-      on: '#21162E',
+      secondary: '#B03A6A',
+      bg: '#FBFAE8',
+      panel: '#FDFDF3',
+      paper: '#FFFFFB',
+      ink: '#18240E',
+      muted: '#4F6136',
+      tint: '#E8C21C',
+      on: '#2C4A16',
     },
     dark: {
-      accent: '#C49BF0',
-      onAccent: '#1E0B33',
-      secondary: '#A5D69E',
-      bg: '#130F1B',
-      panel: '#1B1626',
-      paper: '#211B2D',
-      ink: '#F3ECFB',
-      muted: '#BFB0D2',
-      on: '#E2CCFF',
+      accent: '#A8DB72',
+      onAccent: '#132308',
+      secondary: '#F5A8C6',
+      bg: '#10150A',
+      panel: '#171E10',
+      paper: '#1C2414',
+      ink: '#F3F8E6',
+      muted: '#BCCBA2',
+      tint: '#D9B630',
+      on: '#FBE38E',
     },
   },
   {
     id: 'summer',
-    blurb: 'Sunshine gold and sea blue',
+    blurb: 'Sea blue, warm sand and coral',
     name: 'Summer',
-    emoji: '☀️',
-    pattern: { warp: '#f2a900', weft: '#0277bd', accent: '#ff6f61', knit: ['#fff4cc', '#0277bd'] },
+    emoji: '🏖️',
+    pattern: { warp: '#0089c2', weft: '#fff1c2', accent: '#ff6f5e', knit: ['#fff1c2', '#0089c2'] },
     light: {
-      accent: '#9A5800',
+      accent: '#00699A',
       onAccent: '#FFFFFF',
-      secondary: '#0277BD',
-      bg: '#FFF9E3',
-      panel: '#FFFCF0',
-      paper: '#FFFEF9',
-      ink: '#2A1F05',
-      muted: '#735F2A',
-      tint: '#E0A800',
-      on: '#2A1F05',
+      secondary: '#C2412F',
+      bg: '#FFF8E8',
+      panel: '#FFFBF1',
+      paper: '#FFFEFA',
+      ink: '#0B2230',
+      muted: '#3F5F6E',
+      tint: '#00A3C9',
+      on: '#0B2230',
     },
     dark: {
-      accent: '#FFC94A',
-      onAccent: '#2A1D00',
-      secondary: '#7CC8F2',
-      bg: '#14110A',
-      panel: '#1D1910',
-      paper: '#231E13',
-      ink: '#FFF6DE',
-      muted: '#D2C29A',
-      on: '#FFE29A',
+      accent: '#5CCBF5',
+      onAccent: '#03202E',
+      secondary: '#FF9A8A',
+      bg: '#071521',
+      panel: '#0C1D2B',
+      paper: '#112434',
+      ink: '#EAF7FD',
+      muted: '#A3C4D3',
+      tint: '#1FA8D6',
+      on: '#8FDDF8',
     },
   },
   {
@@ -214,6 +217,37 @@ export const SEASONS: Season[] = [
       ink: '#F8EDE3',
       muted: '#CDB4A0',
       on: '#FFC6A3',
+    },
+  },
+  {
+    id: 'easter',
+    blurb: 'Pastel eggs: lilac, mint and butter yellow',
+    name: 'Easter',
+    emoji: '🐣',
+    pattern: { warp: '#b39ddb', weft: '#fff3b0', accent: '#a8dcc0', knit: ['#fff3b0', '#9575cd'] },
+    light: {
+      accent: '#6A45B0',
+      onAccent: '#FFFFFF',
+      secondary: '#2A7F62',
+      bg: '#FCF9EC',
+      panel: '#FDFBF4',
+      paper: '#FFFFFC',
+      ink: '#221A33',
+      muted: '#5D5373',
+      tint: '#B39DDB',
+      on: '#3F2C6E',
+    },
+    dark: {
+      accent: '#C7AEF5',
+      onAccent: '#1D1235',
+      secondary: '#93DDBE',
+      bg: '#14111C',
+      panel: '#1B1726',
+      paper: '#211C2E',
+      ink: '#F6F1FF',
+      muted: '#C3B8D8',
+      tint: '#9C84D6',
+      on: '#FFE98A',
     },
   },
   {
@@ -247,24 +281,48 @@ export const SEASONS: Season[] = [
   },
 ]
 
-/** Whether the dates of the year are Halloween (late October) or Christmas (December): for "Holidays only". */
-export function holidayOn(date: Date): string | null {
+/**
+ * The theme for the time of year, for "Seasonal": Easter from Palm Sunday to Easter Monday, Halloween from mid
+ * October, Christmas through December to Boxing Day, and otherwise the season (spring from March, summer from June,
+ * autumn from September, winter from December). Written to stand alone: the guide pages run a copy of it.
+ */
+export function seasonalOn(date: Date): string {
+  const y = date.getFullYear()
   const m = date.getMonth()
   const d = date.getDate()
-  if (m === 9 && d >= 17) return 'halloween'
-  if (m === 10 && d === 1) return 'halloween'
+  // Easter Sunday (the anonymous Gregorian algorithm).
+  const a = y % 19
+  const b = Math.floor(y / 100)
+  const c = y % 100
+  const e = (19 * a + b - Math.floor(b / 4) - Math.floor((b - Math.floor((8 * b + 13) / 25)) / 3) + 15) % 30
+  const f = (32 + 2 * (b % 4) + 2 * Math.floor(c / 4) - e - (c % 4)) % 7
+  const g = Math.floor((a + 11 * e + 22 * f) / 451)
+  const month = Math.floor((e + f - 7 * g + 114) / 31) - 1
+  const day = ((e + f - 7 * g + 114) % 31) + 1
+  const easter = new Date(y, month, day).getTime()
+  const today = new Date(y, m, d).getTime()
+  const days = Math.round((today - easter) / 86400000)
+  if (days >= -7 && days <= 1) return 'easter'
+  if ((m === 9 && d >= 17) || (m === 10 && d === 1)) return 'halloween'
   if (m === 11 && d <= 26) return 'christmas'
-  return null
+  if (m >= 2 && m <= 4) return 'spring'
+  if (m >= 5 && m <= 7) return 'summer'
+  if (m >= 8 && m <= 10) return 'autumn'
+  return 'winter'
 }
 
-/** The choice of theme: the app's own, one of SEASONS by id, or "holidays" (Halloween and Christmas when it's time). */
-export type SeasonChoice = 'none' | 'holidays' | string
+/**
+ * The choice of theme: the app's own, one of SEASONS by id, or "seasonal" (whichever fits the date). "holidays", the
+ * old Halloween-and-Christmas choice, now means "seasonal".
+ */
+export type SeasonChoice = 'none' | 'seasonal' | string
 
 const KEY = 'wp-season'
 
 export function loadSeasonChoice(): SeasonChoice {
   try {
-    return localStorage.getItem(KEY) ?? 'none'
+    const choice = localStorage.getItem(KEY) ?? 'none'
+    return choice === 'holidays' ? 'seasonal' : choice
   } catch {
     return 'none'
   }
@@ -281,7 +339,7 @@ export function saveSeasonChoice(choice: SeasonChoice) {
 
 /** The season showing for a choice on a date, if any. */
 export function activeSeason(choice: SeasonChoice, date = new Date()): Season | null {
-  const id = choice === 'holidays' ? holidayOn(date) : choice
+  const id = choice === 'seasonal' || choice === 'holidays' ? seasonalOn(date) : choice
   return SEASONS.find((s) => s.id === id) ?? null
 }
 

@@ -1,7 +1,7 @@
 import { type AppId, type Brand, KNIT, SEW, WEAVE } from '../brands'
 import type { Block } from '../help/types'
 import { markSvg } from '../marks'
-import { holidayOn, SEASONS, seasonBrand } from '../seasons'
+import { SEASONS, seasonalOn, seasonBrand } from '../seasons'
 
 /**
  * The static pages built alongside the apps (guides and patterns), for search engines and anyone who lands on them:
@@ -247,7 +247,7 @@ function themeScript(a: App): string {
     base: both(a.brand),
     seasons: Object.fromEntries(SEASONS.map((s) => [s.id, both(seasonBrand(s))])),
   }
-  return `(function(){var T=${JSON.stringify(themes)};var holidayOn=${holidayOn.toString()};var r=document.documentElement,s=null,m=null;try{s=localStorage.getItem('wp-season');m=localStorage.getItem('mui-mode')}catch(e){}var dark=m==='dark'||(m!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);if(s==='holidays')s=holidayOn(new Date());var t=T.seasons[s]||T.base,p=t[dark?'dark':'light'];r.classList.add(dark?'dark':'light');if(s&&T.seasons[s])r.classList.add('season-'+s);for(var k in p)r.style.setProperty('--'+k,p[k]);var c=document.querySelector('meta[name=theme-color]');if(c)c.setAttribute('content',t.light.accent)})()`
+  return `(function(){var T=${JSON.stringify(themes)};var seasonalOn=${seasonalOn.toString()};var r=document.documentElement,s=null,m=null;try{s=localStorage.getItem('wp-season');m=localStorage.getItem('mui-mode')}catch(e){}var dark=m==='dark'||(m!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);if(s==='seasonal'||s==='holidays')s=seasonalOn(new Date());var t=T.seasons[s]||T.base,p=t[dark?'dark':'light'];r.classList.add(dark?'dark':'light');if(s&&T.seasons[s])r.classList.add('season-'+s);for(var k in p)r.style.setProperty('--'+k,p[k]);var c=document.querySelector('meta[name=theme-color]');if(c)c.setAttribute('content',t.light.accent)})()`
 }
 
 const css = (a: App, root: string) => `

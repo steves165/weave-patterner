@@ -70,21 +70,38 @@ test('Christmas works in dark mode too', async ({ page }) => {
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(11, 23, 16)')
 })
 
-test('"Halloween and Christmas, when it\'s time" follows the calendar', async ({ page }) => {
+test('"Seasonal" follows the calendar: seasons, with Easter, Halloween and Christmas when it\'s time', async ({
+  page,
+}) => {
+  const at = async (date: Date, season: string) => {
+    await page.clock.setFixedTime(date)
+    await page.reload()
+    await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
+    await expect(page.locator('html')).toHaveClass(new RegExp(`season-${season}\\b`))
+  }
   await page.clock.setFixedTime(new Date(2026, 9, 31, 12))
   await openApp(page)
-  await chooseTheme(page, 'holidays')
+  await chooseTheme(page, 'seasonal')
   await expect(page.locator('html')).toHaveClass(/season-halloween/)
+  await at(new Date(2026, 11, 20, 12), 'christmas')
+  // Easter Sunday 2026 is 5 April.
+  await at(new Date(2026, 3, 5, 12), 'easter')
+  await at(new Date(2026, 3, 20, 12), 'spring')
+  await at(new Date(2026, 6, 20, 12), 'summer')
+  await at(new Date(2026, 8, 20, 12), 'autumn')
+  await at(new Date(2027, 0, 20, 12), 'winter')
+  // The dialog says which it is now.
+  await page.getByRole('contentinfo').getByRole('button', { name: 'Theme' }).click()
+  await expect(page.getByRole('dialog', { name: 'Colour theme' })).toContainText('Now: Winter')
+})
 
-  await page.clock.setFixedTime(new Date(2026, 11, 20, 12))
-  await page.reload()
-  await expect(page.locator('html')).toHaveClass(/season-christmas/)
-
-  await page.clock.setFixedTime(new Date(2026, 5, 20, 12))
-  await page.reload()
-  await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
-  await expect(page.locator('html')).not.toHaveClass(/season-/)
-  expect(await accent(page)).toBe('#d6246e')
+test('the old "Halloween and Christmas" choice becomes Seasonal', async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 6, 20, 12))
+  await page.addInitScript(() => localStorage.setItem('wp-season', 'holidays'))
+  await openApp(page)
+  await expect(page.locator('html')).toHaveClass(/season-summer/)
+  await page.getByRole('contentinfo').getByRole('button', { name: 'Theme' }).click()
+  await expect(page.getByRole('dialog', { name: 'Colour theme' }).locator('input[value="seasonal"]')).toBeChecked()
 })
 
 test("new patterns start in the theme's colours; patterns you have keep theirs", async ({ page }) => {

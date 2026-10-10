@@ -97,12 +97,13 @@ function Swatches({ colors }: { colors: string[] }) {
 }
 
 /**
- * The colour theme dialog (from Theme at the foot of the page): the app's own colours, Halloween and Christmas
- * when it's time, or a season. It applies as soon as one is picked; new patterns start in its colours.
+ * The colour theme dialog (from Theme at the foot of the page): the app's own colours, the theme for the time of
+ * year (Seasonal), or any one theme. It applies as soon as one is picked; new patterns start in its colours.
  */
 export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { choice, setChoice, app, base } = useContext(Choice)
-  const value = SEASONS.some((s) => s.id === choice) || choice === 'holidays' ? choice : 'none'
+  const value = SEASONS.some((s) => s.id === choice) || choice === 'seasonal' ? choice : 'none'
+  const now = activeSeason('seasonal')
   const option = (id: string, label: ReactNode, hint: string, colors: string[]) => (
     <Box
       component="label"
@@ -146,10 +147,15 @@ export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => v
         >
           {option('none', `${app} colours`, 'The usual look', [base.accent.light, base.background.light])}
           {option(
-            'holidays',
-            'Halloween and Christmas',
-            'Only when it’s time: late October, and December',
-            ['halloween', 'christmas'].map((id) => SEASONS.find((x) => x.id === id)?.light.accent ?? ''),
+            'seasonal',
+            <>
+              <span aria-hidden="true" style={{ marginRight: 6 }}>
+                🗓️
+              </span>
+              Seasonal
+            </>,
+            `Changes with the time of year, with Easter, Halloween and Christmas when it’s time. Now: ${now?.name ?? ''}`,
+            ['spring', 'summer', 'autumn', 'winter'].map((id) => SEASONS.find((x) => x.id === id)?.light.accent ?? ''),
           )}
           {SEASONS.map((x) =>
             option(

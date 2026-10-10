@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   activeSeason,
-  holidayOn,
+  loadSeasonChoice,
   mix,
   PINK_PATTERN,
   SEASONS,
+  seasonalOn,
   seasonBrand,
   seasonCss,
   seasonVars,
@@ -25,9 +26,11 @@ function contrast(a: string, b: string) {
 }
 
 describe('seasonal themes', () => {
-  it('include Halloween and Christmas, with unique ids', () => {
+  it('include the seasons, Easter, Halloween and Christmas, with unique ids', () => {
     const ids = SEASONS.map((s) => s.id)
-    expect(ids).toEqual(expect.arrayContaining(['halloween', 'christmas', 'rachel']))
+    expect(ids).toEqual(
+      expect.arrayContaining(['halloween', 'christmas', 'easter', 'spring', 'summer', 'autumn', 'winter', 'rachel']),
+    )
     expect(SEASONS.find((s) => s.id === 'rachel')?.name).toBe('Rachel’s Theme <3')
     expect(new Set(ids).size).toBe(ids.length)
   })
@@ -67,14 +70,46 @@ describe('seasonal themes', () => {
     expect(mix('#ff0000', '#0000ff', 1)).toBe('#ff0000')
   })
 
-  it('"Halloween and Christmas" follows the calendar', () => {
-    expect(holidayOn(new Date(2026, 9, 31))).toBe('halloween')
-    expect(holidayOn(new Date(2026, 9, 10))).toBeNull()
-    expect(holidayOn(new Date(2026, 11, 24))).toBe('christmas')
-    expect(holidayOn(new Date(2026, 11, 30))).toBeNull()
-    expect(activeSeason('holidays', new Date(2026, 5, 1))).toBeNull()
-    expect(activeSeason('holidays', new Date(2026, 11, 1))?.id).toBe('christmas')
-    expect(activeSeason('winter')?.name).toBe('Winter')
-    expect(activeSeason('none')).toBeNull()
+  it('"Seasonal" follows the time of year, with Easter, Halloween and Christmas when it’s time', () => {
+    const on = (y: number, m: number, d: number) => seasonalOn(new Date(y, m - 1, d))
+    // Easter Sunday: 5 April 2026, 28 March 2027, 16 April 2028; Palm Sunday to Easter Monday.
+    expect([on(2026, 3, 29), on(2026, 4, 5), on(2026, 4, 6), on(2026, 4, 7)]).toEqual([
+      'easter',
+      'easter',
+      'easter',
+      'spring',
+    ])
+    expect([on(2026, 3, 28), on(2027, 3, 28), on(2028, 4, 16), on(2028, 4, 18)]).toEqual([
+      'spring',
+      'easter',
+      'easter',
+      'spring',
+    ])
+    expect([on(2026, 10, 31), on(2026, 11, 1), on(2026, 11, 2)]).toEqual(['halloween', 'halloween', 'autumn'])
+    expect([on(2026, 12, 1), on(2026, 12, 26), on(2026, 12, 27), on(2027, 1, 15), on(2027, 2, 28)]).toEqual([
+      'christmas',
+      'christmas',
+      'winter',
+      'winter',
+      'winter',
+    ])
+    expect([on(2026, 3, 1), on(2026, 6, 1), on(2026, 8, 31), on(2026, 9, 1)]).toEqual([
+      'spring',
+      'summer',
+      'summer',
+      'autumn',
+    ])
+    expect(activeSeason('seasonal', new Date(2026, 6, 1))?.id).toBe('summer')
+    // Whoever chose the old "Halloween and Christmas" gets Seasonal.
+    expect(activeSeason('holidays', new Date(2026, 6, 1))?.id).toBe('summer')
+    vi.stubGlobal('localStorage', { getItem: (k: string) => (k === 'wp-season' ? 'holidays' : null) })
+    expect(loadSeasonChoice()).toBe('seasonal')
+    vi.unstubAllGlobals()
+  })
+
+  it('runs on its own, as the guide pages run a copy of it', () => {
+    // Built from its source alone, with nothing else in scope, as the guide pages do.
+    const copy = new Function(`return (${seasonalOn.toString()})`)() as typeof seasonalOn
+    expect(copy(new Date(2026, 3, 5))).toBe('easter')
   })
 })
