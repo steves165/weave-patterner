@@ -38,6 +38,7 @@ import {
   type SavedBlock,
   setBlockPicks,
   shaftsUsed,
+  unweaveBlock,
 } from '../endBlocks'
 import { useSavedPresets } from '../hooks/useSavedPresets'
 import { usePhone } from '../layout'
@@ -241,7 +242,8 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
           Split the threading into blocks of ends, lettered A, B, C … from end 1, and name each one: the names show
           above the threading. Drag along the strip above the threading to mark a block. Each block's picks are the weft
           that weaves it (the same numbers as its ends unless you set them). Save any block to the block store, warp and
-          weft, to use it again here or in another pattern, or thread a block from any preset (only its columns change).
+          weft, to use it again here or in another pattern, or weave a block as any preset, all the way down on its own
+          shafts.
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -296,14 +298,6 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                 slotProps={{ htmlInput: { maxLength: 80 } }}
                 sx={{ flex: 1, minWidth: 160 }}
               />
-              <Tooltip
-                describeChild
-                title="Save this block's threading and warp colours to the block store, under its name"
-              >
-                <Button size="small" startIcon={<SaveIcon />} onClick={() => save(i)}>
-                  {store.some((s) => s.name === b.name) ? 'Update in store' : 'Save to store'}
-                </Button>
-              </Tooltip>
               {store.length > 0 && (
                 <TextField
                   select
@@ -332,19 +326,25 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                 select
                 size="small"
                 label="Weave as preset"
-                value=""
+                value={(b.weave && presetChoices.find((c) => c.name === b.weave?.name)?.key) || 'none'}
                 onChange={(e) => {
+                  if (e.target.value === 'none') {
+                    onChange((d) => unweaveBlock(d, i))
+                    onMessage(`Block ${blockLetter(i)} no longer weaves a preset; its threading and treadling stay`)
+                    return
+                  }
                   const choice = presetChoices.find((c) => c.key === e.target.value)
                   if (choice)
                     tryIt(() => {
-                      const next = presetIntoBlock(draft, i, choice.draft)
+                      const next = presetIntoBlock(draft, i, choice.draft, { name: choice.name })
                       onChange(() => next)
-                      onMessage(`Block ${blockLetter(i)} is now threaded as ${choice.name}`)
+                      onMessage(`Block ${blockLetter(i)} is now woven as ${choice.name}, all the way down`)
                     })
                 }}
                 sx={{ width: 160 }}
                 slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: 360 } } } } } }}
               >
+                <MenuItem value="none">None</MenuItem>
                 {presetChoices.flatMap((c, k) => [
                   ...(k === 0 || presetChoices[k - 1].group !== c.group
                     ? [
@@ -358,6 +358,17 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                   </MenuItem>,
                 ])}
               </TextField>
+              <Tooltip
+                describeChild
+                title={`${store.some((s) => s.name === b.name) ? 'Update it in' : 'Save it to'} the block store: its threading, warp colours and picks`}
+              >
+                <IconButton
+                  aria-label={`${store.some((s) => s.name === b.name) ? 'Update' : 'Save'} block ${blockLetter(i)} in the block store`}
+                  onClick={() => save(i)}
+                >
+                  <SaveIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip describeChild title="Remove the block's label (its ends stay)">
                 <IconButton
                   aria-label={`Remove block ${blockLetter(i)}`}
@@ -437,7 +448,7 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
         </Stack>
         {store.length === 0 && (
           <Typography variant="body2" color="text.secondary">
-            Nothing saved yet. Use "Save to store" on a block to keep it here.
+            Nothing saved yet. Use the save button on a block to keep it here.
           </Typography>
         )}
         <Stack sx={{ gap: 1 }} data-testid="block-store">

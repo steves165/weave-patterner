@@ -1,3 +1,4 @@
+import { liftsPerPick, toTreadling } from './liftplan'
 import type { Draft } from './weave'
 
 /**
@@ -10,6 +11,19 @@ export interface EndBlock {
   name: string
   /** The picks that weave this block (0-based, both included), when they've been set. */
   picks?: { from: number; to: number }
+  /**
+   * A preset woven in this block, all the way down: the shafts it lifts on each of its picks (from 0), and the
+   * block's first shaft. The block has those shafts to itself.
+   */
+  weave?: BlockWeave
+}
+
+export interface BlockWeave {
+  name: string
+  /** The block's first shaft (0-based): the preset's shaft 1 is this one. */
+  offset: number
+  /** For each pick of the preset's repeat, the shafts it lifts, counted from the block's first shaft. */
+  lifts: number[][]
 }
 
 /**
@@ -196,6 +210,7 @@ function withShafts(d: Draft, shafts: number): Draft {
 
 export const MAX_PICKS = 1000
 const MAX_TREADLES = 128
+const MAX_SHAFTS = 128
 
 /**
  * The pattern's treadle for each of a weft's treadles: one already tied to exactly the same shafts, or a new one added
@@ -338,10 +353,24 @@ export function parseBlocks(data: unknown, ends: number, picks = Number.POSITIVE
         to: b.to,
         name: typeof b.name === 'string' ? b.name.slice(0, 80) : '',
         ...(b.picks && typeof b.picks === 'object' ? { picks: { from: b.picks.from, to: b.picks.to } } : {}),
+        ...(parseWeave(b.weave) ? { weave: parseWeave(b.weave) } : {}),
       })),
     ends,
     picks,
   )
+}
+
+/** A block's preset weave from untrusted data, if it's valid. */
+function parseWeave(w: unknown): BlockWeave | undefined {
+  if (!w || typeof w !== 'object') return undefined
+  const { name, offset, lifts } = w as Record<string, unknown>
+  if (!Number.isInteger(offset) || (offset as number) < 0 || (offset as number) >= MAX_SHAFTS) return undefined
+  if (!Array.isArray(lifts) || !lifts.length || lifts.length > MAX_PICKS) return undefined
+  const ok = lifts.every(
+    (row) =>
+      Array.isArray(row) && row.every((s) => Number.isInteger(s) && s >= 0 && s + (offset as number) < MAX_SHAFTS),
+  )
+  return ok ? { name: typeof name === 'string' ? name.slice(0, 80) : '', offset: offset as number, lifts } : undefined
 }
 
 /** A saved block's weft from untrusted data, if it's valid. */
@@ -412,31 +441,105 @@ export function putSavedBlock(store: SavedBlock[], block: SavedBlock): SavedBloc
 /** `xs` repeated (or cut) to `n` long. */
 const fill = <T>(xs: T[], n: number): T[] => Array.from({ length: n }, (_, i) => xs[i % xs.length])
 
+/** Shafts a block weave uses: its first shaft up to the highest it threads or lifts. */
+const weaveShafts = (d: Draft, b: EndBlock): number[] => {
+  const w = b.weave
+  if (!w) return []
+  const top = Math.max(...d.threading.slice(b.from, b.to + 1), w.offset + Math.max(0, ...w.lifts.flat()))
+  return Array.from({ length: top - w.offset + 1 }, (_, k) => w.offset + k)
+}
+
 /**
- * Block i threaded from a preset (or any pattern): only the part of the preset that fills the block's columns, its
- * threading repeated across the block's ends on shafts from `offset` (the block's lowest shaft unless given, so
- * blocks on their own shafts stay apart), and its warp colours unless `colours` is false. Nothing outside the block
- * changes: the treadling, tie-up and weft are the pattern's own.
+ * The treadling rebuilt so every block with a preset weaves it all the way down, on its own shafts, each pick
+ * lifting the next row of every block's preset; other ends keep what they had. Each different combination of
+ * shafts becomes a treadle (added as needed).
+ */
+export function weaveBlocks(d: Draft): Draft {
+  const woven = (d.blocks ?? []).flatMap((b) => (b.weave ? [{ ...b, weave: b.weave }] : []))
+  if (!woven.length) return d
+  const shafts = Math.max(d.shafts, ...woven.flatMap((b) => weaveShafts(d, b).map((s) => s + 1)))
+  const owned = new Set(woven.flatMap((b) => weaveShafts(d, b)))
+  const before = liftsPerPick(d)
+  const lifts = before.map((base, p) => {
+    const up = new Set(base.filter((s) => !owned.has(s)))
+    for (const b of woven) {
+      const w = b.weave
+      for (const s of w.lifts[p % w.lifts.length]) up.add(w.offset + s)
+    }
+    return [...up].sort((a, b) => a - b)
+  })
+  // As a lift plan (a treadle per shaft), then back to a tie-up with a treadle for each shed.
+  const plan: Draft = {
+    ...d,
+    shafts,
+    treadles: shafts,
+    tieup: Array.from({ length: shafts }, (_, s) => Array.from({ length: shafts }, (_, t) => s === t)),
+    treadling: lifts.map((ss) => Array.from({ length: shafts }, (_, s) => ss.includes(s))),
+  }
+  const next = toTreadling(plan, MAX_TREADLES)
+  return { ...next, blocks: d.blocks }
+}
+
+/**
+ * Block i woven as a preset (or any pattern), all the way down: the part of the preset that fills the block's
+ * columns (its threading, repeated across the block's ends), on shafts the block has to itself (more are added if
+ * the rest of the pattern uses its own), and the preset's treadling down every pick for those shafts. Other blocks
+ * with presets keep theirs, each on its own shafts, and the ends outside them keep their weave. With `colours`, the
+ * block takes the preset's warp colours, and the whole pattern its weft colours (the weft crosses every block), unless
+ * another block's preset set them first.
  */
 export function presetIntoBlock(
   d: Draft,
   i: number,
   preset: Draft,
-  opts: { offset?: number; colours?: boolean } = {},
+  opts: { name?: string; colours?: boolean; weftColours?: boolean } = {},
 ): Draft {
   const b = d.blocks?.[i]
   if (!b) return d
   const width = b.to - b.from + 1
-  const own = d.threading.slice(b.from, b.to + 1).filter((s) => s >= 0)
-  const offset = Math.max(0, Math.min(opts.offset ?? (own.length ? Math.min(...own) : 0), 128 - preset.shafts))
+  const lifts = liftsPerPick(preset)
+  const used = preset.threading.filter((s) => s >= 0)
+  const span = Math.max(Math.max(0, ...used), Math.max(0, ...lifts.flat())) + 1
+  // The lowest run of shafts no end outside this block uses.
+  const outside = new Set(d.threading.filter((s, e) => s >= 0 && (e < b.from || e > b.to)))
+  for (const [j, other] of (d.blocks ?? []).entries())
+    if (j !== i && other.weave) for (const s of weaveShafts(d, other)) outside.add(s)
+  let offset = 0
+  while (Array.from({ length: span }, (_, k) => offset + k).some((s) => outside.has(s))) offset++
+  if (offset + span > MAX_SHAFTS) throw new Error(`That needs more than ${MAX_SHAFTS} shafts`)
   const colours = opts.colours !== false
-  return replaceBlock(d, i, {
-    name: b.name,
-    threading: fill(
-      preset.threading.map((s) => (s < 0 ? -1 : s + offset)),
-      width,
-    ),
-    warpColors: colours ? fill(preset.warpColors, width) : d.warpColors.slice(b.from, b.to + 1),
-    updatedAt: 0,
+  const threading = [...d.threading]
+  const warpColors = [...d.warpColors]
+  const repeat = fill(
+    preset.threading.map((s) => (s < 0 ? -1 : s + offset)),
+    width,
+  )
+  for (let k = 0; k < width; k++) {
+    threading[b.from + k] = repeat[k]
+    if (colours) warpColors[b.from + k] = preset.warpColors[k % preset.warpColors.length]
+  }
+  const blocks = (d.blocks ?? []).map((x, j) =>
+    j === i ? { ...x, weave: { name: opts.name ?? '', offset, lifts: lifts.length ? lifts : [[]] } } : x,
+  )
+  // The weft crosses every block: it takes the preset's weft colours unless another block already set them.
+  const others = (d.blocks ?? []).some((x, j) => j !== i && x.weave)
+  const withWeft = colours && (opts.weftColours ?? !others)
+  const next: Draft = {
+    ...withShafts(d, offset + span),
+    threading,
+    warpColors,
+    blocks,
+    ...(withWeft ? { weftColors: fill(preset.weftColors, d.picks) } : {}),
+  }
+  return weaveBlocks(next)
+}
+
+/** Stops block i weaving its preset; its threading stays, and the treadling is rebuilt for the other blocks. */
+export function unweaveBlock(d: Draft, i: number): Draft {
+  const blocks = (d.blocks ?? []).map((x, j) => {
+    if (j !== i) return x
+    const { weave, ...rest } = x
+    return rest
   })
+  return { ...d, blocks }
 }
