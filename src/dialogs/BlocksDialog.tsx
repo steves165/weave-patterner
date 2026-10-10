@@ -24,21 +24,21 @@ import {
   addBlock,
   blockContents,
   blockLetter,
-  blockPicks,
   blockTitle,
   insertBlock,
   moveBlock,
   nextBlockName,
-  picksAfter,
   presetIntoBlock,
   putSavedBlock,
   removeBlock,
   renameBlock,
+  repeatPicks,
   replaceBlock,
   type SavedBlock,
-  setBlockPicks,
+  setWeftFrom,
   shaftsUsed,
   unweaveBlock,
+  weftBlock,
 } from '../endBlocks'
 import { useSavedPresets } from '../hooks/useSavedPresets'
 import { usePhone } from '../layout'
@@ -113,61 +113,6 @@ function EndField({
   )
 }
 
-/** The picks that weave a block: from and to, counted from 1; shown faint while they follow its ends. */
-function PickFields({
-  letter,
-  range,
-  set,
-  picks,
-  onCommit,
-}: {
-  letter: string
-  range: { from: number; to: number } | null
-  set: boolean
-  picks: number
-  onCommit: (from: number, to: number) => void
-}) {
-  const [text, setText] = useState({ from: '', to: '' })
-  const from = set && range ? String(range.from + 1) : ''
-  const to = set && range ? String(range.to + 1) : ''
-  useEffect(() => setText({ from, to }), [from, to])
-  const commit = () => {
-    const from = Math.round(Number(text.from || (range ? range.from + 1 : 0)))
-    const to = Math.round(Number(text.to || (range ? range.to + 1 : 0)))
-    if (
-      from >= 1 &&
-      to >= 1 &&
-      from <= picks &&
-      to <= picks &&
-      (!set || from - 1 !== range?.from || to - 1 !== range?.to)
-    )
-      onCommit(from - 1, to - 1)
-  }
-  const field = (key: 'from' | 'to', label: string) => (
-    <TextField
-      size="small"
-      type="number"
-      label={label}
-      value={text[key]}
-      placeholder={range ? String(range[key] + 1) : '–'}
-      onChange={(e) => setText({ ...text, [key]: e.target.value })}
-      onBlur={commit}
-      onKeyDown={(e) => e.key === 'Enter' && commit()}
-      slotProps={{
-        inputLabel: { shrink: true },
-        htmlInput: { min: 1, max: picks, 'aria-label': `${label} of block ${letter}` },
-      }}
-      sx={{ width: 84 }}
-    />
-  )
-  return (
-    <>
-      {field('from', 'From pick')}
-      {field('to', 'To pick')}
-    </>
-  )
-}
-
 /**
  * The pattern's blocks of ends (A, B, … from end 1), each with a name shown above its columns, and the block store:
  * blocks saved to use again, in this pattern or any other. A saved block can be put in at any point, or swapped in
@@ -225,9 +170,6 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
 
   const insertAt = () =>
     place === 'start' ? 0 : place === 'end' ? draft.ends : (blocks[Number(place.slice(6))]?.to ?? draft.ends - 1) + 1
-  // Picks go in at the same place in the weft: before pick 1, after the last, or after the block's picks.
-  const pickAt = () =>
-    place === 'start' ? 0 : place === 'end' ? draft.picks : picksAfter(draft, Number(place.slice(6)))
 
   const addFrom = Number(add.from || after + 1) - 1
   const addTo = Number(add.to || Math.min(draft.ends, after + 4)) - 1
@@ -240,10 +182,9 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Split the threading into blocks of ends, lettered A, B, C … from end 1, and name each one: the names show
-          above the threading. Drag along the strip above the threading to mark a block. Each block's picks are the weft
-          that weaves it (the same numbers as its ends unless you set them). Save any block to the block store, warp and
-          weft, to use it again here or in another pattern, or weave a block as any preset, all the way down on its own
-          shafts.
+          above the threading. Drag along the strip above the threading to mark a block. Weave a block as any preset,
+          all the way down on shafts of its own, and save any block to the block store, warp and weft, to put it in
+          again here or in another pattern.
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -281,13 +222,6 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                 value={b.to}
                 ends={draft.ends}
                 onCommit={(e) => onChange((d) => moveBlock(d, i, Math.min(e, b.from), e))}
-              />
-              <PickFields
-                letter={blockLetter(i)}
-                range={blockPicks(draft, i)}
-                set={Boolean(b.picks)}
-                picks={draft.picks}
-                onCommit={(from, to) => onChange((d) => setBlockPicks(d, i, from, to))}
               />
               <TextField
                 size="small"
@@ -422,6 +356,40 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
           </Button>
         </Stack>
 
+        {blocks.some((b) => b.weave) && (
+          <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 3 }}>
+            <TextField
+              select
+              size="small"
+              label="Weft colours from"
+              value={weftBlock(draft) >= 0 ? String(weftBlock(draft)) : 'keep'}
+              onChange={(e) => {
+                const v = e.target.value
+                onChange((d) => setWeftFrom(d, v === 'keep' ? null : Number(v)))
+                onMessage(
+                  v === 'keep'
+                    ? 'The weft colours stay as they are'
+                    : `The weft colours now come from block ${blockLetter(Number(v))}'s pattern`,
+                )
+              }}
+              sx={{ minWidth: 240 }}
+            >
+              <MenuItem value="keep">Leave them as they are</MenuItem>
+              {blocks.map((b, i) =>
+                b.weave ? (
+                  <MenuItem key={`${b.from}-${b.to}`} value={String(i)}>
+                    Block {blockLetter(i)}: {b.weave.name || b.name || 'its pattern'}
+                  </MenuItem>
+                ) : null,
+              )}
+            </TextField>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: '1 1 240px' }}>
+              The weft crosses every block, so one pattern's weft colours go right across the cloth: the newest one
+              woven, unless you choose another.
+            </Typography>
+          </Stack>
+        )}
+
         <Divider sx={{ mb: 2 }} />
         <Stack direction="row" sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
           <Typography variant="subtitle2" component="h3">
@@ -468,7 +436,7 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {s.threading.length} ends on {shaftsUsed(s)} shafts
-                  {s.weft ? ` · ${s.weft.treadling.length} picks on ${s.weft.treadles.length} treadles` : ' · no weft'}
+                  {s.weave ? ` · weaves a ${repeatPicks(s)}-pick repeat all the way down` : ' · threading only'}
                 </Typography>
               </Box>
               <Button
@@ -478,14 +446,10 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
                 onClick={() =>
                   tryIt(() => {
                     const at = insertAt()
-                    const picksAt = pickAt()
-                    const next = insertBlock(draft, s, at, picksAt)
+                    const next = insertBlock(draft, s, at)
                     onChange(() => next)
-                    const weft = s.weft
-                      ? ` and ${s.weft.treadling.length} picks ${picksAt === 0 ? 'at the start' : `after pick ${picksAt}`}`
-                      : ''
                     onMessage(
-                      `Put in "${s.name}": ${s.threading.length} ends ${at === 0 ? 'at the start' : `after end ${at}`}${weft}`,
+                      `Put in "${s.name}": ${s.threading.length} ends ${at === 0 ? 'at the start' : `after end ${at}`}${s.weave ? ', woven all the way down' : ''}`,
                     )
                   })
                 }

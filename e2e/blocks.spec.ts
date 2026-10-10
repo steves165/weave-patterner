@@ -52,14 +52,15 @@ test('split the threading into named blocks, save them to the block store and us
   await expect(label(page, 'A')).toHaveText('ASaved block 1')
   await expect(label(page, 'B')).toHaveText('BSaved block 2')
 
-  // Put saved block 1 in after block B: 4 more ends, and it's block C, with the rest of the pattern after it.
+  // Put saved block 1 in after block B: 4 more ends, and it's block C, with the rest of the pattern after it. It
+  // weaves its twill all the way down on shafts of its own (5 to 8: the rest of the pattern uses 1 to 4).
   await page.getByRole('button', { name: 'Blocks', exact: true }).click()
   await dialog(page).getByLabel('Put saved blocks in').click()
   await page.getByRole('option', { name: 'After block B (5–9)' }).click()
   await dialog(page).getByRole('button', { name: 'Put in Saved block 1' }).click()
   await dialog(page).getByRole('button', { name: 'Done' }).click()
   expect(await ends(page)).toBe('36')
-  expect((await threading(page)).slice(0, 14)).toBe('12341234112342')
+  expect((await threading(page)).slice(0, 14)).toBe('12341234156782')
   await expect(label(page, 'C')).toHaveAttribute('aria-label', 'Block C (10–13), Saved block 1')
 
   // One undo takes it out again.
@@ -90,21 +91,35 @@ test('swap a saved block in for a block, and rename it', async ({ page }) => {
   await expect(label(page, 'A')).toHaveText('ABorder')
 })
 
-test('a saved block keeps its weft, and putting it in adds its picks too', async ({ page }) => {
+test('a saved block keeps its weft, and putting it in weaves it all the way down without adding rows', async ({
+  page,
+}) => {
   await markBlock(page, 1, 4)
   await label(page, 'A').click()
-  // Its picks follow its ends until they're set.
-  await expect(dialog(page).getByLabel('From pick of block A')).toHaveAttribute('placeholder', '1')
   await dialog(page)
     .locator('[data-block="A"]')
     .getByRole('button', { name: /^(Save|Update) block [A-Z]+ in the block store$/ })
     .click()
-  await expect(dialog(page).getByTestId('block-store')).toContainText('4 ends on 4 shafts · 4 picks on 4 treadles')
+  await expect(dialog(page).getByTestId('block-store')).toContainText(
+    '4 ends on 4 shafts · weaves a 4-pick repeat all the way down',
+  )
   await dialog(page).getByRole('button', { name: 'Put in Saved block 1' }).click()
-  await expect(toast(page)).toContainText('Put in "Saved block 1": 4 ends after end 32 and 4 picks after pick 32')
+  await expect(toast(page)).toContainText('Put in "Saved block 1": 4 ends after end 32, woven all the way down')
   await dialog(page).getByRole('button', { name: 'Done' }).click()
   expect(await ends(page)).toBe('36')
-  expect(await picks(page)).toBe('36')
+  expect(await picks(page)).toBe('32')
+  // The new ends weave the same twill as block A, on every pick.
+  const column = (end: number) =>
+    page
+      .locator('.drawdown')
+      .evaluate(
+        (el, e) =>
+          [...el.querySelectorAll<HTMLElement>(`.cell[data-end="${e}"]`)]
+            .map((c) => c.classList.contains('warp'))
+            .join(),
+        end,
+      )
+  for (let k = 0; k < 4; k++) expect(await column(32 + k)).toBe(await column(k))
 })
 
 test('weave a block as a preset, built in or your own', async ({ page }) => {

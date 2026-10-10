@@ -4,7 +4,6 @@ import {
   addBlock,
   blockContents,
   blockLetter,
-  blockPicks,
   blockTitle,
   cleanBlocks,
   insertBlock,
@@ -17,7 +16,8 @@ import {
   renameBlock,
   replaceBlock,
   type SavedBlock,
-  setBlockPicks,
+  setWeftFrom,
+  weftBlock,
 } from './endBlocks'
 import { computeDrawdown, type Draft, defaultDraft, exportFile, importFile, parseDraft, resizeDraft } from './weave'
 
@@ -142,147 +142,148 @@ describe('the block store', () => {
   })
 })
 
-describe('blocks with their weft', () => {
-  it('saves a block’s picks with it: the same numbers as its ends, unless set', () => {
-    const d = addBlock(draft(), 0, 3, 'Twill')
-    const saved = blockContents(d, 0, 'Twill')
-    // 2/2 twill: picks 1-4 press treadles 1-4, each lifting two shafts.
-    expect(saved.weft?.treadling).toEqual([[0], [1], [2], [3]])
-    expect(saved.weft?.treadles).toEqual([
-      [0, 1],
-      [1, 2],
-      [2, 3],
-      [0, 3],
-    ])
-    expect(saved.weft?.weftColors).toEqual(d.weftColors.slice(0, 4))
-    const set = setBlockPicks(d, 0, 9, 8)
-    expect(set.blocks?.[0].picks).toEqual({ from: 8, to: 9 })
-    expect(blockContents(set, 0, 'Twill').weft?.treadling).toHaveLength(2)
-    expect(blockPicks(set, 0)).toEqual({ from: 8, to: 9 })
-  })
+const presetDraft = (id: string) => {
+  const p = PRESETS.find((x) => x.id === id)
+  if (!p) throw new Error(id)
+  return p.build('#111111', '#eeeeee')
+}
 
-  it('puts in the warp and the weft of a saved block, reusing treadles with the same tie-up', () => {
-    const d = addBlock(draft(), 0, 3, 'Twill')
-    const saved = blockContents(d, 0, 'Twill')
-    const next = insertBlock(d, saved, d.ends, d.picks)
-    expect(next.ends).toBe(36)
-    expect(next.picks).toBe(36)
-    expect(next.treadles).toBe(d.treadles)
-    expect(next.treadling.slice(32)).toEqual(d.treadling.slice(0, 4))
-    expect(next.blocks?.[1]).toMatchObject({ from: 32, to: 35, name: 'Twill', picks: { from: 32, to: 35 } })
-  })
-
-  it('adds treadles for tie-ups the pattern doesn’t have, and shifts later blocks’ picks', () => {
-    const tabby = {
-      ...blockContents(addBlock(draft(), 0, 3), 0, 'x'),
-      weft: {
-        treadles: [
-          [0, 2],
-          [1, 3],
-        ],
-        treadling: [[0], [1]],
-        weftColors: ['#000000', '#ffffff'],
-      },
-    }
-    const d = setBlockPicks(addBlock(draft(), 8, 11, 'Later'), 0, 10, 12)
-    const next = insertBlock(d, tabby, 0, 0)
-    expect(next.treadles).toBe(6)
-    expect(next.tieup.map((row) => row.slice(4))).toEqual([
-      [true, false],
-      [false, true],
-      [true, false],
-      [false, true],
-    ])
-    expect(next.treadling[0]).toEqual([false, false, false, false, true, false])
-    expect(next.blocks?.find((b) => b.name === 'Later')?.picks).toEqual({ from: 12, to: 14 })
-  })
-
-  it('swaps a block’s picks along with its ends', () => {
-    const d = addBlock(draft(), 0, 3, 'A')
-    const other = {
-      name: 'B',
-      threading: [0, 0],
-      warpColors: ['#000000', '#000000'],
-      weft: { treadles: [[0]], treadling: [[0]], weftColors: ['#123456'] },
-      updatedAt: 0,
-    }
-    const next = replaceBlock(d, 0, other)
-    expect(next.ends).toBe(30)
-    expect(next.picks).toBe(29)
-    expect(next.weftColors[0]).toBe('#123456')
-    expect(next.blocks?.[0]).toMatchObject({ from: 0, to: 1, picks: { from: 0, to: 0 } })
-  })
-
-  it('keeps saved wefts in the block store, and drops broken ones', () => {
-    const saved = blockContents(addBlock(draft(), 0, 3), 0, 'W')
-    expect(parseSavedBlocks(JSON.parse(JSON.stringify([saved])))[0].weft).toEqual(saved.weft)
-    const broken = { ...saved, weft: { treadles: [[0]], treadling: [[5]], weftColors: ['#000000'] } }
-    expect(parseSavedBlocks([broken])[0].weft).toBeUndefined()
-  })
-
-  it('remembers a block’s picks in the file, and trims them when picks are taken away', () => {
-    const d = setBlockPicks(addBlock(draft(), 0, 3, 'A'), 0, 20, 30)
-    expect(importFile(exportFile('x', d)).draft.blocks?.[0].picks).toEqual({ from: 20, to: 30 })
-    expect(resizeDraft(d, { picks: 25 }).blocks?.[0].picks).toEqual({ from: 20, to: 24 })
-    expect(resizeDraft(d, { picks: 10 }).blocks?.[0].picks).toBeUndefined()
-  })
-})
+/** Whether each end of a block is up or down on each pick as in `p`'s own drawdown, repeated. */
+const weaves = (d: Draft, from: number, to: number, p: Draft) => {
+  const dd = computeDrawdown(d)
+  const pd = computeDrawdown(p)
+  for (let pick = 0; pick < d.picks; pick++)
+    for (let e = from; e <= to; e++)
+      if (dd[pick][e] !== pd[pick % p.picks][(e - from) % p.ends]) return `pick ${pick + 1}, end ${e + 1}`
+  return 'weaves it'
+}
 
 describe('weaving a block as a preset', () => {
-  const preset = (id: string) => {
-    const p = PRESETS.find((x) => x.id === id)
-    if (!p) throw new Error(id)
-    return p.build('#111111', '#eeeeee')
-  }
-  /** Whether each end of a block is up or down on each pick, as in the preset's own drawdown, repeated. */
-  const matches = (d: Draft, from: number, to: number, p: Draft) => {
-    const dd = computeDrawdown(d)
-    const pd = computeDrawdown(p)
-    for (let pick = 0; pick < d.picks; pick++)
-      for (let e = from; e <= to; e++)
-        if (dd[pick][e] !== pd[pick % p.picks][(e - from) % p.ends]) return `pick ${pick + 1}, end ${e + 1}`
-    return 'matches'
-  }
-
   it('weaves houndstooth and puppytooth side by side, each all the way down on its own shafts', () => {
     let d = addBlock(addBlock(draft(), 0, 7, 'Houndstooth'), 8, 14, 'Puppytooth')
     const before = computeDrawdown(d)
-    d = presetIntoBlock(d, 0, preset('houndstooth'), { name: 'Houndstooth' })
-    d = presetIntoBlock(d, 1, preset('puppytooth'), { name: 'Puppytooth' })
-    expect(matches(d, 0, 7, preset('houndstooth'))).toBe('matches')
-    expect(matches(d, 8, 14, preset('puppytooth'))).toBe('matches')
+    d = presetIntoBlock(d, 0, presetDraft('houndstooth'), { name: 'Houndstooth' })
+    d = presetIntoBlock(d, 1, presetDraft('puppytooth'), { name: 'Puppytooth' })
+    expect(weaves(d, 0, 7, presetDraft('houndstooth'))).toBe('weaves it')
+    expect(weaves(d, 8, 14, presetDraft('puppytooth'))).toBe('weaves it')
     // The ends outside both blocks weave as they did.
-    const after = computeDrawdown(d)
-    expect(after.map((row) => row.slice(15))).toEqual(before.map((row) => row.slice(15)))
+    expect(computeDrawdown(d).map((row) => row.slice(15))).toEqual(before.map((row) => row.slice(15)))
     // Each block has shafts of its own, added beyond the pattern's 4.
     const shaftsOf = (from: number, to: number) => new Set(d.threading.slice(from, to + 1))
-    const a = shaftsOf(0, 7)
-    const b = shaftsOf(8, 14)
-    const rest = shaftsOf(15, 31)
+    const [a, b, rest] = [shaftsOf(0, 7), shaftsOf(8, 14), shaftsOf(15, 31)]
     expect([...a].some((x) => b.has(x) || rest.has(x))).toBe(false)
     expect([...b].some((x) => rest.has(x))).toBe(false)
     expect(d.shafts).toBe(12)
-    expect(d.blocks?.map((x) => x.weave?.name)).toEqual(['Houndstooth', 'Puppytooth'])
-    // Picks and their number are kept; treadles are one per shed.
     expect(d.picks).toBe(32)
-    expect(d.treadles).toBeGreaterThanOrEqual(4)
-    // The houndstooth's colours: the block's warp, and the weft across the pattern (the first preset's).
-    expect(d.warpColors.slice(0, 8)).toEqual(preset('houndstooth').warpColors.slice(0, 8))
-    expect(d.weftColors.slice(0, 8)).toEqual(preset('houndstooth').weftColors.slice(0, 8))
+    expect(d.blocks?.map((x) => x.weave?.name)).toEqual(['Houndstooth', 'Puppytooth'])
+    expect(d.warpColors.slice(0, 8)).toEqual(presetDraft('houndstooth').warpColors.slice(0, 8))
   })
 
-  it('keeps a block on its own shafts when nothing else uses them, and re-weaves when its preset changes', () => {
+  it('takes the newest preset’s weft colours, or the block chosen for them, or leaves them', () => {
+    let d = addBlock(addBlock(draft(), 0, 7), 8, 15)
+    d = presetIntoBlock(d, 0, presetDraft('houndstooth'), { name: 'Houndstooth' })
+    d = presetIntoBlock(d, 1, presetDraft('puppytooth'), { name: 'Puppytooth' })
+    const weft = (p: Draft) => Array.from({ length: 32 }, (_, k) => p.weftColors[k % p.picks])
+    expect(d.weftColors).toEqual(weft(presetDraft('puppytooth')))
+    expect(weftBlock(d)).toBe(1)
+    d = setWeftFrom(d, 0)
+    expect(d.weftColors).toEqual(weft(presetDraft('houndstooth')))
+    expect(weftBlock(d)).toBe(0)
+    const kept = setWeftFrom(d, null)
+    expect(kept.weftColors).toEqual(d.weftColors)
+    expect(weftBlock(kept)).toBe(-1)
+    // Both still weave their structure.
+    expect(weaves(d, 0, 7, presetDraft('houndstooth'))).toBe('weaves it')
+    expect(weaves(d, 8, 15, presetDraft('puppytooth'))).toBe('weaves it')
+  })
+
+  it('keeps a block on the shafts it has when nothing else uses them', () => {
     let d = addBlock(draft(), 0, 31, 'All')
-    d = presetIntoBlock(d, 0, preset('basket-check'))
+    d = presetIntoBlock(d, 0, presetDraft('basket-check'))
     expect(d.shafts).toBe(4)
-    expect(matches(d, 0, 31, preset('basket-check'))).toBe('matches')
-    d = presetIntoBlock(d, 0, preset('houndstooth'))
-    expect(matches(d, 0, 31, preset('houndstooth'))).toBe('matches')
+    expect(weaves(d, 0, 31, presetDraft('basket-check'))).toBe('weaves it')
+    d = presetIntoBlock(d, 0, presetDraft('houndstooth'))
+    expect(weaves(d, 0, 31, presetDraft('houndstooth'))).toBe('weaves it')
     expect(d.shafts).toBe(4)
   })
 
   it('keeps block weaves in the file', () => {
-    const d = presetIntoBlock(addBlock(draft(), 0, 7), 0, preset('puppytooth'), { name: 'Puppytooth' })
+    const d = presetIntoBlock(addBlock(draft(), 0, 7), 0, presetDraft('puppytooth'), { name: 'Puppytooth' })
     expect(importFile(exportFile('x', d)).draft.blocks?.[0].weave).toEqual(d.blocks?.[0].weave)
+  })
+})
+
+describe('saved blocks keep their weft', () => {
+  it('saves only the block’s own shafts’ lifts, as a repeat, with the weft colours', () => {
+    const saved = blockContents(addBlock(draft(), 0, 3, 'Twill'), 0, 'Twill')
+    // 2/2 twill: a 4-pick repeat.
+    expect(saved.weave).toEqual({
+      base: 0,
+      lifts: [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [0, 3],
+      ],
+      weftColors: draft().weftColors.slice(0, 4),
+    })
+  })
+
+  it('a woven block saved and put in again weaves its pattern all the way down, on shafts of its own', () => {
+    let d = addBlock(addBlock(draft(), 0, 7, 'H'), 8, 14, 'P')
+    d = presetIntoBlock(d, 0, presetDraft('houndstooth'), { name: 'Houndstooth' })
+    d = presetIntoBlock(d, 1, presetDraft('puppytooth'), { name: 'Puppytooth' })
+    const saved = blockContents(d, 0, 'Saved H')
+    // Only its own shafts, counted from its first: none of the other blocks' or the rest's.
+    expect(Math.max(...(saved.weave?.lifts.flat() ?? []))).toBeLessThan(4)
+    expect(saved.weave?.lifts).toHaveLength(8)
+    const put = insertBlock(d, saved, d.ends)
+    expect(put.ends).toBe(40)
+    // No rows added across the cloth.
+    expect(put.picks).toBe(32)
+    expect(weaves(put, 32, 39, presetDraft('houndstooth'))).toBe('weaves it')
+    expect(weaves(put, 0, 7, presetDraft('houndstooth'))).toBe('weaves it')
+    expect(weaves(put, 8, 14, presetDraft('puppytooth'))).toBe('weaves it')
+    expect(computeDrawdown(put).map((r) => r.slice(15, 32))).toEqual(computeDrawdown(d).map((r) => r.slice(15, 32)))
+    const own = new Set(put.threading.slice(32))
+    expect(put.threading.slice(0, 32).some((x) => own.has(x))).toBe(false)
+    expect(put.blocks?.at(-1)).toMatchObject({ name: 'Saved H', weave: { name: 'Saved H' } })
+  })
+
+  it('swaps a block for a saved one, which weaves its own pattern there', () => {
+    let d = addBlock(addBlock(draft(), 0, 7, 'H'), 8, 15, 'Plain')
+    d = presetIntoBlock(d, 0, presetDraft('houndstooth'), { name: 'Houndstooth' })
+    const saved = blockContents(d, 0, 'H')
+    const next = replaceBlock(d, 1, saved)
+    expect(next.ends).toBe(32)
+    expect(weaves(next, 8, 15, presetDraft('houndstooth'))).toBe('weaves it')
+  })
+
+  it('reads blocks saved before, with their picks’ treadles, keeping only their own shafts', () => {
+    const old = {
+      name: 'Old',
+      threading: [4, 5, 6, 7],
+      warpColors: Array(4).fill('#000000'),
+      weft: {
+        treadles: [
+          [0, 4, 5],
+          [1, 5, 6],
+        ],
+        treadling: [[0], [1]],
+        weftColors: ['#111111', '#222222'],
+      },
+      updatedAt: 1,
+    }
+    expect(parseSavedBlocks([old])[0].weave).toEqual({
+      base: 4,
+      lifts: [
+        [0, 1],
+        [1, 2],
+      ],
+      weftColors: ['#111111', '#222222'],
+    })
+    expect(
+      parseSavedBlocks([{ ...old, weft: { treadles: [[0]], treadling: [[5]], weftColors: ['#000000'] } }])[0].weave,
+    ).toBeUndefined()
   })
 })

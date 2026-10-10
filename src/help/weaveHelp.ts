@@ -183,10 +183,9 @@ export const WEAVE_HELP: Topic[] = [
       {
         list: [
           'Click a block label to rename it, change its ends, or remove it.',
-          'Each block has **picks** too: the weft that weaves it. They follow its ends (ends 1–4, picks 1–4) until you set them with **From pick** and **To pick**.',
-          'The **save** button at the end of a block’s row keeps it in the block store on this device, warp and weft: its threading and warp colours, and its picks’ treadling, tie-up and weft colours. Unnamed blocks are called "Saved block 1" and so on.',
-          '**Put in** adds a saved block anywhere, its ends and its picks: treadles tied the same way are reused, and any others added. **Swap in** replaces a block (and its picks) with a saved one.',
-          '**Weave as preset** weaves a block as any preset, built in or your own, all the way down: just the part of it that fills the block’s columns, on shafts of the block’s own (added if the rest of the pattern uses its shafts), and the preset’s treadling on every pick. Several blocks can each weave a different preset side by side; each different shed gets a treadle. The block takes the preset’s warp colours; the weft crosses every block, so the first block’s preset gives the pattern its weft colours. Choose **None** to stop.',
+          'The **save** button at the end of a block’s row keeps it in the block store on this device, warp and weft: its threading and warp colours, and how it weaves all the way down (its own shafts’ lifts, as a repeat) with its weft colours. Unnamed blocks are called "Saved block 1" and so on.',
+          '**Put in** adds a saved block anywhere, and **Swap in** replaces a block with one: either way it weaves its pattern all the way down on shafts of its own (added as needed), without adding rows.',
+          '**Weave as preset** weaves a block as any preset, built in or your own, all the way down: just the part of it that fills the block’s columns, on shafts of the block’s own (added if the rest of the pattern uses its shafts), and the preset’s treadling on every pick. Several blocks can each weave a different preset side by side; each different shed gets a treadle. The block takes the preset’s warp colours. The weft crosses every block, so one pattern’s weft colours go right across the cloth: the newest one woven, or the block you choose under **Weft colours from**. Choose **None** to stop a block weaving its pattern.',
           'To make your own presets, save a pattern, then star it under **Load**.',
         ],
       },
