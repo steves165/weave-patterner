@@ -1,0 +1,13 @@
+.sew-list {
+  margin: 0;
+  padding-left: 1.4em;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--wp-body);
+}
+.sew-list li + li {
+  margin-top: 6px;
+}
+.sew-pattern text {
+  user-select: none;
+}

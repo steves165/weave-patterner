@@ -3,9 +3,9 @@
  * name and the app underneath. Drawn on a canvas, so the same code makes them in the browser (Share) and in Node
  * when the static pages are built (with @napi-rs/canvas).
  */
-import type { Brand } from './brands'
+import type { AppId, Brand } from './brands'
 import { clothView } from './layers'
-import { KNIT_VS, TWILL_STEPS } from './marks'
+import { KNIT_VS, SEW_NEEDLE, SEW_STITCHES, TWILL_STEPS } from './marks'
 import type { Draft } from './weave'
 
 type Ctx = CanvasRenderingContext2D
@@ -54,7 +54,7 @@ export function clothPainter(d: Draft): DesignPainter {
 }
 
 /** An app's mark (the logo square) at x, y. */
-function drawMark(ctx: Ctx, app: 'weave' | 'knit', x: number, y: number, size: number, accent: string, on: string) {
+function drawMark(ctx: Ctx, app: AppId, x: number, y: number, size: number, accent: string, on: string) {
   const s = size / 30
   ctx.fillStyle = accent
   ctx.beginPath()
@@ -67,6 +67,22 @@ function drawMark(ctx: Ctx, app: 'weave' | 'knit', x: number, y: number, size: n
       ctx.roundRect(x + mx * s, y + my * s, 4 * s, 4 * s, 1.3 * s)
       ctx.fill()
     }
+  } else if (app === 'sew') {
+    ctx.strokeStyle = on
+    ctx.lineWidth = 2.2 * s
+    ctx.lineCap = 'round'
+    const n = SEW_NEEDLE
+    ctx.beginPath()
+    ctx.moveTo(x + n.from[0] * s, y + n.from[1] * s)
+    ctx.lineTo(x + n.to[0] * s, y + n.to[1] * s)
+    for (const [a, b, c, d] of SEW_STITCHES) {
+      ctx.moveTo(x + a * s, y + b * s)
+      ctx.lineTo(x + c * s, y + d * s)
+    }
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(x + n.eye[0] * s, y + n.eye[1] * s, n.eyeR * s, 0, 2 * Math.PI)
+    ctx.stroke()
   } else {
     ctx.strokeStyle = on
     ctx.lineWidth = 2.2 * s
@@ -91,7 +107,7 @@ function shorten(ctx: Ctx, text: string, width: number): string {
 }
 
 export interface ShareCard {
-  app: 'weave' | 'knit'
+  app: AppId
   appName: string
   brand: Brand
   /** The design's name. */

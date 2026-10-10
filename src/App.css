@@ -94,6 +94,66 @@
   --wp-accent-glow: rgba(77, 182, 172, 0.3);
 }
 
+/* Sew Patterner: the same design in indigo on lavender-grey, deep navy in dark mode. */
+:root.sew {
+  --wp-bg: #eef0fb;
+  --wp-panel: #f8f9fe;
+  --wp-line: #d6daf2;
+  --wp-hover: #e2e5f8;
+  --wp-seg: #e0e3f6;
+  --wp-field: #b2b9e3;
+  --wp-field-hover: #7d88cc;
+  --wp-switch-off: #bcc2e6;
+  --wp-paper: #fdfdff;
+  --wp-ink: #181c33;
+  --wp-muted: #4d5580;
+  --wp-body: #33395e;
+  --wp-accent: #3949ab;
+  --wp-shadow: rgba(30, 40, 110, 0.08);
+  --wp-shadow-soft: rgba(30, 40, 110, 0.05);
+  --wp-shadow-strong: rgba(30, 40, 110, 0.3);
+  --wp-accent-glow: rgba(57, 73, 171, 0.35);
+}
+:root.sew.dark {
+  --wp-bg: #0d0f1e;
+  --wp-panel: #151829;
+  --wp-line: #262b4a;
+  --wp-hover: #1e2240;
+  --wp-seg: #1b1f38;
+  --wp-field: #343b66;
+  --wp-field-hover: #5761a0;
+  --wp-switch-off: #30365c;
+  --wp-paper: #181b2e;
+  --wp-ink: #e8eafa;
+  --wp-muted: #a3aad6;
+  --wp-body: #c6cbec;
+  --wp-accent: #9fa8da;
+  --wp-shadow: rgba(0, 0, 0, 0.35);
+  --wp-shadow-soft: rgba(0, 0, 0, 0.25);
+  --wp-shadow-strong: rgba(0, 0, 0, 0.4);
+  --wp-accent-glow: rgba(159, 168, 218, 0.3);
+}
+
+/* Sew Patterner's drawings: pattern lines on paper, notches and darts in a contrasting colour, the fabric. */
+:root.sew {
+  --sew-ink: #1e1e2a;
+  --sew-mark: #c2185b;
+  --sew-paper: #ffffff;
+  --sew-grid: #e3e6f5;
+  --sew-fabric: #c5cae9;
+  --sew-lining: #f3e5f5;
+  --sew-contrast: #ffe082;
+}
+:root.sew.dark {
+  --sew-ink: #e8eafa;
+  --sew-mark: #f48fb1;
+  --sew-paper: #181b2e;
+  --sew-grid: #262b4a;
+  --sew-fabric: #3f4a8a;
+  --sew-lining: #4a3a55;
+  --sew-contrast: #8d6e00;
+}
+
 .draft {
   display: grid;
   grid-template-columns: max-content max-content max-content;

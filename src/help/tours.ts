@@ -135,3 +135,51 @@ export const KNIT_TOUR: TourStep[] = [
     text: 'Press **F1** for help with whatever you are working on, **?** for keyboard shortcuts, or open Help to search the guides and take this tour again.',
   },
 ]
+
+/** The tour of Sew Patterner. */
+export const SEW_TOUR: TourStep[] = [
+  {
+    title: 'Welcome to Sew Patterner',
+    text: 'Sewing patterns made to your size: choose a design and a size or your measurements, print it, and sew it. This tour takes about a minute.',
+  },
+  {
+    target: '[data-tour="designs"]',
+    title: 'Designs',
+    text: 'Tops, dresses, skirts, trousers and accessories. Pick one to start; your size and units stay as they are.',
+  },
+  {
+    target: '[data-tour="settings"]',
+    title: 'Pattern settings',
+    text: 'The design’s style (neckline, sleeves, length, fit), your size or measurements, nested sizes and the seam allowances.',
+  },
+  {
+    target: '[data-tour="pattern"]',
+    title: 'The pattern',
+    text: 'Every piece with its cutting and sewing lines, grainline, notches and darts, redrafted as you change things. Zoom in, or see it at actual size.',
+  },
+  {
+    target: '[data-testid="sew-cutting"]',
+    title: 'Cutting layout',
+    text: 'The pieces laid out on your fabric, and how much to buy for its width.',
+  },
+  {
+    target: '[data-testid="sew-steps"]',
+    title: 'Instructions',
+    text: 'The steps to sew it, following the options you chose, and the materials to buy.',
+  },
+  {
+    target: '[data-tour="projector"]',
+    title: 'Projector',
+    text: 'Cut straight from a projector: the pattern full screen at full size, once you set the scale.',
+  },
+  {
+    target: 'nav[aria-label="File"], nav[aria-label="Main"]',
+    title: 'Save, print and share',
+    text: '**Print** makes a PDF to print at home with a test square and a page map. **Export** has A0, SVG and DXF too. **Save** keeps projects in this browser.',
+  },
+  {
+    target: '[data-tour="help"], [data-nav="File"]',
+    title: 'Help is always here',
+    text: 'Press **F1** for help with whatever you are working on, including how to take your measurements, or open Help to search the guides and take this tour again.',
+  },
+]

@@ -1,4 +1,4 @@
-import { type Brand, KNIT, WEAVE } from '../brands'
+import { type AppId, type Brand, KNIT, SEW, WEAVE } from '../brands'
 import type { Block } from '../help/types'
 import { markSvg } from '../marks'
 import { holidayOn, SEASONS, seasonBrand } from '../seasons'
@@ -63,15 +63,15 @@ export function describe(text: string, max = 158): string {
 }
 
 export interface App {
-  /** "weave" or "knit". */
-  id: 'weave' | 'knit'
+  /** "weave", "knit" or "sew". */
+  id: AppId
   name: string
-  /** Path of the app from the site root: "" or "knit/". */
+  /** Path of the app from the site root: "", "knit/" or "sew/". */
   path: string
   /** Its own colours (seasonal themes chosen in the app replace them). */
   brand: Brand
-  /** The other app, linked from the footer. */
-  other: { name: string; path: string }
+  /** The other apps, linked from the footer. */
+  others: { name: string; path: string }[]
 }
 
 export const WEAVE_APP: App = {
@@ -79,7 +79,10 @@ export const WEAVE_APP: App = {
   name: 'Weave Patterner',
   path: '',
   brand: WEAVE,
-  other: { name: 'Knit Patterner', path: 'knit/' },
+  others: [
+    { name: 'Knit Patterner', path: 'knit/' },
+    { name: 'Sew Patterner', path: 'sew/' },
+  ],
 }
 
 export const KNIT_APP: App = {
@@ -87,7 +90,21 @@ export const KNIT_APP: App = {
   name: 'Knit Patterner',
   path: 'knit/',
   brand: KNIT,
-  other: { name: 'Weave Patterner', path: '' },
+  others: [
+    { name: 'Weave Patterner', path: '' },
+    { name: 'Sew Patterner', path: 'sew/' },
+  ],
+}
+
+export const SEW_APP: App = {
+  id: 'sew',
+  name: 'Sew Patterner',
+  path: 'sew/',
+  brand: SEW,
+  others: [
+    { name: 'Weave Patterner', path: '' },
+    { name: 'Knit Patterner', path: 'knit/' },
+  ],
 }
 
 export interface Page {
@@ -194,7 +211,7 @@ ${content}
 </main>
 <footer>
 <p><a href="${root}${app.path}">${app.name}</a> is free and open source, and runs in your browser: no account or download.</p>
-<p><a href="${root}${app.path}guide/">Guides</a> · <a href="${root}${app.path}patterns/">Patterns</a> · <a href="${root}${app.other.path}">${app.other.name}</a> · <a href="https://github.com/steves165/weave-patterner">Source code</a></p>
+<p><a href="${root}${app.path}guide/">Guides</a> · <a href="${root}${app.path}patterns/">Patterns</a> · ${app.others.map((o) => `<a href="${root}${o.path}">${o.name}</a> · `).join('')}<a href="https://github.com/steves165/weave-patterner">Source code</a></p>
 </footer>
 </body>
 </html>

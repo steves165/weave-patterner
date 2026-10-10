@@ -1,5 +1,5 @@
 /**
- * Renders the PNG icons and the social-share preview images into public/ and public/knit/, from the favicons, the
+ * Renders the PNG icons and the social-share preview images into public/, public/knit/ and public/sew/, from the favicons, the
  * sample draft and the Fair Isle sample chart.
  * Run with `npm run images` after changing any of them; the outputs are committed.
  */
@@ -7,10 +7,13 @@ import { readFileSync } from 'node:fs'
 import { chromium } from '@playwright/test'
 import { SAMPLES } from '../src/knit/samples'
 import { clothView } from '../src/layers'
+import { bodyOf, designOf, newProject } from '../src/sew/project'
+import { piecesSvg, sketchSvg } from '../src/site/pages'
 import { importFile } from '../src/weave'
 
 const icon = readFileSync(new URL('../public/favicon.svg', import.meta.url), 'utf8')
 const knitIcon = readFileSync(new URL('../public/knit/favicon.svg', import.meta.url), 'utf8')
+const sewIcon = readFileSync(new URL('../public/sew/favicon.svg', import.meta.url), 'utf8')
 const { draft } = importFile(readFileSync(new URL('../samples/Green blocks.weave.json', import.meta.url), 'utf8'))
 
 /** The sample's face as an SVG of coloured squares, `size` px across. */
@@ -87,11 +90,43 @@ const knitSocial = `<!doctype html><html><head><style>
   <div class="cloth">${knitChart(470, 630)}</div>
 </body></html>`
 
+/** A shift dress: its sketch and its pattern pieces, for Sew Patterner's share image. */
+const dress = newProject('shift-dress')
+// Sized by the page's CSS rather than their own width and height.
+const unsized = (svg: string) => svg.replace(/ width="\d+" height="\d+"/, '')
+const dressSketch = unsized(sketchSvg(designOf(dress).sketch(bodyOf(dress), dress.options), '', '#9fa8da'))
+const dressPieces = unsized(piecesSvg(dress, ''))
+
+const sewSocial = `<!doctype html><html><head><style>
+  body { margin: 0; width: 1200px; height: 630px; display: flex; font-family: system-ui, sans-serif;
+         background: #eef0fb; color: #181c33; }
+  .text { flex: 1; padding: 72px 56px 56px 72px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 20px; }
+  .brand svg { width: 76px; height: 76px; }
+  h1 { font-size: 64px; margin: 0; color: #3949ab; letter-spacing: -1px; }
+  p { font-size: 32px; line-height: 1.3; margin: 36px 0 0; }
+  ul { margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 12px; }
+  li { font-size: 21px; background: #3949ab; color: #fff; padding: 8px 16px; border-radius: 999px; }
+  .art { width: 470px; height: 630px; overflow: hidden; background: #fff; box-shadow: -8px 0 24px rgba(0,0,0,.18);
+         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .art svg { display: block; }
+  .art .sketch svg { height: 270px; width: auto; }
+  .art .pieces svg { width: 430px; height: 300px; }
+</style></head><body>
+  <div class="text">
+    <div class="brand">${sewIcon}<h1>Sew Patterner</h1></div>
+    <p>Free sewing patterns made to your measurements, printed at home.</p>
+    <ul><li>Made to measure</li><li>A4, Letter &amp; A0</li><li>Projector mode</li><li>Fabric amounts</li></ul>
+  </div>
+  <div class="art"><div class="sketch">${dressSketch}</div><div class="pieces">${dressPieces}</div></div>
+</body></html>`
+
 const browser = await chromium.launch()
 const page = await browser.newPage()
 for (const [dir, svg] of [
   ['public', icon],
   ['public/knit', knitIcon],
+  ['public/sew', sewIcon],
 ] as const)
   for (const [file, size] of [
     ['apple-touch-icon.png', 180],
@@ -109,5 +144,7 @@ await page.setContent(social)
 await page.screenshot({ path: 'public/og-image.png' })
 await page.setContent(knitSocial)
 await page.screenshot({ path: 'public/knit/og-image.png' })
+await page.setContent(sewSocial)
+await page.screenshot({ path: 'public/sew/og-image.png' })
 await browser.close()
-console.log('Wrote the icons and share images in public/ and public/knit/')
+console.log('Wrote the icons and share images in public/, public/knit/ and public/sew/')

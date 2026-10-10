@@ -12,6 +12,9 @@ export interface Brand {
   divider: { light: string; dark: string }
 }
 
+/** The three apps. */
+export type AppId = 'weave' | 'knit' | 'sew'
+
 /** Weave Patterner: magenta on blush pink; deep plum in dark mode. */
 export const WEAVE: Brand = {
   accent: { light: '#D6246E', dark: '#E36A9C', onDark: '#2B0A1C' },
@@ -32,4 +35,15 @@ export const KNIT: Brand = {
   text: { light: '#14282A', dark: '#E6F5F2' },
   muted: { light: '#4E6F6B', dark: '#9CC3BC' },
   divider: { light: '#CFE9E4', dark: '#22403C' },
+}
+
+/** Sew Patterner: the same design in indigo on lavender-grey; deep navy in dark mode. */
+export const SEW: Brand = {
+  accent: { light: '#3949AB', dark: '#9FA8DA', onDark: '#141A3D' },
+  secondary: { light: '#4A5390', dark: '#B5BCE6' },
+  background: { light: '#EEF0FB', dark: '#0D0F1E' },
+  paper: { light: '#F8F9FE', dark: '#151829' },
+  text: { light: '#181C33', dark: '#E8EAFA' },
+  muted: { light: '#4D5580', dark: '#A3AAD6' },
+  divider: { light: '#D6DAF2', dark: '#262B4A' },
 }

@@ -1,3 +1,4 @@
+import type { AppId } from './brands'
 import { type Draft, parseDraft } from './weave'
 
 /**
@@ -75,15 +76,21 @@ export function withoutParam(keys: string | string[], pathname: string, search: 
 /** The encoded pattern in a URL's query or hash, if there is one. */
 export const patternFromLink = (search: string, hash = '') => linkParam(SHARE_KEY, search, hash)
 
-const APP_NAMES = { weave: 'Weave Patterner', knit: 'Knit Patterner' }
-const WHAT = { weave: 'a weaving draft', knit: 'a knitting chart' }
+export const APP_NAMES: Record<AppId, string> = {
+  weave: 'Weave Patterner',
+  knit: 'Knit Patterner',
+  sew: 'Sew Patterner',
+}
+const WHAT: Record<AppId, string> = { weave: 'a weaving draft', knit: 'a knitting chart', sew: 'a sewing pattern' }
+/** Where each app lives, from the site root. */
+export const APP_PATHS: Record<AppId, string> = { weave: '', knit: 'knit/', sew: 'sew/' }
 
 /** Links that open each site's own share page with the design's link filled in. */
-export function shareLinks(app: 'weave' | 'knit', title: string, link: string) {
+export function shareLinks(app: AppId, title: string, link: string) {
   const e = encodeURIComponent
   const text = `${title}: ${WHAT[app]} I made with ${APP_NAMES[app]}`
   // Pinterest pins a picture at a public address: the app's own picture (the design is only in this browser).
-  const picture = `${APP_URL}${app === 'knit' ? 'knit/' : ''}og-image.png`
+  const picture = `${APP_URL}${APP_PATHS[app]}og-image.png`
   return {
     text,
     pinterest: `https://www.pinterest.com/pin/create/button/?url=${e(link)}&media=${e(picture)}&description=${e(text)}`,

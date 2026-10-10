@@ -12,7 +12,8 @@ export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|anal
 /** A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way. */
 async function tourSeen(page: Page) {
   await page.addInitScript(() => {
-    if (!localStorage.getItem('wp-tour-seen')) localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true}')
+    if (!localStorage.getItem('wp-tour-seen'))
+      localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true,"sew":true}')
   })
 }
 
@@ -102,6 +103,17 @@ export async function openKnit(page: Page, { tour = 'seen' }: { tour?: 'seen' | 
   })
   await page.goto('./knit/')
   await expect(page.getByRole('grid', { name: 'Knitting chart' })).toBeVisible()
+}
+
+/** Opens Sew Patterner, with analytics blocked and already declined as for openApp. */
+export async function openSew(page: Page, { tour = 'seen', at = '' }: { tour?: 'seen' | 'new'; at?: string } = {}) {
+  await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  if (tour === 'seen') await tourSeen(page)
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
+  })
+  await page.goto(`./sew/${at}`)
+  await expect(page.getByRole('img', { name: /pattern, / })).toBeVisible()
 }
 
 /** A square of the knitting chart: row 1 is the bottom row, stitch 1 the rightmost. */

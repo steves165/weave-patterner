@@ -305,6 +305,13 @@ export function AppToolbar(p: Props) {
       onClick: close,
       href: './knit/',
     },
+    {
+      group: 'Other crafts',
+      primary: 'Sew Patterner',
+      secondary: 'Made-to-measure sewing patterns, printed at home',
+      onClick: close,
+      href: './sew/',
+    },
   ]
   const words = toolQuery.toLowerCase().split(/\s+/).filter(Boolean)
   const found = tools.filter((t) =>

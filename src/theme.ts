@@ -11,7 +11,7 @@ import '@fontsource/ibm-plex-mono/500.css'
  * name and headings, IBM Plex Mono for numbers. Pill-shaped buttons and segmented controls, rounded fields and cards.
  * The same colours are CSS variables (--wp-*) in App.css, for the grids and the parts outside MUI.
  */
-export { type Brand, KNIT, WEAVE } from './brands'
+export { type Brand, KNIT, SEW, WEAVE } from './brands'
 
 export const ACCENT = { light: WEAVE.accent.light, dark: WEAVE.accent.dark }
 export const BODY_FONT = "'Nunito Variable', 'Nunito', 'Helvetica Neue', sans-serif"

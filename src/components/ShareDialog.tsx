@@ -24,15 +24,16 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import { track } from '../analytics'
+import type { AppId } from '../brands'
 import { download } from '../exportDraft'
 import { useThemeBrand } from '../SeasonalTheme'
-import { APP_URL, shareLinks } from '../share'
+import { APP_NAMES, APP_PATHS, APP_URL, shareLinks } from '../share'
 import { type DesignPainter, drawShareCard, type ShareSize } from '../shareImage'
 
 interface Props {
   open: boolean
   onClose: () => void
-  app: 'weave' | 'knit'
+  app: AppId
   /** The design's name. */
   title: string
   /** Makes the link that opens this design. */
@@ -42,8 +43,6 @@ interface Props {
   /** Shows a short message. */
   onToast: (message: string) => void
 }
-
-const NAMES = { weave: 'Weave Patterner', knit: 'Knit Patterner' }
 
 /** The file name for a picture of the design. */
 const pictureName = (title: string, size: ShareSize) =>
@@ -75,7 +74,7 @@ export function ShareDialog({ open, onClose, app, title, link: makeLink, design,
     if (!open) return
     let cancelled = false
     let url = ''
-    const home = new URL(`${APP_URL}${app === 'knit' ? 'knit/' : ''}`)
+    const home = new URL(`${APP_URL}${APP_PATHS[app]}`)
     const address = `${home.host}${home.pathname}`.replace(/\/$/, '')
     Promise.all(
       ["600 52px 'Fredoka'", "700 30px 'Nunito Variable'"].map((f) => document.fonts?.load(f).catch(() => null)),
@@ -84,7 +83,7 @@ export function ShareDialog({ open, onClose, app, title, link: makeLink, design,
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
         if (!ctx) throw new Error('This browser cannot draw pictures')
-        drawShareCard(ctx, { app, appName: NAMES[app], brand, title, address, design }, size)
+        drawShareCard(ctx, { app, appName: APP_NAMES[app], brand, title, address, design }, size)
         return new Promise<Blob>((resolve, reject) =>
           canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('no picture'))), 'image/png'),
         )

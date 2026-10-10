@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { a11yProblems, openApp, openKnit } from './helpers'
+import { a11yProblems, openApp, openKnit, openSew } from './helpers'
 
 test.describe('phones and tablets: axe finds no accessibility problems', () => {
   test('Weave Patterner', async ({ page }) => {
@@ -9,6 +9,11 @@ test.describe('phones and tablets: axe finds no accessibility problems', () => {
 
   test('Knit Patterner', async ({ page }) => {
     await openKnit(page)
+    expect(await a11yProblems(page)).toEqual([])
+  })
+
+  test('Sew Patterner', async ({ page }) => {
+    await openSew(page)
     expect(await a11yProblems(page)).toEqual([])
   })
 

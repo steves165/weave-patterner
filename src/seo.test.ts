@@ -86,3 +86,30 @@ describe('Knit Patterner page metadata', () => {
     expect(html).toContain('<a href="./knit/">Knit Patterner</a>')
   })
 })
+
+describe('Sew Patterner page metadata', () => {
+  const sew = read('sew/index.html')
+  it('has its own title, description, canonical link and share image', () => {
+    expect(sew.match(/<title>(.*)<\/title>/)?.[1]).toMatch(/Sew Patterner.*Sewing Pattern/)
+    const description = sew.match(/<meta\s+name="description"\s+content="([^"]*)"/s)?.[1] ?? ''
+    expect(description.length).toBeGreaterThan(120)
+    expect(description.length).toBeLessThanOrEqual(200)
+    expect(sew).toContain('<link rel="canonical" href="https://steves165.github.io/weave-patterner/sew/" />')
+    const png = readFileSync(new URL('../public/sew/og-image.png', import.meta.url))
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
+  })
+
+  it('has structured data, existing icons, and links between all three apps', () => {
+    const data = JSON.parse(sew.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '')
+    expect(data.name).toBe('Sew Patterner')
+    expect(data.url).toBe('https://steves165.github.io/weave-patterner/sew/')
+    for (const [, href] of sew.matchAll(/href="\.\/([^"]+)"/g))
+      if (!/^(guide|patterns)\//.test(href)) expect(existsSync(`public/sew/${href}`), href).toBe(true)
+    const manifest = JSON.parse(read('public/sew/manifest.webmanifest'))
+    for (const icon of manifest.icons) expect(existsSync(`public/sew/${icon.src}`), icon.src).toBe(true)
+    expect(sew).toContain('<a href="../">Weave Patterner</a>')
+    expect(sew).toContain('<a href="../knit/">Knit Patterner</a>')
+    expect(html).toContain('<a href="./sew/">Sew Patterner</a>')
+    expect(read('knit/index.html')).toContain('<a href="../sew/">Sew Patterner</a>')
+  })
+})

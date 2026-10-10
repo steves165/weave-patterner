@@ -69,6 +69,7 @@ import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
 import { patternColours } from '../seasons'
+import { SewMark } from '../sew/SewLogo'
 import { linkParam, withoutParam } from '../share'
 import { patternStore } from '../storage'
 import { MONO_FONT } from '../theme'
@@ -541,7 +542,10 @@ export default function KnitApp() {
   const analyticsChoice = GA_ID ? () => setConsent(null) : undefined
   const weaveLinks = (fontSize?: number) => (
     <FooterLinks
-      other={{ href: '../', label: 'Weave Patterner' }}
+      others={[
+        { href: '../', label: 'Weave Patterner' },
+        { href: '../sew/', label: 'Sew Patterner' },
+      ]}
       onAnalytics={analyticsChoice}
       onHelp={() => openHelp(null)}
       fontSize={fontSize}
@@ -940,6 +944,13 @@ export default function KnitApp() {
                 <WeaveMark size={26} />
               </IconButton>
             </Tooltip>
+            {!phone && (
+              <Tooltip title="Sew Patterner: sewing patterns">
+                <IconButton component="a" href="../sew/" aria-label="Sew Patterner" sx={{ p: 1 }}>
+                  <SewMark size={26} />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         </Toolbar>
       </AppBar>

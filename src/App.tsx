@@ -490,7 +490,10 @@ export default function App() {
             links={
               phone && (
                 <FooterLinks
-                  other={{ href: './knit/', label: 'Knit Patterner' }}
+                  others={[
+                    { href: './knit/', label: 'Knit Patterner' },
+                    { href: './sew/', label: 'Sew Patterner' },
+                  ]}
                   onAnalytics={analyticsChoice}
                   onHelp={() => openHelp(null)}
                   fontSize={14}

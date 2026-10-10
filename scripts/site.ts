@@ -6,8 +6,10 @@ import { execSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
-import { KNIT, WEAVE } from '../src/brands'
+import { KNIT, SEW, WEAVE } from '../src/brands'
 import { fabricPainter } from '../src/knit/sharePicture'
+import { sketchPainter } from '../src/sew/sharePicture'
+import { APP_NAMES, APP_PATHS } from '../src/share'
 import { clothPainter, drawShareCard, type ShareSize } from '../src/shareImage'
 import { PICTURES, SITE_URL } from '../src/site/html'
 import { type Built, buildSite, sitemap } from '../src/site/pages'
@@ -34,14 +36,16 @@ async function pictures(picture: NonNullable<Built['picture']>, dir: string) {
   const site = new URL(SITE_URL)
   const card = {
     app: picture.app,
-    appName: picture.app === 'weave' ? 'Weave Patterner' : 'Knit Patterner',
-    brand: picture.app === 'weave' ? WEAVE : KNIT,
+    appName: APP_NAMES[picture.app],
+    brand: { weave: WEAVE, knit: KNIT, sew: SEW }[picture.app],
     title: picture.title,
-    address: `${site.host}${site.pathname}${picture.app === 'knit' ? 'knit' : ''}`.replace(/\/$/, ''),
+    address: `${site.host}${site.pathname}${APP_PATHS[picture.app]}`.replace(/\/$/, ''),
     design:
       picture.app === 'weave'
         ? clothPainter(picture.draft)
-        : fabricPainter(picture.chart, () => createCanvas(1, 1) as unknown as HTMLCanvasElement),
+        : picture.app === 'sew'
+          ? sketchPainter(picture.sketch, '#9fa8da')
+          : fabricPainter(picture.chart, () => createCanvas(1, 1) as unknown as HTMLCanvasElement),
   }
   const sizes: [ShareSize, string][] = [
     ['preview', PICTURES.preview],

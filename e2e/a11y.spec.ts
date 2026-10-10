@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { a11yProblems, openApp, openKnit, openTool, toolbarButton } from './helpers'
+import { a11yProblems, openApp, openKnit, openSew, openTool, toolbarButton } from './helpers'
 
 /** Closes whatever dialog is open, and waits for it to go. */
 async function closeDialog(page: Page) {
@@ -188,5 +188,36 @@ test.describe('keyboard and screen readers', () => {
       .first()
       .evaluate((el) => getComputedStyle(el).backgroundColor)
     expect(on).not.toBe(off)
+  })
+})
+
+test.describe('Sew Patterner: axe finds no accessibility problems', () => {
+  test('the app, with each design', async ({ page }) => {
+    await openSew(page)
+    expect(await a11yProblems(page)).toEqual([])
+    for (const name of ['Shift dress', 'Pull-on trousers', 'Bucket hat']) {
+      await page.getByRole('button', { name, exact: true }).click()
+      expect(await a11yProblems(page), name).toEqual([])
+    }
+  })
+
+  test('its dialogs and menus', async ({ page }) => {
+    await openSew(page)
+    for (const name of ['Save', 'Load', 'Share']) {
+      await toolbarButton(page, name).click()
+      expect(await a11yProblems(page, '[role="dialog"]'), name).toEqual([])
+      await closeDialog(page)
+    }
+    await toolbarButton(page, 'Export').click()
+    expect(await a11yProblems(page, '[role="menu"]'), 'Export').toEqual([])
+    await page.keyboard.press('Escape')
+    await page.getByTestId('sew-own').getByRole('button', { name: 'Draw one' }).click()
+    expect(await a11yProblems(page, '[role="dialog"]'), 'Draw one').toEqual([])
+    await closeDialog(page)
+    await page.getByRole('button', { name: 'Projector' }).click()
+    expect(await a11yProblems(page, '[role="dialog"]'), 'Projector').toEqual([])
+    await closeDialog(page)
+    await page.keyboard.press('F1')
+    expect(await a11yProblems(page, '[role="dialog"]'), 'Help').toEqual([])
   })
 })

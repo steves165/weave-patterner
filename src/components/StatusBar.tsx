@@ -145,7 +145,10 @@ export function StatusBar(p: Props) {
       links={
         !p.phone && (
           <FooterLinks
-            other={{ href: './knit/', label: 'Knit Patterner' }}
+            others={[
+              { href: './knit/', label: 'Knit Patterner' },
+              { href: './sew/', label: 'Sew Patterner' },
+            ]}
             onAnalytics={p.onAnalytics}
             onHelp={p.onHelp}
           />

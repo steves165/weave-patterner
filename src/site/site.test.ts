@@ -20,7 +20,8 @@ describe('guide and pattern pages', () => {
     for (const t of KNIT_HELP) expect(paths).toContain(`knit/guide/${t.id}/`)
     for (const p of PRESETS) expect(paths).toContain(`patterns/${p.id}/`)
     for (const s of SAMPLES) expect(paths).toContain(`knit/patterns/${sampleSlug(s.name)}/`)
-    for (const index of ['guide/', 'patterns/', 'knit/guide/', 'knit/patterns/']) expect(paths).toContain(index)
+    for (const index of ['guide/', 'patterns/', 'knit/guide/', 'knit/patterns/', 'sew/guide/', 'sew/patterns/'])
+      expect(paths).toContain(index)
     expect(paths.size).toBe(pages.length)
   })
 
@@ -43,7 +44,7 @@ describe('guide and pattern pages', () => {
   })
 
   it('only links to pages that exist, the apps, or their files', () => {
-    const apps = new Set(['', 'knit/', 'favicon.svg', 'knit/favicon.svg'])
+    const apps = new Set(['', 'knit/', 'sew/', 'favicon.svg', 'knit/favicon.svg', 'sew/favicon.svg'])
     for (const p of pages)
       for (const [, href] of p.html.matchAll(/href="([^"]+)"/g)) {
         if (/^https?:/.test(href)) continue
@@ -85,8 +86,8 @@ describe('guide and pattern pages', () => {
 
   it('lists every page in the sitemap with the date it last changed', () => {
     const xml = sitemap(pages, '2026-10-09')
-    for (const p of ['', 'knit/', ...paths]) expect(xml).toContain(`<loc>${SITE_URL}${p}</loc>`)
-    expect(xml.match(/<lastmod>2026-10-09<\/lastmod>/g)).toHaveLength(paths.size + 2)
+    for (const p of ['', 'knit/', 'sew/', ...paths]) expect(xml).toContain(`<loc>${SITE_URL}${p}</loc>`)
+    expect(xml.match(/<lastmod>2026-10-09<\/lastmod>/g)).toHaveLength(paths.size + 3)
   })
 })
 
@@ -106,5 +107,21 @@ describe('written drafts', () => {
     expect(text([...Array(4).fill([n, c]).flat(), ...Array(4).fill([c, n]).flat()])).toBe(
       '(1 navy, 1 cream) × 4, (1 cream, 1 navy) × 4',
     )
+  })
+})
+
+describe('sewing pattern pages', () => {
+  it('has a page for every design, opening it in Sew Patterner, with its sketch, pieces, sizes and steps', async () => {
+    const pages = await buildSite()
+    const page = pages.find((p) => p.path === 'sew/patterns/shift-dress/')
+    expect(page?.html).toContain(
+      '<a class="button" href="../../../sew/?design=shift-dress">Make this pattern in your size</a>',
+    )
+    expect(page?.html).toContain('aria-label="Sketch of the shift dress"')
+    expect(page?.html).toContain('aria-label="Shift dress pattern pieces in UK 12"')
+    expect(page?.html).toContain('<td>UK 24</td>')
+    expect(page?.html).toMatch(/<h2>How to sew it<\/h2>\n<ol><li>/)
+    expect(page?.picture).toMatchObject({ app: 'sew', title: 'Shift dress' })
+    expect(pages.find((p) => p.path === 'sew/guide/measuring/')?.html).toContain('Taking your measurements')
   })
 })

@@ -6,8 +6,8 @@ import { useState } from 'react'
 import { ThemeDialog } from '../SeasonalTheme'
 
 interface Props {
-  /** The sister app: Knit Patterner from Weave Patterner, and back. */
-  other: { href: string; label: string }
+  /** The sister apps: Knit and Sew Patterner from Weave Patterner, and so on. */
+  others: { href: string; label: string }[]
   /** Shown when analytics is set up: lets visitors change their analytics choice. */
   onAnalytics?: () => void
   /** Opens the help (also F1). */
@@ -16,7 +16,7 @@ interface Props {
 }
 
 /** The links at the foot of the app: help, the colour theme, the other app, the analytics choice and the source. */
-export function FooterLinks({ other, onAnalytics, onHelp, fontSize = 13 }: Props) {
+export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Props) {
   const [theme, setTheme] = useState(false)
   return (
     <>
@@ -45,9 +45,11 @@ export function FooterLinks({ other, onAnalytics, onHelp, fontSize = 13 }: Props
       <Link href="./guide/" sx={{ fontSize }}>
         Guides
       </Link>
-      <Link href={other.href} sx={{ fontSize }}>
-        {other.label}
-      </Link>
+      {others.map((o) => (
+        <Link key={o.href} href={o.href} sx={{ fontSize }}>
+          {o.label}
+        </Link>
+      ))}
       {onAnalytics && (
         <Link component="button" onClick={onAnalytics} sx={{ fontSize }}>
           Analytics
