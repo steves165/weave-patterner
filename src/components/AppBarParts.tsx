@@ -1,5 +1,5 @@
 import { Box, Button, ButtonBase, IconButton, ListSubheader, Tooltip } from '@mui/material'
-import type { MouseEvent, ReactNode } from 'react'
+import { type MouseEvent, type ReactNode, useLayoutEffect, useRef } from 'react'
 
 /** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
 export function Action(props: {
@@ -75,9 +75,28 @@ export function NavTab(props: {
 }
 
 /** The phone's bottom navigation bar, fixed along the bottom of the screen. */
+/** The phone navigation's height, as drawn, for what sits on it: the settings bar, and room at the foot of the page. */
+export const PHONE_NAV_HEIGHT = 'var(--phone-nav-height, calc(70px + env(safe-area-inset-bottom, 0px)))'
+
 export function PhoneNav({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+  // Its height depends on the fonts and the phone's safe area, so measure it rather than guess.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const root = document.documentElement
+    const set = () => root.style.setProperty('--phone-nav-height', `${el.getBoundingClientRect().height}px`)
+    set()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(set)
+    ro?.observe(el, { box: 'border-box' })
+    return () => {
+      ro?.disconnect()
+      root.style.removeProperty('--phone-nav-height')
+    }
+  }, [])
   return (
     <Box
+      ref={ref}
       component="nav"
       aria-label="Main"
       sx={{

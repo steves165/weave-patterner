@@ -4,6 +4,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import TuneIcon from '@mui/icons-material/Tune'
 import { Box, ButtonBase, Drawer, IconButton, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { PHONE_NAV_HEIGHT } from './AppBarParts'
 
 /** The app bar's height: the sidebar stays in view just below it. */
 const BAR = 65
@@ -128,7 +129,8 @@ export function SettingsSheet(props: {
         onClick={() => props.onOpen(true)}
         sx={{
           position: 'sticky',
-          bottom: props.phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
+          // On the phone navigation, overlapping it by a pixel so rounding never leaves a gap (the navigation is on top).
+          bottom: props.phone ? `calc(${PHONE_NAV_HEIGHT} - 1px)` : 0,
           zIndex: 5,
           mx: 1.25,
           px: 1.75,

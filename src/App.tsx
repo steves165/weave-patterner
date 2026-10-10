@@ -2,7 +2,7 @@ import { Box, Snackbar } from '@mui/material'
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
-import { SkipLink } from './components/AppBarParts'
+import { PHONE_NAV_HEIGHT, SkipLink } from './components/AppBarParts'
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
@@ -275,7 +275,7 @@ export default function App() {
           ...(pageScroll ? { width: 'max-content', minWidth: '100%' } : {}),
           bgcolor: 'background.default',
           // Room for the phone's bottom navigation.
-          pb: phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
+          pb: phone ? PHONE_NAV_HEIGHT : 0,
         }}
       >
         <SkipLink target="main">Skip to the draft</SkipLink>

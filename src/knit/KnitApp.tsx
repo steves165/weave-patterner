@@ -48,7 +48,7 @@ import {
 } from '@mui/material'
 import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
-import { Action, MenuHeading, NavTab, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
+import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
@@ -1131,7 +1131,7 @@ export default function KnitApp() {
           minHeight: 'calc(100vh - 64px)',
           display: 'flex',
           flexDirection: 'column',
-          pb: phone ? 'calc(70px + env(safe-area-inset-bottom, 0px))' : 0,
+          pb: phone ? PHONE_NAV_HEIGHT : 0,
         }}
       >
         <Box sx={{ flex: '1 0 auto', display: 'flex', alignItems: 'stretch' }}>
