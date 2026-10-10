@@ -2,6 +2,8 @@ import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
+import StarIcon from '@mui/icons-material/Star'
+import StarBorderIcon from '@mui/icons-material/StarBorder'
 import {
   Alert,
   Box,
@@ -36,6 +38,8 @@ interface Props<T> {
   onLoad: (pattern: Saved<T>) => void
   /** Called when a pattern is renamed or deleted, so the app can keep its current name in sync. */
   onRenamed: (from: string, to: string | null) => void
+  /** Patterns can be starred to be offered as presets (weaving drafts). */
+  presets?: boolean
 }
 
 const weaveThumb = (d: unknown) => <PatternThumb draft={d as Draft} />
@@ -52,6 +56,7 @@ export function LoadDialog<T = Draft>({
   onClose,
   onLoad,
   onRenamed,
+  presets = false,
 }: Props<T>) {
   const phone = usePhone()
   const [patterns, setPatterns] = useState<Saved<T>[] | null>(null)
@@ -171,6 +176,18 @@ export function LoadDialog<T = Draft>({
                     </Box>
                   ) : (
                     <>
+                      {presets && (
+                        <Tooltip title={p.preset ? 'A preset: click to stop offering it' : 'Use as a preset'}>
+                          <IconButton
+                            aria-label={`Use ${p.name} as a preset`}
+                            aria-pressed={Boolean(p.preset)}
+                            onClick={() => run(() => store.setPreset(p.name, !p.preset))}
+                            sx={{ color: p.preset ? 'warning.main' : undefined }}
+                          >
+                            {p.preset ? <StarIcon /> : <StarBorderIcon />}
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       <Tooltip title="Rename">
                         <IconButton onClick={() => setEditing({ from: p.name, to: p.name })}>
                           <EditIcon />
@@ -185,11 +202,11 @@ export function LoadDialog<T = Draft>({
                   )
                 }
               >
-                <ListItemButton onClick={() => onLoad(p)} sx={{ gap: 2, pr: 16 }}>
+                <ListItemButton onClick={() => onLoad(p)} sx={{ gap: 2, pr: presets ? 22 : 16 }}>
                   {thumb(p.draft)}
                   <ListItemText
                     primary={p.name}
-                    secondary={`${describe(p.draft)} · ${new Date(p.updatedAt).toLocaleString()}`}
+                    secondary={`${p.preset ? 'Preset · ' : ''}${describe(p.draft)} · ${new Date(p.updatedAt).toLocaleString()}`}
                   />
                 </ListItemButton>
               </ListItem>

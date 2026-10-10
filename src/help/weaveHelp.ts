@@ -164,7 +164,7 @@ export const WEAVE_HELP: Topic[] = [
         list: [
           'Click a swatch in the colour strips (above the threading, right of the treadling) to change one end or pick.',
           'In the settings, choose a colour and **Set all warp** or **Set all weft** to colour every end or pick.',
-          '**Colours and presets…** (settings, or Tools) makes stripe sequences, and 16 classic patterns with previews: houndstooth, puppytooth, Glen check, gun club check, log cabin, gingham, buffalo check, windowpane, tattersall, basket check, hairline and pin stripes, herringbone, bird’s eye, denim and a broken-twill check. They start in the colour theme’s colours (dark, light and an accent); change them before choosing.',
+          '**Colours and presets…** (settings, or Tools) makes stripe sequences, and 16 classic patterns with previews: houndstooth, puppytooth, Glen check, gun club check, log cabin, gingham, buffalo check, windowpane, tattersall, basket check, hairline and pin stripes, herringbone, bird’s eye, denim and a broken-twill check. They start in the colour theme’s colours (dark, light and an accent); change them before choosing. Your own presets are there too: star any saved pattern under **Load** to use it as one.',
           '**Tools › Colourways** shows the same cloth in other colours side by side.',
           'Turn on **Thread colours in boxes** to fill threading and treadling boxes with their thread colour.',
         ],
@@ -174,8 +174,8 @@ export const WEAVE_HELP: Topic[] = [
   {
     id: 'blocks',
     title: 'Blocks of ends',
-    summary: 'Name stretches of the threading and save them to reuse',
-    keywords: ['blocks', 'block store', 'saved block', 'sections'],
+    summary: 'Name stretches of the threading, weave them as presets, and save them to reuse',
+    keywords: ['blocks', 'block store', 'saved block', 'sections', 'picks', 'weft', 'preset', 'star'],
     body: [
       {
         p: 'Split the threading into named blocks (A, B, C… from end 1), shown in a strip above the draft. Drag along the strip to mark a block, or use the **Blocks** button above the draft.',
@@ -183,8 +183,11 @@ export const WEAVE_HELP: Topic[] = [
       {
         list: [
           'Click a block label to rename it, change its ends, or remove it.',
-          '**Save to store** keeps the block (its threading and warp colours) on this device. Unnamed blocks are called "Saved block 1" and so on.',
-          '**Put in** adds a saved block anywhere; **Swap in** replaces a block with a saved one.',
+          'Each block has **picks** too: the weft that weaves it. They follow its ends (ends 1–4, picks 1–4) until you set them with **From pick** and **To pick**.',
+          '**Save to store** keeps the block on this device, warp and weft: its threading and warp colours, and its picks’ treadling, tie-up and weft colours. Unnamed blocks are called "Saved block 1" and so on.',
+          '**Put in** adds a saved block anywhere, its ends and its picks: treadles tied the same way are reused, and any others added. **Swap in** replaces a block (and its picks) with a saved one.',
+          '**Weave as preset** fills a block’s ends and picks with any preset, built in or your own, on the block’s own shafts, so blocks on different shafts stay apart.',
+          'To make your own presets, save a pattern, then star it under **Load**.',
         ],
       },
       { p: 'For block weaves such as overshot or summer and winter, see **Tools › Block profile**.' },

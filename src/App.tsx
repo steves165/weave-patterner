@@ -544,6 +544,7 @@ export default function App() {
         />
         <LoadDialog
           open={dialog === 'load'}
+          presets
           onClose={() => setDialog(null)}
           onLoad={(p) => open(p.draft, p.name, `Loaded "${p.name}"`)}
           onRenamed={(from, to) => setName((cur) => (cur === from ? to : cur))}
@@ -738,7 +739,8 @@ export default function App() {
         <Snackbar
           open={toast !== null}
           autoHideDuration={toast && toast.length > 60 ? 8000 : 3000}
-          onClose={() => setToast(null)}
+          // Not on a click elsewhere: that click may be what just set a new message.
+          onClose={(_, reason) => reason !== 'clickaway' && setToast(null)}
           message={toast}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           // Above the phone's bottom navigation.

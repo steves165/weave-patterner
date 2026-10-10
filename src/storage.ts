@@ -7,6 +7,8 @@ export interface Saved<T> {
   name: string
   draft: T
   updatedAt: number
+  /** Offered as a preset, beside the built-in ones (weaving drafts). */
+  preset?: boolean
 }
 export type SavedPattern = Saved<Draft>
 
@@ -16,6 +18,8 @@ export interface PatternStore<T> {
   savePattern: (name: string, draft: T) => Promise<void>
   deletePattern: (name: string) => Promise<void>
   renamePattern: (from: string, to: string) => Promise<void>
+  /** Marks a pattern to be offered as a preset, or not. */
+  setPreset: (name: string, preset: boolean) => Promise<void>
 }
 
 const STORE = 'patterns'
@@ -66,7 +70,11 @@ export function patternStore<T>(dbName: string): PatternStore<T> {
         const exists = (await promisify(s.getKey(name))) !== undefined
         if (!exists && (await promisify(s.count())) >= MAX_PATTERNS)
           throw new Error(`You can save up to ${MAX_PATTERNS} patterns. Delete one to make room.`)
-        await promisify(s.put({ name, draft, updatedAt: Date.now() } satisfies Saved<T>))
+        // Saving over a pattern keeps it a preset if it was one.
+        const old = exists ? ((await promisify(s.get(name))) as Saved<T> | undefined) : undefined
+        await promisify(
+          s.put({ name, draft, updatedAt: Date.now(), ...(old?.preset ? { preset: true } : {}) } satisfies Saved<T>),
+        )
       }),
     deletePattern: (name) =>
       withStore('readwrite', async (s) => {
@@ -79,6 +87,13 @@ export function patternStore<T>(dbName: string): PatternStore<T> {
         if (!p) throw new Error(`Pattern "${from}" no longer exists`)
         await promisify(s.put({ ...p, name: to }))
         await promisify(s.delete(from))
+      }),
+    setPreset: (name, preset) =>
+      withStore('readwrite', async (s) => {
+        const p = (await promisify(s.get(name))) as Saved<T> | undefined
+        if (!p) throw new Error(`Pattern "${name}" no longer exists`)
+        const { preset: _, ...rest } = p
+        await promisify(s.put(preset ? { ...rest, preset: true } : rest))
       }),
   }
 }

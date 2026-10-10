@@ -78,7 +78,7 @@ export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'trea
   const colors = {
     warpColors: resize(d.warpColors, ends, () => lastWarp),
     weftColors: resize(d.weftColors, picks, () => lastWeft),
-    ...(d.blocks?.length ? { blocks: cleanBlocks(d.blocks, ends) } : {}),
+    ...(d.blocks?.length ? { blocks: cleanBlocks(d.blocks, ends, picks) } : {}),
   }
   // A new shaft or treadle count regenerates the grids so the pattern uses all of them.
   if (shafts !== d.shafts || treadles !== d.treadles) {
@@ -153,7 +153,7 @@ export function parseDraft(data: unknown): Draft {
     treadling: d.treadling,
     warpColors: d.warpColors,
     weftColors: d.weftColors,
-    ...(Array.isArray(d.blocks) && d.blocks.length ? { blocks: parseBlocks(d.blocks, ends) } : {}),
+    ...(Array.isArray(d.blocks) && d.blocks.length ? { blocks: parseBlocks(d.blocks, ends, picks) } : {}),
   }
 }
 

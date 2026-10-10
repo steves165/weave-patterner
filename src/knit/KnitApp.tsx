@@ -1611,7 +1611,8 @@ export default function KnitApp() {
       <Snackbar
         open={toast !== null}
         autoHideDuration={4000}
-        onClose={() => setToast(null)}
+        // Not on a click elsewhere: that click may be what just set a new message.
+        onClose={(_, reason) => reason !== 'clickaway' && setToast(null)}
         message={toast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         // Above the phone's bottom navigation.

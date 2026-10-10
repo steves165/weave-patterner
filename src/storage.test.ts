@@ -1,6 +1,14 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { deletePattern, listPatterns, MAX_PATTERNS, nextPatternName, renamePattern, savePattern } from './storage'
+import {
+  deletePattern,
+  listPatterns,
+  MAX_PATTERNS,
+  nextPatternName,
+  renamePattern,
+  savePattern,
+  weaveStore,
+} from './storage'
 import { defaultDraft, resizeDraft } from './weave'
 
 beforeEach(async () => {
@@ -49,5 +57,19 @@ describe('nextPatternName', () => {
   it('continues after the highest "Pattern N", ignoring other names', () => {
     expect(nextPatternName([])).toBe('Pattern 1')
     expect(nextPatternName(['Pattern 2', 'Pattern 10', 'My twill', 'Pattern x'])).toBe('Pattern 11')
+  })
+})
+
+describe('patterns as presets', () => {
+  it('marks a pattern as a preset, keeps it one when saved over or renamed, and unmarks it', async () => {
+    await savePattern('Check', defaultDraft())
+    await weaveStore.setPreset('Check', true)
+    expect((await listPatterns())[0].preset).toBe(true)
+    await savePattern('Check', resizeDraft(defaultDraft(), { ends: 8 }))
+    await renamePattern('Check', 'My check')
+    expect(await listPatterns()).toMatchObject([{ name: 'My check', preset: true, draft: { ends: 8 } }])
+    await weaveStore.setPreset('My check', false)
+    expect((await listPatterns())[0].preset).toBeUndefined()
+    await expect(weaveStore.setPreset('gone', true)).rejects.toThrow(/no longer exists/)
   })
 })

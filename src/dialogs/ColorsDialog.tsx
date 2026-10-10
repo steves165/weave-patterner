@@ -23,6 +23,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { applyStripes, type ColorRun, darkAndLight, expandRuns, PRESETS, toRuns } from '../colors'
 import { PatternThumb } from '../components/PatternThumb'
+import { useSavedPresets } from '../hooks/useSavedPresets'
 import { usePhone } from '../layout'
 import { themeColours } from '../seasons'
 import type { Draft } from '../weave'
@@ -70,6 +71,7 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
     () => PRESETS.map((preset) => ({ preset, draft: preset.build(dark, light, accent) })),
     [dark, light, accent],
   )
+  const saved = useSavedPresets(open && tab === 1)
   const [error, setError] = useState<string | null>(null)
   const colors = side === 'warp' ? draft.warpColors : draft.weftColors
 
@@ -238,6 +240,42 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
               They start in the theme's colours. A preset replaces the whole draft (undo brings it back); some use the
               accent too.
             </Typography>
+            {saved.length > 0 && (
+              <>
+                <Typography variant="subtitle2" component="h3">
+                  Your presets
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5 }}>
+                  Saved patterns starred as presets under Load, in their own colours.
+                </Typography>
+                {saved.map((p) => (
+                  <Card key={`saved-${p.name}`} variant="outlined" data-saved-preset={p.name}>
+                    <Stack direction="row" sx={{ gap: 2, alignItems: 'center', p: 1.5 }}>
+                      <PatternThumb draft={p.draft} size={64} />
+                      <CardContent sx={{ p: 0, flex: 1, minWidth: 0, '&:last-child': { pb: 0 } }}>
+                        <Typography variant="subtitle1" component="h4">
+                          {p.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {p.draft.shafts} shafts · {p.draft.treadles} treadles · {p.draft.ends} × {p.draft.picks}
+                        </Typography>
+                      </CardContent>
+                      <CardActions sx={{ p: 0 }}>
+                        <Button
+                          aria-label={`Use ${p.name}`}
+                          onClick={() => onApply(p.draft, `Applied your ${p.name} preset`)}
+                        >
+                          Use
+                        </Button>
+                      </CardActions>
+                    </Stack>
+                  </Card>
+                ))}
+                <Typography variant="subtitle2" component="h3">
+                  Built-in presets
+                </Typography>
+              </>
+            )}
             {built.map(({ preset: p, draft: d }) => (
               <Card key={p.id} variant="outlined">
                 <Stack direction="row" sx={{ gap: 2, alignItems: 'center', p: 1.5 }}>

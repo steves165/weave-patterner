@@ -3,17 +3,20 @@ import {
   addBlock,
   blockContents,
   blockLetter,
+  blockPicks,
   blockTitle,
   cleanBlocks,
   insertBlock,
   moveBlock,
   nextBlockName,
   parseSavedBlocks,
+  presetIntoBlock,
   putSavedBlock,
   removeBlock,
   renameBlock,
   replaceBlock,
   type SavedBlock,
+  setBlockPicks,
 } from './endBlocks'
 import { defaultDraft, exportFile, importFile, parseDraft, resizeDraft } from './weave'
 
@@ -135,5 +138,125 @@ describe('the block store', () => {
   it('reads back only valid saved blocks', () => {
     expect(parseSavedBlocks([pointBlock, { name: 'Bad', threading: [0], warpColors: [] }, null])).toEqual([pointBlock])
     expect(parseSavedBlocks('nope')).toEqual([])
+  })
+})
+
+describe('blocks with their weft', () => {
+  it('saves a block’s picks with it: the same numbers as its ends, unless set', () => {
+    const d = addBlock(draft(), 0, 3, 'Twill')
+    const saved = blockContents(d, 0, 'Twill')
+    // 2/2 twill: picks 1-4 press treadles 1-4, each lifting two shafts.
+    expect(saved.weft?.treadling).toEqual([[0], [1], [2], [3]])
+    expect(saved.weft?.treadles).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [0, 3],
+    ])
+    expect(saved.weft?.weftColors).toEqual(d.weftColors.slice(0, 4))
+    const set = setBlockPicks(d, 0, 9, 8)
+    expect(set.blocks?.[0].picks).toEqual({ from: 8, to: 9 })
+    expect(blockContents(set, 0, 'Twill').weft?.treadling).toHaveLength(2)
+    expect(blockPicks(set, 0)).toEqual({ from: 8, to: 9 })
+  })
+
+  it('puts in the warp and the weft of a saved block, reusing treadles with the same tie-up', () => {
+    const d = addBlock(draft(), 0, 3, 'Twill')
+    const saved = blockContents(d, 0, 'Twill')
+    const next = insertBlock(d, saved, d.ends, d.picks)
+    expect(next.ends).toBe(36)
+    expect(next.picks).toBe(36)
+    expect(next.treadles).toBe(d.treadles)
+    expect(next.treadling.slice(32)).toEqual(d.treadling.slice(0, 4))
+    expect(next.blocks?.[1]).toMatchObject({ from: 32, to: 35, name: 'Twill', picks: { from: 32, to: 35 } })
+  })
+
+  it('adds treadles for tie-ups the pattern doesn’t have, and shifts later blocks’ picks', () => {
+    const tabby = {
+      ...blockContents(addBlock(draft(), 0, 3), 0, 'x'),
+      weft: {
+        treadles: [
+          [0, 2],
+          [1, 3],
+        ],
+        treadling: [[0], [1]],
+        weftColors: ['#000000', '#ffffff'],
+      },
+    }
+    const d = setBlockPicks(addBlock(draft(), 8, 11, 'Later'), 0, 10, 12)
+    const next = insertBlock(d, tabby, 0, 0)
+    expect(next.treadles).toBe(6)
+    expect(next.tieup.map((row) => row.slice(4))).toEqual([
+      [true, false],
+      [false, true],
+      [true, false],
+      [false, true],
+    ])
+    expect(next.treadling[0]).toEqual([false, false, false, false, true, false])
+    expect(next.blocks?.find((b) => b.name === 'Later')?.picks).toEqual({ from: 12, to: 14 })
+  })
+
+  it('swaps a block’s picks along with its ends', () => {
+    const d = addBlock(draft(), 0, 3, 'A')
+    const other = {
+      name: 'B',
+      threading: [0, 0],
+      warpColors: ['#000000', '#000000'],
+      weft: { treadles: [[0]], treadling: [[0]], weftColors: ['#123456'] },
+      updatedAt: 0,
+    }
+    const next = replaceBlock(d, 0, other)
+    expect(next.ends).toBe(30)
+    expect(next.picks).toBe(29)
+    expect(next.weftColors[0]).toBe('#123456')
+    expect(next.blocks?.[0]).toMatchObject({ from: 0, to: 1, picks: { from: 0, to: 0 } })
+  })
+
+  it('keeps saved wefts in the block store, and drops broken ones', () => {
+    const saved = blockContents(addBlock(draft(), 0, 3), 0, 'W')
+    expect(parseSavedBlocks(JSON.parse(JSON.stringify([saved])))[0].weft).toEqual(saved.weft)
+    const broken = { ...saved, weft: { treadles: [[0]], treadling: [[5]], weftColors: ['#000000'] } }
+    expect(parseSavedBlocks([broken])[0].weft).toBeUndefined()
+  })
+
+  it('remembers a block’s picks in the file, and trims them when picks are taken away', () => {
+    const d = setBlockPicks(addBlock(draft(), 0, 3, 'A'), 0, 20, 30)
+    expect(importFile(exportFile('x', d)).draft.blocks?.[0].picks).toEqual({ from: 20, to: 30 })
+    expect(resizeDraft(d, { picks: 25 }).blocks?.[0].picks).toEqual({ from: 20, to: 24 })
+    expect(resizeDraft(d, { picks: 10 }).blocks?.[0].picks).toBeUndefined()
+  })
+})
+
+describe('weaving a block as a preset', () => {
+  it('fills the block’s ends and picks with the preset, on the block’s own shafts', () => {
+    // Block B on shafts 5-8.
+    let d = resizeDraft(draft(), { shafts: 8, treadles: 8 })
+    d = { ...d, threading: d.threading.map((s, e) => (e >= 8 && e < 16 ? s + 4 : s)) }
+    d = addBlock(addBlock(d, 0, 7, 'A'), 8, 15, 'B')
+    const preset = { ...draft(), warpColors: draft().warpColors.map(() => '#111111') }
+    const plain = {
+      ...preset,
+      threading: [0, 1],
+      ends: 2,
+      warpColors: ['#111111', '#222222'],
+      tieup: preset.tieup.map((row, s) => row.map((_, t) => (t === 0 ? s % 2 === 0 : t === 1 ? s % 2 === 1 : false))),
+      treadling: [
+        [true, false, false, false],
+        [false, true, false, false],
+      ],
+      picks: 2,
+      weftColors: ['#333333', '#444444'],
+    }
+    const next = presetIntoBlock(d, 1, plain)
+    expect(next.ends).toBe(32)
+    expect(next.threading.slice(8, 16)).toEqual([4, 5, 4, 5, 4, 5, 4, 5])
+    expect(next.warpColors.slice(8, 16)).toEqual(Array(4).fill(['#111111', '#222222']).flat())
+    expect(next.weftColors.slice(8, 16)).toEqual(Array(4).fill(['#333333', '#444444']).flat())
+    expect(next.picks).toBe(32)
+    // Block A is untouched.
+    expect(next.threading.slice(0, 8)).toEqual(d.threading.slice(0, 8))
+    // Without colours, the block keeps its own.
+    const kept = presetIntoBlock(d, 1, plain, { colours: false })
+    expect(kept.warpColors).toEqual(d.warpColors)
   })
 })

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { cell, ends, openApp, threading, toast, toolbarButton } from './helpers'
+import { cell, ends, openApp, openTool, picks, threading, toast, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await openApp(page)
@@ -83,4 +83,45 @@ test('swap a saved block in for a block, and rename it', async ({ page }) => {
   await dialog(page).getByRole('button', { name: 'Done' }).click()
   await expect(label(page, 'B')).toHaveAttribute('aria-label', 'Block B (5–8), Border')
   await expect(label(page, 'A')).toHaveText('ABorder')
+})
+
+test('a saved block keeps its weft, and putting it in adds its picks too', async ({ page }) => {
+  await markBlock(page, 1, 4)
+  await label(page, 'A').click()
+  // Its picks follow its ends until they're set.
+  await expect(dialog(page).getByLabel('From pick of block A')).toHaveAttribute('placeholder', '1')
+  await dialog(page).locator('[data-block="A"]').getByRole('button', { name: 'Save to store' }).click()
+  await expect(dialog(page).getByTestId('block-store')).toContainText('4 ends on 4 shafts · 4 picks on 4 treadles')
+  await dialog(page).getByRole('button', { name: 'Put in Saved block 1' }).click()
+  await expect(toast(page)).toContainText('Put in "Saved block 1": 4 ends after end 32 and 4 picks after pick 32')
+  await dialog(page).getByRole('button', { name: 'Done' }).click()
+  expect(await ends(page)).toBe('36')
+  expect(await picks(page)).toBe('36')
+})
+
+test('weave a block as a preset, built in or your own', async ({ page }) => {
+  // Star a saved pattern as a preset.
+  await toolbarButton(page, 'Save').click()
+  await page.getByRole('dialog').getByLabel('Name').fill('My basket')
+  await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+  await toolbarButton(page, 'Load').click()
+  const star = page.getByRole('button', { name: 'Use My basket as a preset' })
+  await star.click()
+  await expect(star).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Escape')
+
+  await markBlock(page, 1, 4)
+  await label(page, 'A').click()
+  await dialog(page).getByLabel('Weave as preset').first().click()
+  await expect(page.getByRole('option', { name: 'My basket' })).toBeVisible()
+  await page.getByRole('option', { name: 'Basket check' }).click()
+  await expect(toast(page)).toContainText('Block A is now woven as Basket check')
+  await dialog(page).getByRole('button', { name: 'Done' }).click()
+  // Basket weave threads in pairs: 1 1 2 2.
+  expect((await threading(page)).slice(0, 8)).toBe('11221234')
+
+  // Starred patterns are in the Colours dialog's presets too.
+  await openTool(page, /Colours and presets/)
+  await page.getByRole('tab', { name: /presets/ }).click()
+  await expect(page.getByRole('dialog').locator('[data-saved-preset="My basket"]')).toBeVisible()
 })

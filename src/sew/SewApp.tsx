@@ -1453,7 +1453,8 @@ export default function SewApp() {
       <Snackbar
         open={toast !== null}
         autoHideDuration={4000}
-        onClose={() => setToast(null)}
+        // Not on a click elsewhere: that click may be what just set a new message.
+        onClose={(_, reason) => reason !== 'clickaway' && setToast(null)}
         message={toast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         sx={phone ? { bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))' } : undefined}
