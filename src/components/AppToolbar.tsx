@@ -88,6 +88,7 @@ interface Props {
   onReport: () => void
   onRigidHeddle: () => void
   onTablet: () => void
+  onPaper: () => void
   onDrawloom: () => void
   onYarns: () => void
   onToLiftplan: () => void
@@ -204,6 +205,12 @@ export function AppToolbar(p: Props) {
       primary: 'Draw on the drawdown',
       secondary: 'Swap squares between warp and weft, right on the drawdown',
       onClick: p.onCloth,
+    },
+    {
+      group: 'Design',
+      primary: 'Draw on paper…',
+      secondary: 'Print a grid to colour in, then scan or photograph it as a new pattern',
+      onClick: p.onPaper,
     },
     {
       group: 'Design',

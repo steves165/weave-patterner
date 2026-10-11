@@ -293,6 +293,29 @@ export const WEAVE_HELP: Topic[] = [
     ],
   },
   {
+    id: 'paper',
+    title: 'Drawing on paper',
+    summary: 'Print a grid, colour it in by hand, and scan or photograph it back in',
+    keywords: ['paper', 'print', 'scan', 'photo', 'camera', 'qr code', 'draw by hand', 'pen', 'pencil', 'graph paper'],
+    body: [
+      {
+        p: '**Tools › Draw on paper…** prints a sheet to design on by hand, then reads it back as a new pattern, in the colours you used.',
+      },
+      {
+        steps: [
+          'Under **1. Print a sheet**, give it a name and choose how many ends (across) and picks (down) the grid has, and the paper. The preview shows the sheet; the squares get as big as the paper allows (turning it sideways for wide grids).',
+          '**Print** it, or **Download PDF** to print later, at 100% (actual size): the 10 cm scale at the bottom checks it.',
+          'Fill in each square where the warp shows on top, and leave weft squares blank. Colour the strip above the grid with each end’s warp colour and the strip on the right with each pick’s weft colour, or leave them blank. Felt tips, coloured pencils or a dark pencil all work.',
+          'Under **2. Read it back**, choose a scan, or **Take a photo** of the whole page, flat and in good light. The QR code says which sheet it is and its name; the corner squares line it up, even photographed at an angle.',
+          'Check the preview, then **Open as a new pattern**. The threading, tie-up and treadling are worked out from what you drew, with as few shafts and treadles as it needs. Use **Save** to keep it.',
+        ],
+      },
+      {
+        tip: 'Colour whole drawings too: colour the weft squares in their weft colour and fill in the strips, and squares coloured like their pick’s weft are read as weft. Keep the corner squares and the QR code clean.',
+      },
+    ],
+  },
+  {
     id: 'tools',
     title: 'Tools',
     summary: 'Every tool in the Tools menu, and what it does',
@@ -305,6 +328,10 @@ export const WEAVE_HELP: Topic[] = [
           ['Tromp as writ', 'Treadle as threaded.'],
           ['Colours and presets', 'Stripe sequences and classic colour patterns.'],
           ['Draw on the drawdown', 'Turns on drawing on the drawdown (also a switch in the view settings).'],
+          [
+            'Draw on paper',
+            'Print a grid to colour in by hand, then scan or photograph it and open it as a new pattern (see [[paper|Drawing on paper]]).',
+          ],
           ['Block profile', 'Design in blocks: overshot, summer and winter, lace, crackle, turned twill and more.'],
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],

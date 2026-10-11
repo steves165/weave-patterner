@@ -26,6 +26,7 @@ import { findRepeat } from './repeat'
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
 const TabletDialog = lazy(() => import('./dialogs/TabletDialog'))
+const PaperDialog = lazyDialog(() => import('./dialogs/PaperDialog'), 'PaperDialog')
 const DrawloomDialog = lazy(() => import('./dialogs/DrawloomDialog'))
 
 /** A dialog loaded the first time it's needed, keeping the main download small. */
@@ -89,6 +90,7 @@ type DialogName =
   | 'report'
   | 'rigid'
   | 'tablet'
+  | 'paper'
   | 'drawloom'
   | 'yarns'
   | 'blocks'
@@ -377,6 +379,7 @@ export default function App() {
           onReport={() => setDialog('report')}
           onRigidHeddle={() => setDialog('rigid')}
           onTablet={() => setDialog('tablet')}
+          onPaper={() => setDialog('paper')}
           onDrawloom={() => setDialog('drawloom')}
           onYarns={() => setDialog('yarns')}
           isLiftplan={isDirectTieup(draft)}
@@ -652,6 +655,17 @@ export default function App() {
         {dialog === 'drawloom' && (
           <Suspense fallback={null}>
             <DrawloomDialog open onClose={() => setDialog(null)} onApply={applyFromDialog} />
+          </Suspense>
+        )}
+        {dialog === 'paper' && (
+          <Suspense fallback={null}>
+            <PaperDialog
+              open
+              draft={draft}
+              name={name}
+              onClose={() => setDialog(null)}
+              onOpen={(d, n, message) => open(d, n, `${message}. Use Save to keep it.`)}
+            />
           </Suspense>
         )}
         {dialog === 'tablet' && (
