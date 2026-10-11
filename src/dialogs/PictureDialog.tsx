@@ -18,6 +18,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MAX_BLOCKS, turnedTwill } from '../blocks'
 import { BLOCK_WEAVES, blockWeave } from '../blockWeaves'
+import { ColourInput } from '../components/ColourInput'
 import { doubleCloth } from '../doublecloth'
 import { lightnessGrid, midLightness, type Pixels, pictureProfile, twoTone } from '../image'
 import { readImagePixels } from '../imageFile'
@@ -255,13 +256,7 @@ export function PictureDialog({ open, onClose, onApply }: Props) {
               ] as const
             ).map(([label, value, set]) => (
               <Stack key={label} direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label={`${label} colour`}
-                  value={value}
-                  onChange={(e) => set(e.target.value)}
-                />
+                <ColourInput label={`${label} colour`} value={value} onChange={(v) => set(v)} className="picker" />
                 <Typography variant="body2">{label}</Typography>
               </Stack>
             ))}

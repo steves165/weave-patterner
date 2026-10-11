@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
+import { ColourInput } from '../components/ColourInput'
 import { usePhone } from '../layout'
 import { skeletonTieup } from '../skeleton'
 import { flipDraft, insertTabby, invertDraft, removeTabby, shiftDraft, tabbyBreaks, turnDraft } from '../transforms'
@@ -161,12 +162,11 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
           </Typography>
           <Stack direction="row" sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="picker"
-                aria-label="Tabby weft colour"
+              <ColourInput
+                label="Tabby weft colour"
                 value={tabbyColor}
-                onChange={(e) => setTabbyColor(e.target.value)}
+                onChange={(v) => setTabbyColor(v)}
+                className="picker"
               />
               <Typography variant="body2">Tabby weft</Typography>
             </Stack>

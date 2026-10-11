@@ -2,6 +2,7 @@ import { Box, Snackbar } from '@mui/material'
 import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
+import { forgetStripe, withStripe } from './colors'
 import { PHONE_NAV_HEIGHT, SkipLink } from './components/AppBarParts'
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
@@ -244,6 +245,19 @@ export default function App() {
       onFillWarp={(c) => update((d) => ({ ...d, warpColors: d.warpColors.map(() => c) }))}
       onFillWeft={(c) => update((d) => ({ ...d, weftColors: d.weftColors.map(() => c) }))}
       onColors={() => setDialog('colors')}
+      onStripe={(side, runs, key) =>
+        update(
+          (d) => {
+            const stripe = d.stripes?.[side]
+            return stripe ? withStripe(d, side, { ...stripe, runs }) : d
+          },
+          { key: `stripe:${side}:${key}` },
+        )
+      }
+      onForgetStripe={(side) => {
+        update((d) => forgetStripe(d, side))
+        setToast(`Forgot the ${side} stripe; its colours stay as they are`)
+      }}
       repeat={repeat}
       onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
       highlightFloats={highlightFloats}

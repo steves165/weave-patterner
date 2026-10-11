@@ -13,6 +13,7 @@ import {
 import { useMemo, useState } from 'react'
 import { MAX_BLOCKS, turnedTwill, UNIT } from '../blocks'
 import { BLOCK_WEAVES, type BlockWeave, blockWeave } from '../blockWeaves'
+import { ColourInput } from '../components/ColourInput'
 import {
   defaultProfileInput,
   ProfileEditor,
@@ -147,12 +148,11 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
             <Stack direction="row" sx={{ gap: 2, flexWrap: 'wrap' }}>
               {colorFields.map(([key, label]) => (
                 <Stack key={key} direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    className="picker"
-                    aria-label={label}
+                  <ColourInput
+                    label={label}
                     value={colors[key]}
-                    onChange={(e) => setColors({ ...colors, [key]: e.target.value })}
+                    onChange={(v) => setColors({ ...colors, [key]: v })}
+                    className="picker"
                   />
                   <Typography variant="body2">{label}</Typography>
                 </Stack>

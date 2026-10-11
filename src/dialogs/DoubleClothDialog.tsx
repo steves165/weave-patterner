@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
+import { ColourInput } from '../components/ColourInput'
 import { defaultProfileInput, ProfileEditor, toProfile } from '../components/ProfileEditor'
 import { doubleCloth, type LayerWeave, type Structure, shaftsPerLayer } from '../doublecloth'
 import { usePhone } from '../layout'
@@ -139,12 +140,11 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
           <Stack direction="row" sx={{ gap: 2, flexWrap: 'wrap' }}>
             {COLOR_FIELDS.filter(([key]) => !(oneShuttle && key === 'weftB')).map(([key, name]) => (
               <Stack key={key} direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label={oneShuttle && key === 'weftA' ? 'Weft (one shuttle)' : name}
+                <ColourInput
+                  label={oneShuttle && key === 'weftA' ? 'Weft (one shuttle)' : name}
                   value={colors[key]}
-                  onChange={(e) => setColors({ ...colors, [key]: e.target.value })}
+                  onChange={(v) => setColors({ ...colors, [key]: v })}
+                  className="picker"
                 />
                 <Typography variant="body2">{oneShuttle && key === 'weftA' ? 'Weft (one shuttle)' : name}</Typography>
               </Stack>

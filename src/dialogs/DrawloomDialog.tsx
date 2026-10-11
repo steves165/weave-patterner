@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ColourInput } from '../components/ColourInput'
 import { Grid } from '../components/Grid'
 import {
   type DrawloomDesign,
@@ -197,12 +198,11 @@ export default function DrawloomDialog({ open, onClose, onApply }: Props) {
             ] as const
           ).map(([key, label]) => (
             <Stack key={key} direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="picker"
-                aria-label={label}
+              <ColourInput
+                label={label}
                 value={design[key]}
-                onChange={(e) => update({ [key]: e.target.value })}
+                onChange={(v) => update({ [key]: v })}
+                className="picker"
               />
               <Typography variant="body2">{label}</Typography>
             </Stack>

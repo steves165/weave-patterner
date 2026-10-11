@@ -48,6 +48,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
 import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
+import { ColourInput } from '../components/ColourInput'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
@@ -1233,12 +1234,11 @@ export default function SewApp() {
                   help="sewing"
                   testId="sew-sketch"
                   action={
-                    <input
-                      type="color"
-                      className="picker"
-                      aria-label="Fabric colour for the sketch"
+                    <ColourInput
+                      label="Fabric colour for the sketch"
                       value={view.colour}
-                      onChange={(e) => setView({ colour: e.target.value })}
+                      onChange={(v) => setView({ colour: v })}
+                      className="picker"
                       style={{ width: 32, height: 32, padding: 2 }}
                     />
                   }

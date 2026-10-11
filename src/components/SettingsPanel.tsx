@@ -14,12 +14,15 @@ import {
   Typography,
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
+import type { ColorRun } from '../colors'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { patternColours } from '../seasons'
 import { MONO_FONT } from '../theme'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
 import { DEFAULT_WARP, DEFAULT_WEFT, type Draft, MAX_SHAFTS, MAX_TREADLES } from '../weave'
+import { ColourInput } from './ColourInput'
+import { StripeEditor } from './StripeEditor'
 
 export const LIMITS = {
   shafts: [2, MAX_SHAFTS],
@@ -73,6 +76,9 @@ interface Props {
   onFillWeft: (color: string) => void
   /** Opens the colour sequences and presets. */
   onColors: () => void
+  /** Changes a remembered stripe's sequence (re-applying it); `key` names the change, to merge typing. */
+  onStripe: (side: 'warp' | 'weft', runs: ColorRun[], key: string) => void
+  onForgetStripe: (side: 'warp' | 'weft') => void
   /** The smallest repeat of the cloth. */
   repeat: { ends: number; picks: number }
   onTrimToRepeat: () => void
@@ -165,13 +171,7 @@ function ColorRow(props: {
   const [color, setColor] = useState(props.initial)
   return (
     <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center' }}>
-      <input
-        type="color"
-        className="picker"
-        aria-label={props.aria}
-        value={color}
-        onChange={(e) => setColor(e.target.value)}
-      />
+      <ColourInput label={props.aria} value={color} onChange={setColor} />
       <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Typography sx={{ fontWeight: 600 }}>{props.label}</Typography>
         <Typography variant="caption" color="text.secondary">
@@ -226,8 +226,36 @@ export function SettingsPanel(p: Props) {
           initial={patternColours()?.weft ?? DEFAULT_WEFT}
           onApply={p.onFillWeft}
         />
+        {(['warp', 'weft'] as const).map((side) => {
+          const stripe = draft.stripes?.[side]
+          if (!stripe) return null
+          const label = side === 'warp' ? 'Warp stripe' : 'Weft stripe'
+          return (
+            <Stack key={side} sx={{ gap: 1 }} data-testid={`${side}-stripes`}>
+              <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ fontWeight: 600, flex: 1 }}>
+                  {side === 'warp' ? 'Warp' : 'Weft'} stripes
+                  <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                    {side === 'warp' ? 'ends' : 'picks'} {stripe.from}–{stripe.to}
+                  </Typography>
+                </Typography>
+                <Tooltip title="Stop remembering this stripe here (the colours stay)" describeChild>
+                  <Button size="small" color="inherit" onClick={() => p.onForgetStripe(side)}>
+                    Forget
+                  </Button>
+                </Tooltip>
+              </Stack>
+              <StripeEditor
+                dense
+                label={label}
+                runs={stripe.runs}
+                onChange={(runs, key) => p.onStripe(side, runs, key)}
+              />
+            </Stack>
+          )
+        })}
         <Button size="small" onClick={p.onColors} sx={{ alignSelf: 'flex-start', ml: -1.5 }}>
-          Colours and presets…
+          {draft.stripes ? 'Colours and presets…' : 'Stripes and presets…'}
         </Button>
       </Section>
 

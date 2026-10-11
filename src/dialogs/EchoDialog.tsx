@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
+import { ColourInput } from '../components/ColourInput'
 import { echoDraft, parseTwill } from '../echo'
 import { usePhone } from '../layout'
 import { parseSequence } from '../tools'
@@ -98,12 +99,11 @@ export function EchoDialog({ open, onClose, onApply }: Props) {
           <Stack direction="row" sx={{ gap: 2, flexWrap: 'wrap' }}>
             {COLOR_FIELDS.map(([key, label]) => (
               <Stack key={key} direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label={label}
+                <ColourInput
+                  label={label}
                   value={colors[key]}
-                  onChange={(e) => setColors({ ...colors, [key]: e.target.value })}
+                  onChange={(v) => setColors({ ...colors, [key]: v })}
+                  className="picker"
                 />
                 <Typography variant="body2">{label}</Typography>
               </Stack>

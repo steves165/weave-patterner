@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { textOn } from '../colors'
+import { ColourInput } from './ColourInput'
 
 interface GridProps {
   rows: number
@@ -165,14 +166,13 @@ export function ColorStrip({ colors, vertical, onChange, labelAt, traced }: Colo
       }
     >
       {colors.map((color, i) => (
-        <input
+        <ColourInput
           key={i}
-          type="color"
-          className={`swatch${i === traced ? ' traced' : ''}`}
+          label={labelAt(i)}
           value={color}
-          aria-label={labelAt(i)}
-          title={`${labelAt(i)}: ${color}`}
-          onChange={(e) => onChange(i, e.target.value)}
+          onChange={(v) => onChange(i, v)}
+          className={`swatch${i === traced ? ' traced' : ''}`}
+          inputProps={{ title: `${labelAt(i)}: ${color}` }}
         />
       ))}
     </div>

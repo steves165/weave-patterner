@@ -117,6 +117,7 @@ import { fabricPainter } from './sharePicture'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 import { yarnNeeded } from './yarn'
 import './knit.css'
+import { ColourInput } from '../components/ColourInput'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Knit3DDialog = lazy(() => import('./Knit3DDialog'))
@@ -1244,14 +1245,11 @@ export default function KnitApp() {
                       />
                       {colorLetter(i)}
                     </ToggleButton>
-                    <input
-                      type="color"
-                      className="picker"
-                      aria-label={`Colour ${colorLetter(i)}`}
+                    <ColourInput
+                      label={`Colour ${colorLetter(i)}`}
                       value={color}
-                      onChange={(e) =>
-                        update({ ...chart, colors: chart.colors.map((c, j) => (j === i ? e.target.value : c)) })
-                      }
+                      onChange={(v) => update({ ...chart, colors: chart.colors.map((c, j) => (j === i ? v : c)) })}
+                      className="picker"
                       style={{ width: 32, height: 32, padding: 2 }}
                     />
                   </Stack>

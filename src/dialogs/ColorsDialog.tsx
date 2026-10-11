@@ -1,8 +1,5 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
 import {
   Alert,
-  Box,
   Button,
   Card,
   CardActions,
@@ -11,7 +8,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
   Stack,
   Tab,
   Tabs,
@@ -21,8 +17,10 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { applyStripes, type ColorRun, darkAndLight, expandRuns, PRESETS, toRuns } from '../colors'
+import { applyStripes, type ColorRun, darkAndLight, expandRuns, PRESETS, toRuns, withStripe } from '../colors'
+import { ColourInput } from '../components/ColourInput'
 import { PatternThumb } from '../components/PatternThumb'
+import { StripeEditor } from '../components/StripeEditor'
 import { useSavedPresets } from '../hooks/useSavedPresets'
 import { usePhone } from '../layout'
 import { themeColours } from '../seasons'
@@ -78,15 +76,15 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
   // Start from the current colours (if they form a manageable stripe) each time the dialog or side changes.
   useEffect(() => {
     if (!open) return
+    // The stripe applied before, to change; or the colours as they are, if they make a manageable stripe.
+    const remembered = draft.stripes?.[side]
     const current = toRuns(side === 'warp' ? draft.warpColors : draft.weftColors)
-    setRuns(current.length >= 2 && current.length <= 8 ? current : defaultRuns())
-    setFrom('1')
-    setTo(String(side === 'warp' ? draft.ends : draft.picks))
+    setRuns(remembered ? remembered.runs : current.length >= 2 && current.length <= 8 ? current : defaultRuns())
+    setFrom(String(remembered?.from ?? 1))
+    setTo(String(remembered?.to ?? (side === 'warp' ? draft.ends : draft.picks)))
     setError(null)
-  }, [open, side, draft.warpColors, draft.weftColors, draft.ends, draft.picks])
+  }, [open, side, draft.warpColors, draft.weftColors, draft.ends, draft.picks, draft.stripes])
 
-  const setRun = (i: number, patch: Partial<ColorRun>) =>
-    setRuns(runs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
   const preview = (() => {
     try {
       return expandRuns(runs)
@@ -97,11 +95,11 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
 
   const applyStripe = () => {
     try {
-      const next = applyStripes(colors, runs, Number(from), Number(to))
+      applyStripes(colors, runs, Number(from), Number(to))
       const label = side === 'warp' ? 'ends' : 'picks'
       onApply(
-        side === 'warp' ? { ...draft, warpColors: next } : { ...draft, weftColors: next },
-        `Applied a ${preview.length}-thread stripe to ${side} ${label} ${from}–${to}`,
+        withStripe(draft, side, { runs, from: Number(from), to: Number(to) }),
+        `Applied a ${preview.length}-thread stripe to ${side} ${label} ${from}–${to}: change it any time under Colours in the settings`,
       )
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -128,54 +126,7 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
               <ToggleButton value="warp">Warp (ends)</ToggleButton>
               <ToggleButton value="weft">Weft (picks)</ToggleButton>
             </ToggleButtonGroup>
-            <Stack sx={{ gap: 1 }} role="list" aria-label="Stripe sequence">
-              {runs.map((r, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: stripes are positional and edited in place
-                <Stack key={i} direction="row" sx={{ gap: 1, alignItems: 'center' }} role="listitem">
-                  <input
-                    type="color"
-                    className="picker"
-                    aria-label={`Stripe ${i + 1} colour`}
-                    value={r.color}
-                    onChange={(e) => setRun(i, { color: e.target.value })}
-                  />
-                  <TextField
-                    size="small"
-                    type="number"
-                    label={`Stripe ${i + 1} threads`}
-                    value={r.count}
-                    onChange={(e) => setRun(i, { count: Number(e.target.value) })}
-                    slotProps={{ htmlInput: { min: 1 } }}
-                    sx={{ width: 150 }}
-                  />
-                  <IconButton
-                    aria-label={`Remove stripe ${i + 1}`}
-                    disabled={runs.length <= 1}
-                    onClick={() => setRuns(runs.filter((_, j) => j !== i))}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Stack>
-              ))}
-            </Stack>
-            <Button
-              startIcon={<AddIcon />}
-              sx={{ alignSelf: 'flex-start' }}
-              onClick={() => setRuns([...runs, { color: runs[runs.length - 1]?.color ?? '#000000', count: 1 }])}
-            >
-              Add stripe
-            </Button>
-            <Box
-              data-testid="stripe-preview"
-              role="img"
-              aria-label="Preview of the stripes"
-              sx={{ display: 'flex', height: 20, border: 1, borderColor: 'divider', overflow: 'hidden' }}
-            >
-              {Array.from({ length: Math.min(64, Math.max(preview.length, 1) * 4) }, (_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: purely positional preview
-                <Box key={i} sx={{ flex: 1, bgcolor: preview[i % preview.length] ?? 'transparent' }} />
-              ))}
-            </Box>
+            <StripeEditor runs={runs} onChange={(next) => setRuns(next)} />
             <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
               <TextField
                 size="small"
@@ -206,33 +157,15 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
           <Stack sx={{ gap: 2, pt: 1 }}>
             <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}>
               <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label="Dark colour"
-                  value={dark}
-                  onChange={(e) => setDark(e.target.value)}
-                />
+                <ColourInput label="Dark colour" value={dark} onChange={setDark} />
                 <Typography>Dark</Typography>
               </Stack>
               <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label="Light colour"
-                  value={light}
-                  onChange={(e) => setLight(e.target.value)}
-                />
+                <ColourInput label="Light colour" value={light} onChange={setLight} />
                 <Typography>Light</Typography>
               </Stack>
               <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label="Accent colour"
-                  value={accent}
-                  onChange={(e) => setAccent(e.target.value)}
-                />
+                <ColourInput label="Accent colour" value={accent} onChange={setAccent} />
                 <Typography>Accent</Typography>
               </Stack>
             </Stack>

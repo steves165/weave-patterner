@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { ColourInput } from '../components/ColourInput'
 import { usePhone } from '../layout'
 import { TEXTURES, type Texture } from '../textures'
 import type { Draft } from '../weave'
@@ -50,12 +51,11 @@ export function YarnsDialog({ open, draft, yarns, onChange, onClose }: Props) {
           <Stack sx={{ gap: 1.5 }} role="list" aria-label="Yarns">
             {yarns.map((y, i) => (
               <Stack key={y.id} direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }} role="listitem">
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label={`Yarn ${i + 1} colour`}
+                <ColourInput
+                  label={`Yarn ${i + 1} colour`}
                   value={y.color}
-                  onChange={(e) => set(y.id, { color: e.target.value })}
+                  onChange={(v) => set(y.id, { color: v })}
+                  className="picker"
                 />
                 <TextField
                   size="small"

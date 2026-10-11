@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ColourInput } from '../components/ColourInput'
 import {
   type Card,
   formatTurns,
@@ -205,15 +206,13 @@ export default function TabletDialog({ open, onClose }: Props) {
                     borderColor: paint === i ? 'primary.main' : 'divider',
                   }}
                 />
-                <input
-                  type="color"
-                  className="picker"
-                  aria-label={`Change colour ${i + 1}`}
+                <ColourInput
+                  label={`Change colour ${i + 1}`}
                   value={c}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     setState((s) => {
                       const old = s.palette[i]
-                      const next = e.target.value
+                      const next = v
                       // Recolour the threads already in this colour.
                       const cards = s.design.cards.map((card) => ({
                         ...card,
@@ -222,6 +221,7 @@ export default function TabletDialog({ open, onClose }: Props) {
                       return { design: { ...s.design, cards }, palette: s.palette.map((p, j) => (j === i ? next : p)) }
                     })
                   }
+                  className="picker"
                   style={{ width: 24, height: 16, marginTop: 4 }}
                 />
               </Stack>

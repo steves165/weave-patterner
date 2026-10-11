@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { colorways, draftColors, mapByLightness, recolor } from '../colorways'
+import { ColourInput } from '../components/ColourInput'
 import { mainColors } from '../image'
 import { readImagePixels } from '../imageFile'
 import type { Draft } from '../weave'
@@ -102,12 +103,11 @@ export function ColorwaysDialog({ open, draft, onClose, onApply }: Props) {
             <Stack key={c} direction="row" sx={{ gap: 0.5, alignItems: 'center' }}>
               <Box sx={{ width: 20, height: 20, borderRadius: 0.5, border: 1, borderColor: 'divider', bgcolor: c }} />
               <Typography variant="body2">→</Typography>
-              <input
-                type="color"
-                className="picker"
-                aria-label={`New colour for colour ${i + 1} (${c})`}
+              <ColourInput
+                label={`New colour for colour ${i + 1} (${c})`}
                 value={own[c] ?? c}
-                onChange={(e) => setOwn({ ...own, [c]: e.target.value })}
+                onChange={(v) => setOwn({ ...own, [c]: v })}
+                className="picker"
               />
             </Stack>
           ))}

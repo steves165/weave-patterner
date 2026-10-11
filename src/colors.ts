@@ -1,5 +1,5 @@
 import { advancing, point, straight } from './tools'
-import { type Draft, defaultDraft, parseDraft, resizeDraft } from './weave'
+import { type ColourStripe, type Draft, defaultDraft, parseDraft, resizeDraft } from './weave'
 
 export interface ColorRun {
   color: string
@@ -251,3 +251,37 @@ export function relativeLuminance(hex: string): number {
 /** Two colours as [dark, light]: the darker one first. */
 export const darkAndLight = (a: string, b: string): [string, string] =>
   relativeLuminance(a) <= relativeLuminance(b) ? [a, b] : [b, a]
+
+/** Applies a stripe sequence to the warp or weft over its range, and remembers it to edit again. */
+export function withStripe(d: Draft, side: 'warp' | 'weft', stripe: ColourStripe): Draft {
+  const colors = side === 'warp' ? d.warpColors : d.weftColors
+  const next = applyStripes(colors, stripe.runs, stripe.from, stripe.to)
+  return {
+    ...d,
+    ...(side === 'warp' ? { warpColors: next } : { weftColors: next }),
+    stripes: {
+      ...d.stripes,
+      [side]: {
+        runs: stripe.runs.map((r) => ({ ...r, color: r.color.toLowerCase() })),
+        from: stripe.from,
+        to: stripe.to,
+      },
+    },
+  }
+}
+
+/** Forgets the stripe remembered for the warp or weft; the colours stay as they are. */
+export function forgetStripe(d: Draft, side: 'warp' | 'weft'): Draft {
+  const { [side]: _, ...rest } = d.stripes ?? {}
+  const { stripes: __, ...draft } = d
+  return Object.keys(rest).length ? { ...draft, stripes: rest } : draft
+}
+
+/** Moves the stripe at `from` to `to` in a sequence. */
+export function moveRun(runs: ColorRun[], from: number, to: number): ColorRun[] {
+  if (from === to || from < 0 || to < 0 || from >= runs.length || to >= runs.length) return runs
+  const next = runs.slice()
+  const [r] = next.splice(from, 1)
+  next.splice(to, 0, r)
+  return next
+}

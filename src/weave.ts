@@ -15,6 +15,44 @@ export interface Draft {
   weftColors: string[]
   /** Named blocks of ends, marked above the threading. */
   blocks?: EndBlock[]
+  /** The colour stripes last applied to the warp and the weft, to edit again. */
+  stripes?: { warp?: ColourStripe; weft?: ColourStripe }
+}
+
+/** A stripe sequence (colours and how many threads of each), repeated over threads `from` to `to` (from 1). */
+export interface ColourStripe {
+  runs: { color: string; count: number }[]
+  from: number
+  to: number
+}
+
+/** A stripe from untrusted data, kept inside `n` threads; undefined if it isn't one. */
+export function cleanStripe(x: unknown, n: number): ColourStripe | undefined {
+  if (!x || typeof x !== 'object') return undefined
+  const { runs, from, to } = x as Record<string, unknown>
+  if (!Array.isArray(runs) || !runs.length || runs.length > 200) return undefined
+  const ok = runs.every(
+    (r) => r && typeof r === 'object' && isHex(r.color) && Number.isInteger(r.count) && r.count >= 1 && r.count <= 1000,
+  )
+  if (!ok || !Number.isInteger(from) || !Number.isInteger(to)) return undefined
+  const f = Math.max(1, from as number)
+  const t = Math.min(n, to as number)
+  if (f > t) return undefined
+  return { runs: runs.map((r) => ({ color: r.color.toLowerCase(), count: r.count })), from: f, to: t }
+}
+
+/** Stripes kept inside the draft's ends and picks, or none. */
+function cleanStripes(x: unknown, ends: number, picks: number): Draft['stripes'] {
+  if (!x || typeof x !== 'object') return undefined
+  const { warp, weft } = x as Record<string, unknown>
+  const w = cleanStripe(warp, ends)
+  const f = cleanStripe(weft, picks)
+  return w || f ? { ...(w ? { warp: w } : {}), ...(f ? { weft: f } : {}) } : undefined
+}
+
+const stripesField = (x: unknown, ends: number, picks: number) => {
+  const s = cleanStripes(x, ends, picks)
+  return s ? { stripes: s } : {}
 }
 
 /** A new pattern's colours: the accent magenta warp and a pale pink weft. */
@@ -79,6 +117,7 @@ export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'trea
     warpColors: resize(d.warpColors, ends, () => lastWarp),
     weftColors: resize(d.weftColors, picks, () => lastWeft),
     ...(d.blocks?.length ? { blocks: cleanBlocks(d.blocks, ends) } : {}),
+    ...stripesField(d.stripes, ends, picks),
   }
   // A new shaft or treadle count regenerates the grids so the pattern uses all of them.
   if (shafts !== d.shafts || treadles !== d.treadles) {
@@ -154,6 +193,7 @@ export function parseDraft(data: unknown): Draft {
     warpColors: d.warpColors,
     weftColors: d.weftColors,
     ...(Array.isArray(d.blocks) && d.blocks.length ? { blocks: parseBlocks(d.blocks, ends) } : {}),
+    ...stripesField(d.stripes, ends, picks),
   }
 }
 
