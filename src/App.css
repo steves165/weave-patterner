@@ -649,3 +649,9 @@
     outline-color: Highlight;
   }
 }
+
+/* Drawing on the drawdown: a crosshair over the squares. */
+.drawdown.drawing,
+.drawdown.drawing .cell {
+  cursor: crosshair;
+}

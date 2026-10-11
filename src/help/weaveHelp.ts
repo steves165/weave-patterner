@@ -102,7 +102,7 @@ export const WEAVE_HELP: Topic[] = [
     id: 'drawdown',
     title: 'The drawdown',
     summary: 'The cloth, worked out from the threading, tie-up and treadling',
-    keywords: ['cloth', 'face', 'back', 'trace', 'fabric view', 'crosshair'],
+    keywords: ['cloth', 'face', 'back', 'trace', 'fabric view', 'crosshair', 'draw', 'paint', 'fabric analysis'],
     body: [
       {
         p: 'Each square of the drawdown is where an end crosses a pick: warp colour where the warp is on top, weft colour where the weft is.',
@@ -113,6 +113,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Drawdown / Face / Back** (above the draft): the plain drawdown, or the face or back of the cloth as woven (they differ for double cloth and other layered weaves).',
           '**Fabric view** (view settings) shades the squares like threads.',
           'Hover over the draft to see which end and pick you are on.',
+          '**Draw on the drawdown** (a switch with the view settings, or in Tools) lets you click or drag across the drawdown to swap squares between warp and weft. Turning it on changes nothing; each square you draw changes only that square, rethreading its end or re-treadling its pick where the draft already has a shaft or treadle that does it, and otherwise adding one shaft and one treadle. A drag is one undo step, and shafts and treadles it tried and no longer needs are taken away again.',
         ],
       },
       { p: 'When you change the draft, the squares that changed glow for a moment so you can see what your edit did.' },
@@ -303,7 +304,7 @@ export const WEAVE_HELP: Topic[] = [
           ['Sequence tools', 'Fill, repeat, mirror, reverse, insert or delete ends and picks; copy and paste them.'],
           ['Tromp as writ', 'Treadle as threaded.'],
           ['Colours and presets', 'Stripe sequences and classic colour patterns.'],
-          ['Draw the cloth', 'Paint the cloth you want and get a threading, tie-up and treadling for it.'],
+          ['Draw on the drawdown', 'Turns on drawing on the drawdown (also a switch in the view settings).'],
           ['Block profile', 'Design in blocks: overshot, summer and winter, lace, crackle, turned twill and more.'],
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],

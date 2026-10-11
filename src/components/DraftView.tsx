@@ -37,6 +37,8 @@ interface Props {
   onThreading: (shaft: number, end: number, value: boolean, continuing: boolean) => void
   onTieup: (shaft: number, treadle: number, value: boolean, continuing: boolean) => void
   onTreadling: (pick: number, treadle: number, value: boolean, continuing: boolean) => void
+  /** Drawing on the drawdown (with Draw on the drawdown on): a square set to warp or weft; `continuing` in a drag. */
+  onDrawCloth: (pick: number, end: number, warp: boolean, continuing: boolean) => void
   onWarpColor: (end: number, color: string) => void
   onWeftColor: (pick: number, color: string) => void
   onView: (patch: Partial<ViewOptions>) => void
@@ -78,10 +80,53 @@ export function DraftView(p: Props) {
 
   const sinking = view.sinkingShed
   // The face or back of the cloth, allowing for layers; null for the plain drawdown.
+  // While drawing on it, the plain drawdown: what's drawn is which thread is on top.
+  const drawing = view.drawCloth
   const cloth = useMemo(
-    () => (view.clothSide === 'drawdown' ? null : clothView(draft, view.clothSide, drawdown)),
-    [draft, drawdown, view.clothSide],
+    () => (view.clothSide === 'drawdown' || drawing ? null : clothView(draft, view.clothSide, drawdown)),
+    [draft, drawdown, view.clothSide, drawing],
   )
+  /**
+   * A drawing stroke: the value being drawn, the square and pointer it started at, and how far apart squares are on
+   * screen then. Squares are found by how far the pointer has moved since, so a drag stays on its row even when a new
+   * shaft pushes the drawdown down the page.
+   */
+  const drawStroke = useRef<{
+    warp: boolean
+    last: string
+    pick: number
+    end: number
+    x: number
+    y: number
+    dx: number
+    dy: number
+  } | null>(null)
+  const squareAt = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('.drawdown [data-end]')
+    return el ? { end: Number(el.dataset.end), pick: Number(el.dataset.pick), el } : null
+  }
+  /** The distance on screen from one square to the next, across (ends) and down (picks). */
+  const squarePitch = (pick: number, end: number, el: HTMLElement) => {
+    const at = el.getBoundingClientRect()
+    const box = (p: number, e: number) =>
+      drawdownRef.current?.querySelector<HTMLElement>(`[data-pick="${p}"][data-end="${e}"]`)?.getBoundingClientRect()
+    const across = box(pick, end + 1) ?? box(pick, end - 1)
+    const down = box(pick + 1, end) ?? box(pick - 1, end)
+    const dx = across ? (across.left - at.left) * (box(pick, end + 1) ? 1 : -1) : at.width
+    const dy = down ? (down.top - at.top) * (box(pick + 1, end) ? 1 : -1) : at.height
+    return { dx: dx || at.width, dy: dy || at.height }
+  }
+  useEffect(() => {
+    const stop = () => {
+      drawStroke.current = null
+    }
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
+    return () => {
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
+    }
+  }, [])
 
   // Clicking a drawdown square traces it back to the threading, tie-up and treadling cells that decide it.
   const [selected, setSelected] = useState<{ end: number; pick: number } | null>(null)
@@ -215,11 +260,50 @@ export function DraftView(p: Props) {
       <div
         ref={drawdownRef}
         data-help="drawdown"
-        className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}`}
+        className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}${drawing ? ' drawing' : ''}`}
         role="img"
-        aria-label={`${view.clothSide === 'face' ? 'Face of the cloth' : view.clothSide === 'back' ? 'Back of the cloth' : 'Woven pattern'}, ${ends} ends by ${picks} picks. Click a square to see what decides it.`}
-        style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))` }}
+        aria-label={
+          drawing
+            ? `Woven pattern, ${ends} ends by ${picks} picks. Drawing: click or drag across squares to swap warp and weft.`
+            : `${view.clothSide === 'face' ? 'Face of the cloth' : view.clothSide === 'back' ? 'Back of the cloth' : 'Woven pattern'}, ${ends} ends by ${picks} picks. Click a square to see what decides it.`
+        }
+        style={{ gridTemplateColumns: `repeat(${ends}, var(--cell))`, touchAction: drawing ? 'none' : undefined }}
+        onPointerDown={(e) => {
+          if (!drawing || e.button !== 0) return
+          const at = squareAt(e.clientX, e.clientY)
+          if (!at) return
+          e.preventDefault()
+          const warp = !drawdown[at.pick][at.end]
+          ;(e.target as Element).setPointerCapture?.(e.pointerId)
+          drawStroke.current = {
+            warp,
+            last: `${at.pick},${at.end}`,
+            pick: at.pick,
+            end: at.end,
+            x: e.clientX,
+            y: e.clientY,
+            ...squarePitch(at.pick, at.end, at.el),
+          }
+          p.onDrawCloth(at.pick, at.end, warp, false)
+        }}
+        onPointerMove={(e) => {
+          const s = drawStroke.current
+          if (!drawing || !s) return
+          const end = s.end + Math.round((e.clientX - s.x) / s.dx)
+          const pick = s.pick + Math.round((e.clientY - s.y) / s.dy)
+          if (end < 0 || end >= ends || pick < 0 || pick >= picks || `${pick},${end}` === s.last) return
+          // Every square along the way, so a quick drag leaves no gaps.
+          const [lp, le] = s.last.split(',').map(Number)
+          const steps = Math.max(Math.abs(pick - lp), Math.abs(end - le))
+          for (let k = 1; k <= steps; k++) {
+            const q = Math.round(lp + ((pick - lp) * k) / steps)
+            const r = Math.round(le + ((end - le) * k) / steps)
+            p.onDrawCloth(q, r, s.warp, true)
+          }
+          s.last = `${pick},${end}`
+        }}
         onClick={(e) => {
+          if (drawing) return
           const square = (e.target as HTMLElement).closest<HTMLElement>('[data-end]')
           if (!square) return
           const end = Number(square.dataset.end)
@@ -362,13 +446,32 @@ export function DraftView(p: Props) {
             Turned over: left and right are swapped, so end 1 is on the {mirrored ? 'right' : 'left'}.
           </Typography>
         )}
-        {!compact && !touch && (
+        {drawing ? (
           <>
             <Box sx={{ flex: '1 1 0px' }} />
-            <Typography variant="body2" color="text.secondary">
-              Click or drag on the grids · arrow keys and Space work too
-            </Typography>
+            <Stack
+              direction="row"
+              data-testid="draw-hint"
+              sx={{ gap: 1, alignItems: 'center', px: 1.25, py: 0.5, borderRadius: 3, bgcolor: 'var(--wp-seg)' }}
+            >
+              <Typography variant="body2">
+                Drawing on the drawdown: {touch ? 'tap or drag' : 'click or drag'} to swap warp and weft
+              </Typography>
+              <Button size="small" onClick={() => p.onView({ drawCloth: false })}>
+                Stop drawing
+              </Button>
+            </Stack>
           </>
+        ) : (
+          !compact &&
+          !touch && (
+            <>
+              <Box sx={{ flex: '1 1 0px' }} />
+              <Typography variant="body2" color="text.secondary">
+                Click or drag on the grids · arrow keys and Space work too
+              </Typography>
+            </>
+          )
         )}
       </Stack>
       <Box sx={{ px: { xs: 1.25, sm: 3 }, py: { xs: 1.25, sm: 4 }, display: 'flex', justifyContent: 'center' }}>

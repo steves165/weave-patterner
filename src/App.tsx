@@ -15,6 +15,7 @@ import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
+import { drawSquare, pruneAdded } from './drawCloth'
 import { HelpCenter } from './help/HelpCenter'
 import { markTourSeen, Tour, TourOffer, tourSeen } from './help/Tour'
 import { WEAVE_TOUR } from './help/tours'
@@ -35,7 +36,6 @@ function lazyDialog<K extends string, C extends ComponentType<any>>(load: () => 
 const BlocksDialog = lazyDialog(() => import('./dialogs/BlocksDialog'), 'BlocksDialog')
 const ShareDialog = lazyDialog(() => import('./components/ShareDialog'), 'ShareDialog')
 const CalculatorDialog = lazyDialog(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
-const ClothDialog = lazyDialog(() => import('./dialogs/ClothDialog'), 'ClothDialog')
 const ClothReportDialog = lazyDialog(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
 const ColorsDialog = lazyDialog(() => import('./dialogs/ColorsDialog'), 'ColorsDialog')
 const ColorwaysDialog = lazyDialog(() => import('./dialogs/ColorwaysDialog'), 'ColorwaysDialog')
@@ -78,7 +78,6 @@ type DialogName =
   | 'weave'
   | '3d'
   | 'colors'
-  | 'cloth'
   | 'profile'
   | 'doublecloth'
   | 'transform'
@@ -165,6 +164,8 @@ export default function App() {
   const [printInstructions, setPrintInstructions] = useState(false)
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
+  // The draft as a drawing stroke on the drawdown began.
+  const clothStroke = useRef<Draft | null>(null)
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
   const repeat = useMemo(() => findRepeat(draft, drawdown), [draft, drawdown])
@@ -361,7 +362,10 @@ export default function App() {
           }}
           onCalculator={() => setDialog('calculator')}
           onColors={() => setDialog('colors')}
-          onCloth={() => setDialog('cloth')}
+          onCloth={() => {
+            changeView({ drawCloth: true })
+            setToast('Drawing on the drawdown: click or drag to swap warp and weft. Turn it off under View.')
+          }}
           onProfile={() => setDialog('profile')}
           onDoubleCloth={() => setDialog('doublecloth')}
           onTransform={() => setDialog('transform')}
@@ -452,6 +456,17 @@ export default function App() {
                   }),
                   { merge: continuing },
                 )
+              }}
+              onDrawCloth={(pick, end, warp, continuing) => {
+                // Each square is the smallest change that weaves it; shafts and treadles a stroke adds and then
+                // leaves unused are tidied away, and the whole stroke is one undo step.
+                if (!continuing) clothStroke.current = draft
+                const base = clothStroke.current ?? draft
+                try {
+                  update((d) => keepLiftplan(pruneAdded(drawSquare(d, pick, end, warp), base)), { merge: continuing })
+                } catch (e) {
+                  setToast(e instanceof Error ? e.message : String(e))
+                }
               }}
               onAddBlock={(from, to) => {
                 update((d) => addBlock(d, from, to))
@@ -621,16 +636,6 @@ export default function App() {
               yarns={yarns}
               onChange={setYarns}
               onClose={() => setDialog(null)}
-            />
-          </Suspense>
-        )}
-        {seen.has('cloth') && (
-          <Suspense fallback={null}>
-            <ClothDialog
-              open={dialog === 'cloth'}
-              draft={draft}
-              onClose={() => setDialog(null)}
-              onApply={applyFromDialog}
             />
           </Suspense>
         )}

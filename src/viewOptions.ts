@@ -24,6 +24,8 @@ export interface ViewOptions {
   threadingBelow: boolean
   /** Size of a grid square in pixels. */
   cellSize: number
+  /** Draw on the drawdown: clicking or dragging across it swaps squares between warp and weft. */
+  drawCloth: boolean
   /** Highlight floats longer than `floatLimit` threads. */
   highlightFloats: boolean
   floatLimit: number
@@ -51,6 +53,7 @@ export const DEFAULT_VIEW: ViewOptions = {
   sinkingShed: false,
   threadingBelow: false,
   cellSize: CELL_DEFAULT,
+  drawCloth: false,
   highlightFloats: false,
   floatLimit: 7,
   floatingSelvedge: false,
@@ -74,6 +77,7 @@ const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   sinkingShed: isBool,
   threadingBelow: isBool,
   cellSize: intIn(CELL_MIN, CELL_MAX),
+  drawCloth: isBool,
   highlightFloats: isBool,
   floatLimit: intIn(1, 99),
   floatingSelvedge: isBool,

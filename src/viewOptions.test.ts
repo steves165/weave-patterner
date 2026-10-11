@@ -22,6 +22,7 @@ describe('parseViewOptions', () => {
       sinkingShed: true,
       threadingBelow: true,
       cellSize: 10,
+      drawCloth: true,
       highlightFloats: true,
       floatLimit: 5,
       floatingSelvedge: true,

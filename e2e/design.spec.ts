@@ -5,40 +5,72 @@ const field = (page: Page, name: string) => page.getByLabel(name, { exact: true 
 
 test.beforeEach(async ({ page }) => openApp(page))
 
-test.describe('draw the cloth', () => {
-  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Design by drawing the cloth' })
+test.describe('draw on the drawdown', () => {
+  const square = (page: Page, pick: number, end: number) =>
+    page.locator(`.drawdown [data-pick="${pick - 1}"][data-end="${end - 1}"]`)
+  const isWarp = async (page: Page, pick: number, end: number) =>
+    (await square(page, pick, end).getAttribute('class'))?.includes(' warp') ?? false
+  /** The whole drawdown, as one string of warp (1) and weft (0) squares. */
+  const cloth = (page: Page) =>
+    page
+      .locator('.drawdown')
+      .evaluate((el) =>
+        [...el.querySelectorAll<HTMLElement>('.cell')].map((c) => (c.classList.contains('warp') ? 1 : 0)).join(''),
+      )
 
-  test('starts from the current drawdown and works out the smallest draft', async ({ page }) => {
-    await openTool(page, /Draw the cloth/)
-    await expect(dialog(page).getByTestId('cloth-needs')).toHaveText('Needs 4 shafts and 4 treadles')
-
-    await dialog(page).getByRole('button', { name: 'Clear' }).click()
-    for (const name of ['Pick 1, end 1', 'Pick 2, end 2', 'Pick 3, end 3'])
-      await dialog(page).getByRole('checkbox', { name, exact: true }).click()
-    await expect(dialog(page).getByTestId('cloth-needs')).toHaveText('Needs 3 shafts and 3 treadles')
-
-    await dialog(page).getByRole('button', { name: 'Create draft' }).click()
-    await expect(toast(page)).toContainText('Draft worked out from the cloth: 3 shafts, 3 treadles')
-    await expect(field(page, 'Shafts')).toHaveValue('3')
-    await expect(page.getByRole('checkbox', { name: 'End 1, shaft 1' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('checkbox', { name: 'End 4, shaft 1' })).toHaveAttribute('aria-checked', 'false')
-
-    await toolbarButton(page, 'Undo').click()
+  test('a switch beside Sinking shed: turning it on changes nothing, then a click swaps just that square', async ({
+    page,
+  }) => {
+    const before = await cloth(page)
+    const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
+    await sidebar.getByLabel('Draw on the drawdown').check()
+    await expect(page.getByTestId('draw-hint')).toContainText('Drawing on the drawdown')
+    expect(await cloth(page)).toBe(before)
     await expect(field(page, 'Shafts')).toHaveValue('4')
+
+    const was = await isWarp(page, 3, 5)
+    await square(page, 3, 5).click()
+    await expect.poll(() => isWarp(page, 3, 5)).toBe(!was)
+    // Only that square changed.
+    const after = await cloth(page)
+    const diffs = [...after].flatMap((c, i) => (c !== before[i] ? [i] : []))
+    expect(diffs).toEqual([2 * 32 + 4])
+
+    // One undo puts it back.
+    await toolbarButton(page, 'Undo').click()
+    expect(await cloth(page)).toBe(before)
   })
 
-  test('works out drafts needing more than 24 shafts', async ({ page }) => {
-    // 25 different columns: a diagonal. (Over 128 is refused; see the unit tests.)
-    await page.getByLabel('Ends', { exact: true }).fill('30')
-    await page.getByLabel('Ends', { exact: true }).press('Enter')
-    await openTool(page, /Draw the cloth/)
-    await dialog(page).getByRole('button', { name: 'Clear' }).click()
-    for (let i = 1; i <= 25; i++)
-      await dialog(page)
-        .getByRole('checkbox', { name: `Pick ${i}, end ${i}`, exact: true })
-        .click()
-    await expect(dialog(page).getByTestId('cloth-needs')).toHaveText('Needs 25 shafts and 25 treadles')
-    await expect(dialog(page).getByRole('button', { name: 'Create draft' })).toBeEnabled()
+  test('dragging draws a line of squares as one undo step; Stop drawing turns it off', async ({ page }) => {
+    await page.getByRole('complementary', { name: 'Pattern settings' }).getByLabel('Draw on the drawdown').check()
+    const before = await cloth(page)
+    const a = await square(page, 10, 1).boundingBox()
+    const b = await square(page, 10, 12).boundingBox()
+    if (!a || !b) throw new Error('no squares')
+    const first = await isWarp(page, 10, 1)
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 24 })
+    await page.mouse.up()
+    for (let e = 1; e <= 12; e++) expect(await isWarp(page, 10, e)).toBe(!first)
+    // Nothing outside pick 10 changed.
+    const after = await cloth(page)
+    const diffs = [...after].flatMap((c, i) => (c !== before[i] ? [Math.floor(i / 32) + 1] : []))
+    expect(new Set(diffs)).toEqual(new Set([10]))
+    await toolbarButton(page, 'Undo').click()
+    expect(await cloth(page)).toBe(before)
+
+    await page.getByTestId('draw-hint').getByRole('button', { name: 'Stop drawing' }).click()
+    await expect(page.getByTestId('draw-hint')).toHaveCount(0)
+    // Clicking a square traces it again.
+    await square(page, 1, 1).click()
+    await expect(page.getByTestId('trace-info')).toBeVisible()
+  })
+
+  test('Tools turns drawing on', async ({ page }) => {
+    await openTool(page, /Draw on the drawdown/)
+    await expect(page.getByTestId('draw-hint')).toBeVisible()
+    await expect(toast(page)).toContainText('Drawing on the drawdown')
   })
 })
 

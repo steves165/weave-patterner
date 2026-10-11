@@ -201,8 +201,8 @@ export function AppToolbar(p: Props) {
     },
     {
       group: 'Design',
-      primary: 'Draw the cloth…',
-      secondary: 'Paint the cloth; get the threading, tie-up and treadling',
+      primary: 'Draw on the drawdown',
+      secondary: 'Swap squares between warp and weft, right on the drawdown',
       onClick: p.onCloth,
     },
     {

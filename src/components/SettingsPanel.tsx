@@ -108,8 +108,17 @@ export const SWITCH_ROW = {
 } as const
 
 /** On/off display options, in the order shown. */
-type ViewSwitch = 'noTieup' | 'colorBoxes' | 'endOneRight' | 'numbers' | 'fabric' | 'sinkingShed' | 'threadingBelow'
+type ViewSwitch =
+  | 'drawCloth'
+  | 'noTieup'
+  | 'colorBoxes'
+  | 'endOneRight'
+  | 'numbers'
+  | 'fabric'
+  | 'sinkingShed'
+  | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
+  ['drawCloth', 'Draw on the drawdown'],
   ['noTieup', 'No tie-up (lift plan)'],
   ['colorBoxes', 'Thread colours in boxes'],
   ['endOneRight', 'End 1 on the right'],
