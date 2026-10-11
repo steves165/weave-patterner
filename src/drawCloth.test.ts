@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { drawSquare, pruneAdded } from './drawCloth'
-import { computeDrawdown, type Draft, defaultDraft } from './weave'
+import { computeDrawdown, type Draft, defaultDraft, emptyDraft } from './weave'
 
 /** The squares that differ between two drafts' drawdowns, as "pick,end". */
 const changed = (a: Draft, b: Draft) => {
@@ -84,5 +84,45 @@ describe('drawing on the drawdown', () => {
     }
     want = computeDrawdown(draft)
     expect(draft.shafts).toBeLessThanOrEqual(128)
+  })
+
+  it('uses the shafts and treadles the draft already has before adding any', () => {
+    let draft = emptyDraft()
+    const base = draft
+    // A row and a diagonal on a blank draft: four squares, the draft's four shafts and treadles.
+    for (const [p, e] of [
+      [0, 0],
+      [1, 1],
+      [0, 4],
+      [2, 2],
+      [3, 3],
+    ]) {
+      const before = draft
+      draft = pruneAdded(drawSquare(draft, p, e, true), base)
+      expect(changed(before, draft)).toEqual([`${p},${e}`])
+    }
+    expect([draft.shafts, draft.treadles]).toEqual([4, 4])
+    // Rubbing one out changes the tie-up rather than adding anything.
+    const rubbed = pruneAdded(drawSquare(draft, 1, 1, false), base)
+    expect(changed(draft, rubbed)).toEqual(['1,1'])
+    expect([rubbed.shafts, rubbed.treadles]).toEqual([4, 4])
+  })
+
+  it('adds a shaft only when the existing ones would change other squares', () => {
+    let draft = emptyDraft()
+    const base = draft
+    draft = pruneAdded(drawSquare(draft, 0, 0, true), base)
+    draft = pruneAdded(drawSquare(draft, 0, 4, true), base)
+    // End 1 shares its shaft with end 5; drawing end 1 on pick 5 can't move both.
+    for (const [p, e] of [
+      [1, 1],
+      [2, 2],
+      [3, 3],
+    ])
+      draft = pruneAdded(drawSquare(draft, p, e, true), base)
+    expect(draft.shafts).toBe(4)
+    const next = pruneAdded(drawSquare(draft, 4, 0, true), base)
+    expect(changed(draft, next)).toEqual(['4,0'])
+    expect(next.shafts).toBe(5)
   })
 })

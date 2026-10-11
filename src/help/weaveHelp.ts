@@ -113,7 +113,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Drawdown / Face / Back** (above the draft): the plain drawdown, or the face or back of the cloth as woven (they differ for double cloth and other layered weaves).',
           '**Fabric view** (view settings) shades the squares like threads.',
           'Hover over the draft to see which end and pick you are on.',
-          '**Draw on the drawdown** (a switch with the view settings, or in Tools) lets you click or drag across the drawdown to swap squares between warp and weft. Turning it on changes nothing; each square you draw changes only that square, rethreading its end or re-treadling its pick where the draft already has a shaft or treadle that does it, and otherwise adding one shaft and one treadle. A drag is one undo step, and shafts and treadles it tried and no longer needs are taken away again.',
+          '**Draw on the drawdown** (a switch with the view settings, or in Tools) lets you click or drag across the drawdown to swap squares between warp and weft. Turning it on changes nothing; each square you draw changes only that square, using the shafts and treadles the draft already has: rethreading its end, moving its pick to another treadle, changing a box of the tie-up, or tying up a spare shaft or treadle. Only when every one of those would change other squares too does it add a shaft (and a treadle) for that square. A drag is one undo step, and shafts and treadles it tried and no longer needs are taken away again.',
         ],
       },
       { p: 'When you change the draft, the squares that changed glow for a moment so you can see what your edit did.' },
