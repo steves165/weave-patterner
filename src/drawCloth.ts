@@ -48,7 +48,7 @@ export function drawSquare(d: Draft, pick: number, end: number, warp: boolean): 
     if (d.treadles >= MAX_TREADLES) throw new Error(`That needs more than ${MAX_TREADLES} treadles`)
     treadle = d.treadles
     treadles++
-    tieup.forEach((r, s) => r.push(column[s]))
+    for (const [s, r] of tieup.entries()) r.push(column[s])
     treadling = d.treadling.map((r) => [...r, false])
   }
   const t = treadle
