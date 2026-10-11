@@ -1,90 +1,11 @@
-import { createCanvas } from '@napi-rs/canvas'
 import { describe, expect, it } from 'vitest'
 import { computeDrawdown } from '../weave'
-import { homography, invert, project } from './homography'
-import {
-  cellCentre,
-  decodeSpec,
-  encodeSpec,
-  type SheetSpec,
-  sheetLayout,
-  warpStripCentre,
-  weftStripCentre,
-} from './layout'
-import { canvasPainter, drawSheet } from './render'
-import { deltaE, type Picture, type RGB, readSheet } from './scan'
+import { decodeSpec, encodeSpec, type SheetSpec, sheetLayout } from './layout'
+import { deltaE, type RGB, readSheet, shrink } from './scan'
+import { filledSheet, photograph } from './testSheets'
 import { draftFromScan } from './toDraft'
 
-/** Pixels to the millimetre of the "printed" sheet. */
-const K = 6
-
 const rgb = (hex: string): RGB => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)) as RGB
-
-interface Filling {
-  /** The colour inked in grid square (row, col), or null to leave it blank. */
-  cell: (row: number, col: number) => string | null
-  warp?: (col: number) => string | null
-  weft?: (row: number) => string | null
-}
-
-/** A sheet as printed, then coloured in like a felt-tip pen (most of each square, a little ragged). */
-function filledSheet(spec: SheetSpec, fill: Filling): Picture {
-  const l = sheetLayout(spec)
-  const canvas = createCanvas(Math.round(l.page.w * K), Math.round(l.page.h * K))
-  const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
-  drawSheet(canvasPainter(ctx, K), l)
-  const ink = (centre: { x: number; y: number }, colour: string | null | undefined, seed: number) => {
-    if (!colour) return
-    const s = l.grid.cell * (0.72 + ((seed * 37) % 10) / 100)
-    ctx.fillStyle = colour
-    ctx.fillRect((centre.x - s / 2) * K, (centre.y - s / 2) * K, s * K, s * K)
-  }
-  for (let r = 0; r < spec.picks; r++)
-    for (let c = 0; c < spec.ends; c++) ink(cellCentre(l, r, c), fill.cell(r, c), r * 31 + c)
-  for (let c = 0; c < spec.ends; c++) ink(warpStripCentre(l, c), fill.warp?.(c), c)
-  for (let r = 0; r < spec.picks; r++) ink(weftStripCentre(l, r), fill.weft?.(r), r)
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  return { data: img.data, width: img.width, height: img.height }
-}
-
-/**
- * The sheet photographed: seen at an angle (the page's corners land on `quad`), on a grey table, lit unevenly (darker
- * to one side) and with a little noise, in a `w` × `h` picture.
- */
-function photograph(sheet: Picture, quad: { x: number; y: number }[], w: number, h: number, seed = 1): Picture {
-  const corners = [
-    { x: 0, y: 0 },
-    { x: sheet.width, y: 0 },
-    { x: sheet.width, y: sheet.height },
-    { x: 0, y: sheet.height },
-  ]
-  const toPhoto = homography(corners, quad)
-  if (!toPhoto) throw new Error('bad quad')
-  const back = invert(toPhoto)
-  const data = new Uint8ClampedArray(w * h * 4)
-  let n = seed
-  const noise = () => {
-    n = (n * 1103515245 + 12345) % 2147483648
-    return ((n / 2147483648) * 2 - 1) * 7
-  }
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const s = project(back, { x: x + 0.5, y: y + 0.5 })
-      const sx = Math.floor(s.x)
-      const sy = Math.floor(s.y)
-      const o = (y * w + x) * 4
-      const light = 0.78 + 0.22 * (x / w)
-      for (let ch = 0; ch < 3; ch++) {
-        const v =
-          sx >= 0 && sy >= 0 && sx < sheet.width && sy < sheet.height
-            ? sheet.data[(sy * sheet.width + sx) * 4 + ch]
-            : 110
-        data[o + ch] = v * light + noise()
-      }
-      data[o + 3] = 255
-    }
-  return { data, width: w, height: h }
-}
 
 /** The cloth a draft weaves, as rows of 0/1. */
 const clothOf = (d: ReturnType<typeof draftFromScan>['draft']) => computeDrawdown(d).map((r) => r.map(Number).join(''))
@@ -179,6 +100,34 @@ describe('reading a filled-in sheet', () => {
     expect([warp, weft]).toEqual([72, 72])
     expect(clothOf(draft)[0]).toBe('110011001100')
     expect(deltaE(rgb(draft.weftColors[0]), rgb(weftC))).toBeLessThan(8)
+  })
+
+  it('reads photos upside down, at low resolution, and in pale yellow ink', () => {
+    const spec: SheetSpec = { kind: 'drawdown', name: 'Hard', ends: 24, picks: 30, paper: 'a4' }
+    const diamond = (r: number, c: number) => Math.abs((r % 8) - 4) + Math.abs((c % 8) - 4) <= 3
+    const want = Array.from({ length: 30 }, (_, r) =>
+      Array.from({ length: 24 }, (_, c) => (diamond(r, c) ? 1 : 0)).join(''),
+    )
+    const quad = [
+      { x: 140, y: 110 },
+      { x: 1300, y: 60 },
+      { x: 1420, y: 1820 },
+      { x: 70, y: 1700 },
+    ]
+    const cases: [string, { x: number; y: number }[], number][] = [
+      ['#1f3a93', [quad[2], quad[3], quad[0], quad[1]], 2000],
+      ['#1f3a93', quad, 800],
+      ['#f2d43a', quad, 2000],
+    ]
+    for (const [ink, at, size] of cases) {
+      const photo = shrink(
+        photograph(filledSheet(spec, { cell: (r, c) => (diamond(r, c) ? ink : null) }), at, 1500, 1900),
+        size,
+      )
+      const scan = readSheet(photo)
+      expect(scan.marksFound).toBe(true)
+      expect(clothOf(draftFromScan(scan).draft)).toEqual(want)
+    }
   })
 
   it('says what’s wrong with a picture without the sheet in it', () => {

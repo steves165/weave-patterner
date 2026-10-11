@@ -67,3 +67,28 @@ export function invert(h: Homography): Homography {
   ]
   return m.map((v) => v / m[8])
 }
+
+/**
+ * The homography that best fits any number (four or more) of matching points, by least squares: with more than four,
+ * small errors in each point average out.
+ */
+export function fitHomography(from: Point[], to: Point[]): Homography | null {
+  if (from.length === 4) return homography(from, to)
+  // The normal equations, AᵀA h = Aᵀb.
+  const ata = Array.from({ length: 8 }, () => Array<number>(8).fill(0))
+  const atb = Array<number>(8).fill(0)
+  const add = (row: number[], v: number) => {
+    for (let i = 0; i < 8; i++) {
+      atb[i] += row[i] * v
+      for (let j = 0; j < 8; j++) ata[i][j] += row[i] * row[j]
+    }
+  }
+  for (let i = 0; i < from.length; i++) {
+    const { x, y } = from[i]
+    const { x: u, y: v } = to[i]
+    add([x, y, 1, 0, 0, 0, -u * x, -u * y], u)
+    add([0, 0, 0, x, y, 1, -v * x, -v * y], v)
+  }
+  const h = solve(ata, atb)
+  return h ? [...h, 1] : null
+}

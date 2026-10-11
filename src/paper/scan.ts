@@ -5,7 +5,7 @@
  * the blank border, allowing for uneven light), and the ink colours found are grouped into a few colours.
  */
 import jsQR from 'jsqr'
-import { type Homography, homography, type Point, project } from './homography'
+import { fitHomography, type Homography, homography, type Point, project } from './homography'
 import {
   cellCentre,
   decodeSpec,
@@ -148,8 +148,8 @@ function findQr(pic: Picture) {
  * The centre of a corner mark near where it's expected: the dark blob of about the right size nearest the guess.
  * `size` is the mark's size in pixels, as far as the guess goes.
  */
-function findMark(pic: Picture, guess: Point, size: number): Point | null {
-  const r = Math.ceil(size * 2.2)
+function findMark(pic: Picture, guess: Point, size: number, widen = 1): Point | null {
+  const r = Math.ceil(size * 2.2 * widen)
   const x0 = Math.max(0, Math.round(guess.x - r))
   const y0 = Math.max(0, Math.round(guess.y - r))
   const x1 = Math.min(pic.width - 1, Math.round(guess.x + r))
@@ -379,11 +379,41 @@ export function readSheet(pic: Picture): Scan {
     qr.corners,
   )
   if (!rough) throw new Error('Couldn’t line up the sheet: take the picture straight on, with the whole page in it.')
-  // The corner marks pin the page down; where one isn't found, the QR code's guess stands in for it.
+  // The corner marks pin the page down. Nearest the QR code first: each one found makes the guess for the next better
+  // (a guess from the small QR code alone can be well out at the far side of a page photographed at an angle), and
+  // the search widens if a mark isn't where it was expected.
   const centres = markCentres(layout)
-  const found = centres.map((c) => findMark(pic, project(rough, c), layout.marks[0].w * pxPerMm(rough, c)))
+  const qrMid = { x: q.x + q.w / 2, y: q.y + q.h / 2 }
+  const order = centres
+    .map((c, i) => ({ i, d: Math.hypot(c.x - qrMid.x, c.y - qrMid.y) }))
+    .sort((a, b) => a.d - b.d)
+    .map((x) => x.i)
+  const known = {
+    from: [
+      { x: q.x, y: q.y },
+      { x: q.x + q.w, y: q.y },
+      { x: q.x + q.w, y: q.y + q.h },
+      { x: q.x, y: q.y + q.h },
+    ],
+    to: [...qr.corners],
+  }
+  const found: (Point | null)[] = centres.map(() => null)
+  for (const i of order) {
+    const guessH = fitHomography(known.from, known.to) ?? rough
+    const guess = project(guessH, centres[i])
+    const size = layout.marks[i].w * pxPerMm(guessH, centres[i])
+    for (const widen of [1, 2, 3.5]) {
+      found[i] = findMark(pic, guess, size, widen)
+      if (found[i]) break
+    }
+    const at = found[i]
+    if (at) {
+      known.from.push(centres[i])
+      known.to.push(at)
+    }
+  }
   const marksFound = found.every(Boolean)
-  const h = (marksFound && homography(centres, found as Point[])) || rough
+  const h = (marksFound && homography(centres, found as Point[])) || fitHomography(known.from, known.to) || rough
   const white = paperWhite(pic, h, layout)
 
   const cell = layout.grid.cell
