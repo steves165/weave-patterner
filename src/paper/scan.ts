@@ -241,7 +241,7 @@ function paperWhite(pic: Picture, h: Homography, l: SheetLayout): (p: Point) => 
     return c ? [{ p, c }] : []
   })
   if (found.length < 6) return () => [255, 255, 255]
-  const fit = (use: typeof found) => {
+  const fitPlane = (use: typeof found) => {
     // Least squares for c = a + b x + d y, per channel.
     const n = use.length
     let sx = 0
@@ -282,10 +282,10 @@ function paperWhite(pic: Picture, h: Homography, l: SheetLayout): (p: Point) => 
     })
     return (p: Point): RGB => coeffs.map(([a, b, c]) => a + b * p.x + c * p.y) as RGB
   }
-  let model = fit(found)
+  let model = fitPlane(found)
   for (let round = 0; round < 2; round++) {
     const kept = found.filter(({ p, c }) => luma(c) > luma(model(p)) - 25)
-    if (kept.length >= 6) model = fit(kept)
+    if (kept.length >= 6) model = fitPlane(kept)
   }
   return model
 }

@@ -41,8 +41,8 @@ export function drawSheet(p: Painter, l: SheetLayout) {
 
   const modules = qrModules(l)
   const size = l.qr.w / modules.length
+  // A hair wider, so neighbouring modules join without seams.
   for (const [r, row] of modules.entries())
-    // A hair wider, so neighbouring modules join without seams.
     for (const [c, dark] of row.entries())
       if (dark) p.fillRect(l.qr.x + c * size, l.qr.y + r * size, size + 0.02, size + 0.02, INK)
 
@@ -55,14 +55,14 @@ export function drawSheet(p: Painter, l: SheetLayout) {
     'right with each pick’s weft colour (or leave them blank). Keep the corners and the',
     'QR code clean, then scan or photograph the whole page, flat and well lit.',
   ]
-  lines.forEach((t, i) => p.text(t, x, y + 16.5 + i * 4.2, 3.1, { colour: SOFT }))
+  for (const [i, t] of lines.entries()) p.text(t, x, y + 16.5 + i * 4.2, 3.1, { colour: SOFT })
 
   // The scale: 100 mm in centimetres, to check the print came out at full size.
   const s = l.scale
   p.line(s.x, s.y, s.x + s.length, s.y, INK, 0.3)
   for (let k = 0; k <= 10; k++)
     p.line(s.x + k * 10, s.y - (k % 5 ? 1.2 : 2), s.x + k * 10, s.y + (k % 5 ? 1.2 : 2), INK, 0.3)
-  p.text('10 cm: measure this to check the print is at full size', s.x + s.length + 4, s.y + 1.2, 3, { colour: SOFT })
+  p.text('10 cm: check the print is full size', s.x + s.length + 4, s.y + 1.1, 2.8, { colour: SOFT })
 
   // Numbers along the top and left, every 4.
   const every = cell < 5 ? 8 : 4

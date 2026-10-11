@@ -73,7 +73,7 @@ export function sheetLayout(spec: SheetSpec): SheetLayout {
   if (spec.ends > MAX_SQUARES || spec.picks > MAX_SQUARES)
     throw new Error(`The grid can be up to ${MAX_SQUARES} squares each way`)
   const paper = PAPERS[spec.paper]
-  const fit = (w: number, h: number) => {
+  const fitPage = (w: number, h: number) => {
     // Header: the title beside the top marks and the QR code; footer: the scale beside the bottom marks.
     const top = MARGIN + QR + QUIET + 2
     const bottom = h - MARGIN - MARK - 4
@@ -83,8 +83,8 @@ export function sheetLayout(spec: SheetSpec): SheetLayout {
     const down = (bottom - top - LABELS - STRIP_GAP) / (spec.picks + 1)
     return { cell: Math.min(MAX_CELL, across, down), top, left }
   }
-  const portrait = fit(paper.w, paper.h)
-  const landscape = fit(paper.h, paper.w)
+  const portrait = fitPage(paper.w, paper.h)
+  const landscape = fitPage(paper.h, paper.w)
   const useLandscape = landscape.cell > portrait.cell + 0.25
   const { cell: raw, top, left } = useLandscape ? landscape : portrait
   if (raw < MIN_CELL)
