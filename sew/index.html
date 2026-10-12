@@ -75,13 +75,38 @@
         ]
       }
     </script>
+    <script>
+      // Before the app starts: the loom loader shows instead of the summary below, in the app's colours and theme.
+      ;(() => {
+        const c = document.documentElement.classList
+        c.add('js', 'sew')
+        try {
+          const m = localStorage.getItem('mui-mode') || 'system'
+          if (m === 'dark' || (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) c.add('dark')
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root">
+      <div class="loom-loader static-loader" role="status">
+        <div class="loom-card">
+          <div class="sewing" aria-hidden="true">
+            <div class="sewing-cloth"></div>
+            <div class="sewing-stitches"></div>
+            <div class="sewing-needle"></div>
+            <div class="sewing-arm"></div>
+            <div class="sewing-pillar"></div>
+            <div class="sewing-bed"></div>
+            <div class="sewing-wheel"></div>
+          </div>
+          <p class="loom-label">Loading Sew Patterner…</p>
+        </div>
+      </div>
       <!--
         A summary for search engines and anyone without JavaScript. The app replaces it as soon as it starts.
       -->
-      <main style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
+      <main class="static-summary" style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
         <h1>Sew Patterner: free made-to-measure sewing patterns</h1>
         <p>
           Make sewing patterns to your measurements in your browser. Choose a garment and its style, a standard size

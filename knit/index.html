@@ -80,13 +80,35 @@
         ]
       }
     </script>
+    <script>
+      // Before the app starts: the loom loader shows instead of the summary below, in the app's colours and theme.
+      ;(() => {
+        const c = document.documentElement.classList
+        c.add('js', 'knit')
+        try {
+          const m = localStorage.getItem('mui-mode') || 'system'
+          if (m === 'dark' || (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) c.add('dark')
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root">
+      <div class="loom-loader static-loader" role="status">
+        <div class="loom-card">
+          <div class="knitting" aria-hidden="true">
+            <div class="knitting-fabric"></div>
+            <div class="knitting-needle knitting-needle-left"></div>
+            <div class="knitting-needle knitting-needle-right"></div>
+            <div class="knitting-ball"></div>
+          </div>
+          <p class="loom-label">Loading Knit Patterner…</p>
+        </div>
+      </div>
       <!--
         A summary for search engines and anyone without JavaScript. The app replaces it as soon as it starts.
       -->
-      <main style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
+      <main class="static-summary" style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
         <h1>Knit Patterner: free online knitting chart maker</h1>
         <p>
           Design knitting charts in your browser. Paint stitches and colours square by square and read the written

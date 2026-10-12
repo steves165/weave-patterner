@@ -55,6 +55,7 @@ import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
+import { LoomLoader } from '../components/LoomLoader'
 import { MoveNotice } from '../components/MoveNotice'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
 import { FIELD_GRID, SWITCH_ROW } from '../components/SettingsPanel'
@@ -1014,7 +1015,7 @@ export default function KnitApp() {
         onToast={setToast}
       />
       {dialog === '3d' && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoomLoader label="Setting up the 3D view…" />}>
           <Knit3DDialog open name={name.trim() || 'Knitting'} chart={chart} onClose={() => setDialog(null)} />
         </Suspense>
       )}

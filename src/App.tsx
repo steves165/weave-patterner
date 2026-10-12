@@ -8,6 +8,7 @@ import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
 import { FooterLinks } from './components/FooterLinks'
+import { BIG_DRAFT, LoomLoader, useBusy } from './components/LoomLoader'
 import { MoveNotice } from './components/MoveNotice'
 import { PrintSheet } from './components/PrintSheet'
 import { SettingsSheet, SettingsSidebar } from './components/SettingsFrame'
@@ -98,6 +99,17 @@ type DialogName =
   | 'blocks'
   | 'share'
 
+/**
+ * A key for the draft's grids that changes when the draft grows a lot at once (a tartan preset, a big pattern opened):
+ * React then builds the grids afresh, which is many times faster than adding thousands of squares beside the old ones.
+ */
+function useGrowthKey(cells: number): number {
+  const last = useRef({ cells, key: 0 })
+  if (cells > last.current.cells * 1.5 + 2000) last.current = { cells, key: last.current.key + 1 }
+  else last.current.cells = cells
+  return last.current.key
+}
+
 export default function App() {
   const phone = usePhone()
   const compact = useCompact()
@@ -123,6 +135,7 @@ export default function App() {
     if (dialog) setSeen((s) => (s.has(dialog) ? s : new Set(s).add(dialog)))
   }, [dialog])
   const [toast, setToast] = useState<string | null>(null)
+  const [loader, busy] = useBusy()
   // Google Analytics, only once the visitor has agreed; the choice is remembered.
   const [consent, setConsentState] = useState<Consent | null>(loadConsent)
   const setConsent = (c: Consent | null) => {
@@ -165,9 +178,32 @@ export default function App() {
   }
   useHelpKeys(openHelp, !touring)
   // Whether the next print includes the written-instructions page.
-  const [printInstructions, setPrintInstructions] = useState(false)
+  // The print sheet (a picture of the whole draft) is only on the page while printing: kept there, a big draft's
+  // thousands of shapes would be redrawn on every change.
+  const [printing, setPrinting] = useState<{ instructions: boolean } | null>(null)
+  useEffect(() => {
+    // Ctrl+P and the browser's own Print: draw the sheet just before the browser takes its picture of the page.
+    const before = () => flushSync(() => setPrinting((p) => p ?? { instructions: false }))
+    const after = () => setPrinting(null)
+    window.addEventListener('beforeprint', before)
+    window.addEventListener('afterprint', after)
+    return () => {
+      window.removeEventListener('beforeprint', before)
+      window.removeEventListener('afterprint', after)
+    }
+  }, [])
+  /** Draws the print sheet while `f` runs (image export copies its picture of the draft), then takes it away. */
+  const withSheet = <T,>(f: () => T): T => {
+    flushSync(() => setPrinting((p) => p ?? { instructions: false }))
+    try {
+      return f()
+    } finally {
+      setPrinting(null)
+    }
+  }
 
   const drawdown = useMemo(() => computeDrawdown(draft), [draft])
+  const gridKey = useGrowthKey(draft.ends * (draft.picks + draft.shafts) + draft.picks * draft.treadles)
   // The draft as a drawing stroke on the drawdown began.
   const clothStroke = useRef<Draft | null>(null)
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
@@ -213,19 +249,25 @@ export default function App() {
   }
 
   /** Applies a change made in a dialog as one undoable step, then closes it. */
-  const applyFromDialog = (d: Draft, message: string) => {
-    update(() => keepLiftplan(d))
-    setDialog(null)
-    setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
-  }
+  /** Runs `work`, behind the loom loader when the draft is big enough to take a while to draw. */
+  const drawing = (d: Draft, work: () => void) =>
+    d.ends * d.picks > BIG_DRAFT ? busy('Weaving your pattern…', work) : work()
+
+  const applyFromDialog = (d: Draft, message: string) =>
+    drawing(d, () => {
+      update(() => keepLiftplan(d))
+      setDialog(null)
+      setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
+    })
 
   /** Opens a different pattern as a new document. */
-  const open = (d: Draft, n: string | null, message?: string) => {
-    reset(keepLiftplan(d))
-    setName(n)
-    setDialog(null)
-    if (message) setToast(message)
-  }
+  const open = (d: Draft, n: string | null, message?: string) =>
+    drawing(d, () => {
+      reset(keepLiftplan(d))
+      setName(n)
+      setDialog(null)
+      if (message) setToast(message)
+    })
   const summary = `${draft.shafts} shafts · ${view.noTieup ? 'lift plan' : `${draft.treadles} treadles`} · ${draft.ends} × ${draft.picks}`
   // Phones and portrait tablets: the settings come up in a sheet from the bottom of the screen.
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -343,13 +385,17 @@ export default function App() {
               done()
             } else if (format === 'svg') {
               try {
-                download(fileName, draftSvg(1), 'image/svg+xml')
+                download(
+                  fileName,
+                  withSheet(() => draftSvg(1)),
+                  'image/svg+xml',
+                )
                 done()
               } catch (e) {
                 fail(e)
               }
             } else
-              draftPng(2)
+              withSheet(() => draftPng(2))
                 .then((png) => {
                   download(fileName, png, 'image/png')
                   done()
@@ -361,7 +407,7 @@ export default function App() {
           onShare={() => setDialog('share')}
           onPrint={(instructions) => {
             // Render the print sheet with or without instructions before the print dialog snapshots the page.
-            flushSync(() => setPrintInstructions(instructions))
+            flushSync(() => setPrinting({ instructions }))
             window.print()
           }}
           onWeave={() => setDialog('weave')}
@@ -433,6 +479,7 @@ export default function App() {
           >
             <h1 className="sr-only">Weave Patterner: weaving draft designer</h1>
             <DraftView
+              key={gridKey}
               draft={draft}
               onView={changeView}
               drawdown={drawdown}
@@ -588,7 +635,7 @@ export default function App() {
           onImport={(n, d, warnings) => open(d, n, [`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))}
         />
         {seen.has('tools') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ToolsDialog
               open={dialog === 'tools'}
               draft={draft}
@@ -600,7 +647,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('blocks') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <BlocksDialog
               open={dialog === 'blocks'}
               draft={draft}
@@ -614,7 +661,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('colors') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ColorsDialog
               open={dialog === 'colors'}
               draft={draft}
@@ -624,7 +671,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('share') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ShareDialog
               open={dialog === 'share'}
               app="weave"
@@ -637,7 +684,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('calculator') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <CalculatorDialog
               open={dialog === 'calculator'}
               draft={draft}
@@ -647,7 +694,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('yarns') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <YarnsDialog
               open={dialog === 'yarns'}
               draft={draft}
@@ -658,22 +705,22 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('report') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ClothReportDialog open={dialog === 'report'} draft={draft} onClose={() => setDialog(null)} />
           </Suspense>
         )}
         {seen.has('rigid') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
           </Suspense>
         )}
         {dialog === 'drawloom' && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <DrawloomDialog open onClose={() => setDialog(null)} onApply={applyFromDialog} />
           </Suspense>
         )}
         {dialog === 'paper' && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <PaperDialog
               open
               draft={draft}
@@ -684,27 +731,27 @@ export default function App() {
           </Suspense>
         )}
         {dialog === 'tablet' && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <TabletDialog open onClose={() => setDialog(null)} />
           </Suspense>
         )}
         {seen.has('echo') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
           </Suspense>
         )}
         {seen.has('picture') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
           </Suspense>
         )}
         {seen.has('warpplan') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
           </Suspense>
         )}
         {seen.has('colorways') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ColorwaysDialog
               open={dialog === 'colorways'}
               draft={draft}
@@ -714,7 +761,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('variations') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <VariationsDialog
               open={dialog === 'variations'}
               draft={draft}
@@ -724,7 +771,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('transform') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <TransformDialog
               open={dialog === 'transform'}
               draft={draft}
@@ -734,7 +781,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('doublecloth') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <DoubleClothDialog
               open={dialog === 'doublecloth'}
               onClose={() => setDialog(null)}
@@ -746,7 +793,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('profile') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <ProfileDialog
               open={dialog === 'profile'}
               draft={draft}
@@ -756,7 +803,7 @@ export default function App() {
           </Suspense>
         )}
         {seen.has('weave') && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader />}>
             <WeavingMode
               open={dialog === 'weave'}
               name={name ?? 'Unsaved pattern'}
@@ -766,7 +813,7 @@ export default function App() {
           </Suspense>
         )}
         {dialog === '3d' && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoomLoader label="Setting up the 3D view…" />}>
             <Fabric3DDialog open name={name} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
           </Suspense>
         )}
@@ -810,13 +857,16 @@ export default function App() {
           />
         )}
       </Box>
-      <PrintSheet
-        name={name ?? 'Untitled pattern'}
-        draft={draft}
-        endOneRight={view.endOneRight}
-        instructions={printInstructions}
-        noTieup={view.noTieup}
-      />
+      {loader}
+      {printing && (
+        <PrintSheet
+          name={name ?? 'Untitled pattern'}
+          draft={draft}
+          endOneRight={view.endOneRight}
+          instructions={printing.instructions}
+          noTieup={view.noTieup}
+        />
+      )}
     </>
   )
 }

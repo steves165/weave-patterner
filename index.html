@@ -80,13 +80,39 @@
         ]
       }
     </script>
+    <script>
+      // Before the app starts: the loom loader shows instead of the summary below, in the app's colours and theme.
+      ;(() => {
+        const c = document.documentElement.classList
+        c.add('js')
+        try {
+          const m = localStorage.getItem('mui-mode') || 'system'
+          if (m === 'dark' || (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) c.add('dark')
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root">
+      <div class="loom-loader static-loader" role="status">
+        <div class="loom-card">
+          <div class="loom" aria-hidden="true">
+            <div class="loom-warp loom-warp-a"></div>
+            <div class="loom-warp loom-warp-b"></div>
+            <div class="loom-cloth"></div>
+            <div class="loom-reed"></div>
+            <div class="loom-shuttle"></div>
+            <div class="loom-beam"></div>
+            <div class="loom-post loom-post-left"></div>
+            <div class="loom-post loom-post-right"></div>
+          </div>
+          <p class="loom-label">Loading Weave Patterner…</p>
+        </div>
+      </div>
       <!--
         A summary for search engines and anyone without JavaScript. The app replaces it as soon as it starts.
       -->
-      <main style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
+      <main class="static-summary" style="max-width: 46rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.5">
         <h1>Weave Patterner: free online weaving draft designer</h1>
         <p>
           Design weaving drafts in your browser. Click the threading, tie-up and treadling and watch the drawdown

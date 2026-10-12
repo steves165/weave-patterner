@@ -88,6 +88,8 @@ test('still opens older links with the pattern in the hash', async ({ page }) =>
 
 test('print shows only the framed draft', async ({ page }) => {
   await importFile(page)
+  // As the browser's own Print (Ctrl+P) does: the sheet is drawn as printing starts.
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
   await page.emulateMedia({ media: 'print' })
   await expect(page.locator('.print-sheet')).toBeVisible()
   await expect(page.locator('.print-sheet h1')).toHaveText('Green blocks')
@@ -163,4 +165,13 @@ test('Tools menu headings scroll with the menu instead of covering items', async
   await item.scrollIntoViewIfNeeded()
   await item.click()
   await expect(page.getByRole('dialog', { name: 'Double cloth' })).toBeVisible()
+})
+
+test('the print sheet is only on the page while printing', async ({ page }) => {
+  await importFile(page)
+  await expect(page.locator('.print-sheet')).toHaveCount(0)
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
+  await expect(page.locator('.print-sheet')).toHaveCount(1)
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+  await expect(page.locator('.print-sheet')).toHaveCount(0)
 })
