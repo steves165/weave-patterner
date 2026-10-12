@@ -154,4 +154,20 @@ describe('tartans', () => {
     ])
     expect(ascii(d)[0].slice(0, 8)).toBe('##..##..')
   })
+
+  it('Cameron of Erracht Ancient: G/16 R2 G2 R6 G32 K32 R2 B32 R6 B16 Y/4, 280 threads', () => {
+    const preset = PRESETS.find((p) => p.id === 'cameron-of-erracht-ancient')
+    if (!preset) throw new Error('missing')
+    const d = preset.build('#000000', '#ffffff', '#ff0000')
+    expect(d).toEqual(preset.build('#123456', '#abcdef'))
+    expect([d.ends, d.picks]).toEqual([280, 280])
+    expect(d.weftColors).toEqual(d.warpColors)
+    const names = preset.colours ?? {}
+    const code = (c: string) => ({ black: 'K' })[names[c]] ?? names[c][0].toUpperCase()
+    expect(
+      toRuns(d.warpColors)
+        .map((r) => `${code(r.color)}${r.count}`)
+        .join(' '),
+    ).toBe('G16 R2 G2 R6 G32 K32 R2 B32 R6 B16 Y4 B16 R6 B32 R2 K32 G32 R6 G2 R2')
+  })
 })

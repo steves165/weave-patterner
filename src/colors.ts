@@ -109,6 +109,11 @@ export function sett(half: [string, number][]): string[] {
 
 /** Clan Cameron's colours (Scottish Register of Tartans). */
 const CAMERON = { red: '#c80000', green: '#006818', yellow: '#e8c000' }
+/**
+ * Ancient colours, the softer shades meant to recall natural dyes: an orange red, a mid green, a sky blue and a
+ * charcoal for black. Mills' ancient shades vary, and there's no registered value; these are typical of them.
+ */
+const ANCIENT = { red: '#d9542c', green: '#5f8a3e', blue: '#5b86b8', black: '#3f3f3f', yellow: '#e3b23c' }
 
 /**
  * Colour-and-weave classics, and the standard checks and stripes: the structure plus the colour order that makes
@@ -267,6 +272,36 @@ export const PRESETS: Preset[] = [
         [red, 8],
         [green, 24],
         [red, 64],
+        [yellow, 4],
+      ])
+      return draftFrom(straight(4), twill22, straight(4), order, order, order.length)
+    },
+  },
+  {
+    id: 'cameron-of-erracht-ancient',
+    name: 'Cameron of Erracht Ancient tartan',
+    description:
+      'The Cameron of Erracht sett (1793, for the 79th Cameron Highlanders), G/16 R2 G2 R6 G32 K32 R2 B32 R6 B16 Y/4, in 2/2 twill and ancient colours',
+    colours: {
+      [ANCIENT.red]: 'red',
+      [ANCIENT.green]: 'green',
+      [ANCIENT.blue]: 'blue',
+      [ANCIENT.black]: 'black',
+      [ANCIENT.yellow]: 'yellow',
+    },
+    build: () => {
+      const { red, green, blue, black, yellow } = ANCIENT
+      const order = sett([
+        [green, 16],
+        [red, 2],
+        [green, 2],
+        [red, 6],
+        [green, 32],
+        [black, 32],
+        [red, 2],
+        [blue, 32],
+        [red, 6],
+        [blue, 16],
         [yellow, 4],
       ])
       return draftFrom(straight(4), twill22, straight(4), order, order, order.length)
