@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyStripes, darkAndLight, expandRuns, PRESETS, textOn, toRuns } from './colors'
+import { applyStripes, darkAndLight, expandRuns, PRESETS, sett, textOn, toRuns } from './colors'
 import { ascii } from './testUtils'
 
 describe('stripes', () => {
@@ -117,5 +117,41 @@ describe('more presets', () => {
   it('puts the darker colour first', () => {
     expect(darkAndLight('#ffd3e4', '#d6246e')).toEqual(['#d6246e', '#ffd3e4'])
     expect(darkAndLight('#000000', '#ffffff')).toEqual(['#000000', '#ffffff'])
+  })
+})
+
+describe('tartans', () => {
+  it('weave a threadcount out to the far pivot and back, each pivot once', () => {
+    expect(
+      sett([
+        ['r', 2],
+        ['g', 1],
+        ['y', 1],
+      ]),
+    ).toEqual(['r', 'r', 'g', 'y', 'g'])
+  })
+
+  it('Clan Cameron: the registered sett R/8 G24 R8 G24 R64 Y/4 in 2/2 twill, the same in warp and weft', () => {
+    const preset = PRESETS.find((p) => p.id === 'clan-cameron')
+    if (!preset) throw new Error('missing')
+    // Its own colours, whatever is chosen.
+    const d = preset.build('#000000', '#ffffff', '#ff0000')
+    expect(d).toEqual(preset.build('#123456', '#abcdef'))
+    expect([d.shafts, d.treadles, d.ends, d.picks]).toEqual([4, 4, 252, 252])
+    expect(d.weftColors).toEqual(d.warpColors)
+    const names = preset.colours ?? {}
+    expect(toRuns(d.warpColors).map((r) => `${names[r.color][0].toUpperCase()}${r.count}`)).toEqual([
+      'R8',
+      'G24',
+      'R8',
+      'G24',
+      'R64',
+      'Y4',
+      'R64',
+      'G24',
+      'R8',
+      'G24',
+    ])
+    expect(ascii(d)[0].slice(0, 8)).toBe('##..##..')
   })
 })

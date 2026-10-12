@@ -127,9 +127,9 @@ const swatch = (c: string) =>
  * One repeat of a colour order, written short: "4 navy, 4 cream", or with groups that repeat,
  * "(4 navy, 4 cream) × 4, (2 navy, 2 cream) × 8"; "all navy" for one colour.
  */
-export function colourOrder(colours: string[]): string {
+export function colourOrder(colours: string[], names: Record<string, string> = COLOUR_NAMES): string {
   const one = colours.slice(0, period(colours))
-  const name = (c: string) => `${swatch(c)} ${esc(COLOUR_NAMES[c] ?? c)}`
+  const name = (c: string) => `${swatch(c)} ${esc(names[c] ?? c)}`
   if (one.length === 1) return `all ${name(one[0])}`
   const runs = (xs: string[]) =>
     toRuns(xs)
@@ -221,9 +221,9 @@ async function weavePatterns(): Promise<Built[]> {
           .map(esc)
           .join('\n')}</pre>
 <h2>Colour order</h2>
-<p><strong>Warp:</strong> ${colourOrder(d.warpColors)}; repeat across the warp.</p>
-<p><strong>Weft:</strong> ${colourOrder(d.weftColors)}; repeat up the cloth.</p>
-<p>Use any two colours with good contrast in place of navy and cream: the effect comes from the order of the colours and the weave together. See the <a href="{root}guide/colours/">colours guide</a> and <a href="{root}guide/drawdown/">how to read a drawdown</a>.</p>
+<p><strong>Warp:</strong> ${colourOrder(d.warpColors, { ...COLOUR_NAMES, ...p.colours })}; repeat across the warp.</p>
+<p><strong>Weft:</strong> ${colourOrder(d.weftColors, { ...COLOUR_NAMES, ...p.colours })}; repeat up the cloth.</p>
+<p>${p.colours ? 'The same colour order in warp and weft makes the tartan’s squares; weave it in the clan’s colours, or your own for a new tartan from the same sett.' : 'Use any two colours with good contrast in place of navy and cream: the effect comes from the order of the colours and the weave together.'} See the <a href="{root}guide/colours/">colours guide</a> and <a href="{root}guide/drawdown/">how to read a drawdown</a>.</p>
 <h2>More drafts</h2>
 <ul>${others.map((o) => `<li><a href="{root}${base}${o.p.id}/">${esc(o.p.name)}</a>: ${esc(o.p.description)}</li>`).join('')}</ul>
 <p><a href="{root}${base}">All weaving drafts</a></p>`,

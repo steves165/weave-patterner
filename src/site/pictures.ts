@@ -20,6 +20,72 @@ function runs(rows: string[][], x0: number, y0: number, cell: number): string {
   return out.join('')
 }
 
+/** The shortest n that the sequence repeats every n of (the whole length if it doesn't). */
+function repeatOf(n: number, same: (a: number, b: number) => boolean): number {
+  for (let k = 1; k < n; k++) {
+    let ok = true
+    for (let i = k; i < n && ok; i++) ok = same(i, i - k)
+    if (ok) return k
+  }
+  return n
+}
+
+/** Drafts bigger than this many crossings are drawn as stripes (clothShapes) rather than a shape per run. */
+const BIG = 128 * 128
+let maskIds = 0
+
+/**
+ * The cloth of a big draft (a tartan's whole sett), in few shapes: the weft as stripes, then the warp as stripes
+ * showing only where the warp is up, through a mask that repeats the weave's structure (4 × 4 for a twill).
+ */
+function clothShapes(d: Draft, up: boolean[][], x0: number, y0: number, cell: number): string {
+  const w = d.ends * cell
+  const h = d.picks * cell
+  const stripes = (colours: string[], across: boolean) =>
+    toRunsOf(colours)
+      .map(({ color, from, count }) =>
+        across
+          ? `<rect x="${x0}" y="${y0 + from * cell}" width="${w}" height="${count * cell}" fill="${color}"/>`
+          : `<rect x="${x0 + from * cell}" y="${y0}" width="${count * cell}" height="${h}" fill="${color}"/>`,
+      )
+      .join('')
+  const rx = repeatOf(d.ends, (a, b) => up.every((row) => row[a] === row[b]))
+  const ry = repeatOf(d.picks, (a, b) => up[a].every((v, e) => v === up[b][e]))
+  const tile = up
+    .slice(0, ry)
+    .flatMap((row, y) =>
+      row
+        .slice(0, rx)
+        .flatMap((v, x) => (v ? [`<rect x="${x * cell}" y="${y * cell}" width="${cell}" height="${cell}"/>`] : [])),
+    )
+    .join('')
+  const id = `up${++maskIds}`
+  return `<defs><pattern id="${id}t" x="${x0}" y="${y0}" width="${rx * cell}" height="${ry * cell}" patternUnits="userSpaceOnUse"><g fill="#fff">${tile}</g></pattern><mask id="${id}" maskUnits="userSpaceOnUse"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="url(#${id}t)"/></mask></defs>${stripes(d.weftColors, true)}<g mask="url(#${id})">${stripes(d.warpColors, false)}</g>`
+}
+
+/** Runs of one colour, with where each starts. */
+function toRunsOf(colours: string[]): { color: string; from: number; count: number }[] {
+  const out: { color: string; from: number; count: number }[] = []
+  colours.forEach((color, i) => {
+    const last = out[out.length - 1]
+    if (last && last.color === color) last.count++
+    else out.push({ color, from: i, count: 1 })
+  })
+  return out
+}
+
+/** The cloth: a shape per run of one colour for most drafts, stripes for big ones. */
+function clothOf(d: Draft, x0: number, y0: number, cell: number): string {
+  const dd = computeDrawdown(d)
+  if (d.ends * d.picks > BIG) return clothShapes(d, dd, x0, y0, cell)
+  return runs(
+    dd.map((row, p) => row.map((up, e) => (up ? d.warpColors[e] : d.weftColors[p]))),
+    x0,
+    y0,
+    cell,
+  )
+}
+
 /** Grid lines over a w × h block of cells. */
 function lines(x0: number, y0: number, w: number, h: number, cell: number, color: string): string {
   const d: string[] = []
@@ -46,22 +112,18 @@ function grid(on: boolean[][], x0: number, y0: number, cell: number): string {
  */
 export function draftSvg(d: Draft, label: string, cell = 10): string {
   const gap = cell
-  const dd = computeDrawdown(d)
   const threading = Array.from({ length: d.shafts }, (_, r) => d.threading.map((s) => s === d.shafts - 1 - r))
   const tieup = Array.from({ length: d.shafts }, (_, r) => d.tieup[d.shafts - 1 - r])
-  const cloth = dd.map((row, p) => row.map((up, e) => (up ? d.warpColors[e] : d.weftColors[p])))
   const top = d.shafts * cell + gap
   const right = d.ends * cell + gap
   const width = right + d.treadles * cell
   const height = top + d.picks * cell
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${esc(label)}">${grid(threading, 0, 0, cell)}${grid(tieup, right, 0, cell)}${runs(cloth, 0, top, cell)}${lines(0, top, d.ends, d.picks, cell, 'rgba(0,0,0,0.12)')}${grid(d.treadling, right, top, cell)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${esc(label)}">${grid(threading, 0, 0, cell)}${grid(tieup, right, 0, cell)}${clothOf(d, 0, top, cell)}${lines(0, top, d.ends, d.picks, cell, 'rgba(0,0,0,0.12)')}${grid(d.treadling, right, top, cell)}</svg>`
 }
 
 /** Just the cloth, small: for the lists of patterns. */
 export function clothSvg(d: Draft, label: string, size = 160): string {
-  const dd = computeDrawdown(d)
-  const cloth = dd.map((row, p) => row.map((up, e) => (up ? d.warpColors[e] : d.weftColors[p])))
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.ends} ${d.picks}" width="${size}" height="${size}" role="img" aria-label="${esc(label)}" shape-rendering="crispEdges">${runs(cloth, 0, 0, 1)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${d.ends} ${d.picks}" width="${size}" height="${size}" role="img" aria-label="${esc(label)}" shape-rendering="crispEdges">${clothOf(d, 0, 0, 1)}</svg>`
 }
 
 /**

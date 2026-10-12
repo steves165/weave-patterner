@@ -36,6 +36,8 @@ export interface Preset {
   description: string
   /** Uses the accent colour as well as dark and light. */
   accent?: boolean
+  /** Woven in its own colours (a clan tartan), not the dark, light and accent chosen: each colour and its name. */
+  colours?: Record<string, string>
   build: (dark: string, light: string, accent?: string) => Draft
 }
 
@@ -91,6 +93,22 @@ const times = (order: string[], n: number): string[] => Array.from({ length: n }
 const basket = { threading: [1, 1, 2, 2], tieup: [[1], [2]], treadling: [1, 1, 2, 2] }
 /** Herringbone: a 2/2 twill threading that turns every 8 ends, with a break so the zigzag is clean. */
 const herringbone = [1, 2, 3, 4, 1, 2, 3, 4, 2, 1, 4, 3, 2, 1, 4, 3]
+
+/**
+ * A tartan's colour order from its threadcount, written as half a sett from pivot to pivot (R/8 G24 … Y/4): the
+ * stripes woven out to the far pivot and back again, each pivot once.
+ */
+export function sett(half: [string, number][]): string[] {
+  const out = half.flatMap(([c, n]) => run(c, n))
+  const back = half
+    .slice(1, -1)
+    .reverse()
+    .flatMap(([c, n]) => run(c, n))
+  return [...out, ...back]
+}
+
+/** Clan Cameron's colours (Scottish Register of Tartans). */
+const CAMERON = { red: '#c80000', green: '#006818', yellow: '#e8c000' }
 
 /**
  * Colour-and-weave classics, and the standard checks and stripes: the structure plus the colour order that makes
@@ -234,6 +252,24 @@ export const PRESETS: Preset[] = [
       const tie = Array.from({ length: 8 }, (_, t) => [t + 1, ((t + 1) % 8) + 1, ((t + 2) % 8) + 1, ((t + 3) % 8) + 1])
       const seq = advancing(8, 4, 2)
       return draftFrom(seq, tie, seq, order, order)
+    },
+  },
+  {
+    id: 'clan-cameron',
+    name: 'Clan Cameron tartan',
+    description: 'The Cameron clan sett, R/8 G24 R8 G24 R64 Y/4, in 2/2 twill: red, with green bands and a yellow line',
+    colours: { [CAMERON.red]: 'red', [CAMERON.green]: 'green', [CAMERON.yellow]: 'yellow' },
+    build: () => {
+      const { red, green, yellow } = CAMERON
+      const order = sett([
+        [red, 8],
+        [green, 24],
+        [red, 8],
+        [green, 24],
+        [red, 64],
+        [yellow, 4],
+      ])
+      return draftFrom(straight(4), twill22, straight(4), order, order, order.length)
     },
   },
 ]

@@ -6,6 +6,7 @@ import { SAMPLES, sampleSlug } from '../knit/samples'
 import { decodePattern } from '../share'
 import { SITE_URL } from './html'
 import { buildSite, colourOrder, period, sitemap } from './pages'
+import { clothSvg, draftSvg } from './pictures'
 
 const pages = await buildSite()
 const paths = new Set(pages.map((p) => p.path))
@@ -123,5 +124,20 @@ describe('sewing pattern pages', () => {
     expect(page?.html).toMatch(/<h2>How to sew it<\/h2>\n<ol><li>/)
     expect(page?.picture).toMatchObject({ app: 'sew', title: 'Shift dress' })
     expect(pages.find((p) => p.path === 'sew/guide/measuring/')?.html).toContain('Taking your measurements')
+  })
+})
+
+describe('pictures of big drafts', () => {
+  it('draw a whole tartan sett in a few shapes: weft stripes, and warp stripes through the twill', () => {
+    const tartan = PRESETS.find((p) => p.id === 'clan-cameron')?.build('#000000', '#ffffff')
+    if (!tartan) throw new Error('missing')
+    const cloth = clothSvg(tartan, 'Clan Cameron')
+    expect(cloth.length).toBeLessThan(10_000)
+    expect(cloth).toContain('<pattern')
+    expect(draftSvg(tartan, 'Clan Cameron').length).toBeLessThan(100_000)
+    // Small drafts are drawn square by square, as before.
+    const houndstooth = PRESETS.find((p) => p.id === 'houndstooth')?.build('#000000', '#ffffff')
+    if (!houndstooth) throw new Error('missing')
+    expect(clothSvg(houndstooth, '')).not.toContain('<pattern')
   })
 })

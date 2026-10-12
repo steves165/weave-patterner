@@ -171,7 +171,7 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
             </Stack>
             <Typography variant="body2" color="text.secondary">
               They start in the theme's colours. A preset replaces the whole draft (undo brings it back); some use the
-              accent too.
+              accent too, and the tartans keep their own colours.
             </Typography>
             {saved.length > 0 && (
               <>
