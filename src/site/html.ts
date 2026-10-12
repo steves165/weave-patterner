@@ -1,4 +1,5 @@
 import { type AppId, type Brand, KNIT, SEW, WEAVE } from '../brands'
+import { DONATE_URL } from '../donate'
 import type { Block } from '../help/types'
 import { markSvg } from '../marks'
 import { SEASONS, seasonalOn, seasonBrand } from '../seasons'
@@ -210,7 +211,7 @@ ${page.pictures ? `<meta property="og:image:width" content="1200" />\n<meta prop
 ${content}
 </main>
 <footer>
-<p><a href="${root}${app.path}">${app.name}</a> is free and open source, and runs in your browser: no account or download.</p>
+<p><a href="${root}${app.path}">${app.name}</a> is free and open source, and runs in your browser: no account or download.${DONATE_URL ? ` If it helps you, you can <a href="${DONATE_URL}" rel="noopener">support it with a donation</a>.` : ''}</p>
 <p><a href="${root}${app.path}guide/">Guides</a> · <a href="${root}${app.path}patterns/">Patterns</a> · ${app.others.map((o) => `<a href="${root}${o.path}">${o.name}</a> · `).join('')}<a href="https://github.com/steves165/weave-patterner">Source code</a></p>
 </footer>
 </body>

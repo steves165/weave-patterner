@@ -1,8 +1,10 @@
+import FavoriteIcon from '@mui/icons-material/FavoriteBorder'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import PaletteIcon from '@mui/icons-material/PaletteOutlined'
 import { Link } from '@mui/material'
 import { useState } from 'react'
+import { DONATE_URL } from '../donate'
 import { ThemeDialog } from '../SeasonalTheme'
 
 interface Props {
@@ -15,7 +17,7 @@ interface Props {
   fontSize?: number
 }
 
-/** The links at the foot of the app: help, the colour theme, the other app, the analytics choice and the source. */
+/** The links at the foot of the app: help, the colour theme, the other app, the analytics choice, donating and the source. */
 export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Props) {
   const [theme, setTheme] = useState(false)
   return (
@@ -53,6 +55,18 @@ export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Prop
       {onAnalytics && (
         <Link component="button" onClick={onAnalytics} sx={{ fontSize }}>
           Analytics
+        </Link>
+      )}
+      {DONATE_URL && (
+        <Link
+          href={DONATE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Support the Patterner apps with a donation through PayPal (opens in a new tab)"
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize, fontWeight: 600 }}
+        >
+          <FavoriteIcon sx={{ fontSize: 16 }} />
+          Donate
         </Link>
       )}
       <Link
