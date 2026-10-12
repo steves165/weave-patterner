@@ -1,11 +1,6 @@
 /**
- * PayPal donations: a plain link to PayPal's hosted donate page (no PayPal script, cookies or tracking on our pages).
- * The page is made at paypal.com/donate/buttons; its link carries the button's id. Empty hides the donate links.
+ * PayPal donations: a plain link to PayPal's donate page (no PayPal script, cookies or tracking on our pages), made
+ * at paypal.com/donate/buttons. Empty hides the donate links.
  */
-export const PAYPAL_DONATE_ID = ''
-
-/** The donate page for a PayPal hosted button id, or '' without one. */
-export const donateUrl = (id: string) =>
-  id.trim() ? `https://www.paypal.com/donate/?hosted_button_id=${encodeURIComponent(id.trim())}` : ''
-
-export const DONATE_URL = donateUrl(PAYPAL_DONATE_ID)
+export const DONATE_URL =
+  'https://www.paypal.com/donate/?business=XSHCPFVA9AVU2&no_recurring=0&item_name=Weave%2C+Knit+and+Sew+Patterner+are+free+for+everyone.+Every+donation+goes+towards+making+them+better.+Thank+you%21&currency_code=GBP'
