@@ -8,6 +8,7 @@ import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { DraftView } from './components/DraftView'
 import { FooterLinks } from './components/FooterLinks'
+import { MoveNotice } from './components/MoveNotice'
 import { PrintSheet } from './components/PrintSheet'
 import { SettingsSheet, SettingsSidebar } from './components/SettingsFrame'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -799,6 +800,7 @@ export default function App() {
             }}
           />
         )}
+        <MoveNotice app="Weave Patterner" />
         {GA_ID && consent === null && (
           <ConsentBanner
             onChoose={(allow) => {

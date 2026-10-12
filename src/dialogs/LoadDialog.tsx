@@ -24,6 +24,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
+import { bringOver, onNewAddress } from '../move'
 import { MAX_PATTERNS, type PatternStore, type Saved, weaveStore } from '../storage'
 import type { Draft } from '../weave'
 
@@ -63,6 +64,7 @@ export function LoadDialog<T = Draft>({
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ from: string; to: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [moving, setMoving] = useState(false)
 
   const refresh = useCallback(
     () =>
@@ -215,6 +217,22 @@ export function LoadDialog<T = Draft>({
         </List>
       </DialogContent>
       <DialogActions>
+        {onNewAddress() && (
+          <Button
+            disabled={moving}
+            onClick={() => {
+              setMoving(true)
+              setError(null)
+              bringOver().catch((e) => {
+                setMoving(false)
+                setError(e instanceof Error ? e.message : String(e))
+              })
+            }}
+            sx={{ mr: 'auto' }}
+          >
+            {moving ? 'Bringing them over…' : 'From the old address…'}
+          </Button>
+        )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>

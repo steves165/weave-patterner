@@ -211,9 +211,7 @@ describe('projects', () => {
 
   it('packs a project into a link and back', async () => {
     const p = { ...newProject('apron'), units: 'in' as const }
-    expect(await projectUrl('Apron', p)).toMatch(
-      /^https:\/\/steves165\.github\.io\/weave-patterner\/sew\/\?project=[\w-]+$/,
-    )
+    expect(await projectUrl('Apron', p)).toMatch(/^https:\/\/weave-patterner\.com\/sew\/\?project=[\w-]+$/)
     const back = await decodeProject(await encodeProject('My apron', p))
     expect(back.name).toBe('My apron')
     expect(back.project.units).toBe('in')

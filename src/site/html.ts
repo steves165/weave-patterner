@@ -9,7 +9,7 @@ import { SEASONS, seasonalOn, seasonBrand } from '../seasons'
  * plain HTML, no JavaScript, in the apps' colours.
  */
 
-export const SITE_URL = 'https://steves165.github.io/weave-patterner/'
+export const SITE_URL = 'https://weave-patterner.com/'
 
 export const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')

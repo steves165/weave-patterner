@@ -52,6 +52,7 @@ import { ColourInput } from '../components/ColourInput'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
+import { MoveNotice } from '../components/MoveNotice'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
 import { FIELD_GRID } from '../components/SettingsPanel'
 import { ShareDialog } from '../components/ShareDialog'
@@ -1447,6 +1448,7 @@ export default function SewApp() {
           }}
         />
       )}
+      <MoveNotice app="Sew Patterner" />
       {GA_ID && consent === null && (
         <ConsentBanner app="Sew Patterner" onChoose={(allow) => setConsent(allow ? 'granted' : 'denied')} />
       )}

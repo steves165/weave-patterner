@@ -5,7 +5,7 @@
   "description": "Free online weaving draft designer: threading, tie-up, treadling and live drawdown, WIF export for looms, 3D cloth preview, double cloth and block weaves",
   "license": "MIT",
   "author": "Stephen Skidmore (https://github.com/steves165)",
-  "homepage": "https://steves165.github.io/weave-patterner/",
+  "homepage": "https://weave-patterner.com/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/steves165/weave-patterner.git"
@@ -29,7 +29,7 @@
     "test:e2e:3d": "vite build && npm run site && playwright test --grep @3d --workers 2",
     "test:e2e:all": "vite build && npm run site && playwright test",
     "test:e2e:changed": "node scripts/e2e.mjs",
-    "test:e2e:live": "E2E_BASE_URL=https://steves165.github.io/weave-patterner/ node scripts/e2e.mjs"
+    "test:e2e:live": "E2E_BASE_URL=https://weave-patterner.com/ node scripts/e2e.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

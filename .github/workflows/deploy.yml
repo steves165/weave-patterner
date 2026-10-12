@@ -54,7 +54,7 @@ jobs:
     needs: [build, deploy]
     runs-on: ubuntu-latest
     env:
-      SITE: https://steves165.github.io/weave-patterner/
+      SITE: https://weave-patterner.com/
     steps:
       - uses: actions/checkout@v4
         with:

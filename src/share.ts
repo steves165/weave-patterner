@@ -6,7 +6,7 @@ import { type Draft, parseDraft } from './weave'
  * it (to show the design in link previews); older links put it in the hash (`#pattern=`), and still open.
  */
 export const SHARE_KEY = 'pattern'
-export const APP_URL = 'https://steves165.github.io/weave-patterner/'
+export const APP_URL = 'https://weave-patterner.com/'
 
 const toBase64Url = (bytes: Uint8Array) => {
   let bin = ''

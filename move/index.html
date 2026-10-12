@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Moving your patterns</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fff0f6;
+        --text: #2b1622;
+        --accent: #d6246e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #170b13;
+          --text: #fce8f1;
+          --accent: #e36a9c;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 17px/1.5 system-ui, sans-serif;
+      }
+      main {
+        max-width: 34rem;
+        margin: 15vh auto;
+        padding: 0 16px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      a {
+        color: var(--accent);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Moving your patterns</h1>
+      <p id="status">Getting your saved patterns ready…</p>
+    </main>
+    <script>
+      // Weave, Knit and Sew Patterner moved from steves165.github.io/weave-patterner to weave-patterner.com.
+      // This page shares the old address's storage, so it reads the saved patterns and settings and sends them to
+      // the app that opened it. Only to the new address (or a local copy of the app); nothing goes to any server.
+      ;(async () => {
+        const NEW_SITE = 'https://weave-patterner.com/'
+        const TARGETS = [
+          'https://weave-patterner.com',
+          'https://www.weave-patterner.com',
+          'http://localhost:5173',
+          'http://localhost:4173',
+        ]
+        const DBS = ['weave-patterner', 'knit-patterner', 'sew-patterner']
+        const PREFIXES = ['weave-', 'wp-', 'knit-', 'sew-', 'thread-progress:']
+        const EXTRA = ['mui-mode']
+        // Asked again at the new address.
+        const SKIP = ['weave-analytics-consent']
+        const status = document.getElementById('status')
+        const say = (html) => {
+          status.innerHTML = html
+        }
+
+        if (!window.opener) {
+          say(
+            `Weave Patterner, Knit Patterner and Sew Patterner have moved to <a href="${NEW_SITE}">weave-patterner.com</a>. ` +
+              'Open it and choose <strong>Bring them over</strong> (or <strong>Load › From the old address</strong>) to bring your saved patterns with you.',
+          )
+          return
+        }
+
+        const local = {}
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (k === null || SKIP.includes(k)) continue
+          if (EXTRA.includes(k) || PREFIXES.some((p) => k.startsWith(p))) local[k] = localStorage.getItem(k)
+        }
+
+        const known = indexedDB.databases ? (await indexedDB.databases()).map((d) => d.name) : null
+        const readDb = (name) =>
+          new Promise((resolve) => {
+            if (known && !known.includes(name)) return resolve([])
+            const req = indexedDB.open(name)
+            req.onupgradeneeded = () => req.transaction.abort()
+            req.onerror = () => resolve([])
+            req.onsuccess = () => {
+              const db = req.result
+              if (!db.objectStoreNames.contains('patterns')) {
+                db.close()
+                return resolve([])
+              }
+              const all = db.transaction('patterns').objectStore('patterns').getAll()
+              all.onsuccess = () => {
+                db.close()
+                resolve(all.result)
+              }
+              all.onerror = () => {
+                db.close()
+                resolve([])
+              }
+            }
+          })
+        const patterns = {}
+        for (const name of DBS) patterns[name] = await readDb(name)
+
+        const message = { type: 'patterner-move', version: 1, local, patterns }
+        // Delivered only if the opener is one of these; to any other page it goes nowhere.
+        for (const origin of TARGETS) window.opener.postMessage(message, origin)
+
+        const n = Object.values(patterns).reduce((sum, list) => sum + list.length, 0)
+        say(
+          `Sent ${n} saved pattern${n === 1 ? '' : 's'} to the app. You can close this tab and carry on at ` +
+            `<a href="${NEW_SITE}">weave-patterner.com</a>.`,
+        )
+        setTimeout(() => window.close(), 1500)
+      })().catch((e) => {
+        document.getElementById('status').textContent = `Something went wrong: ${e && e.message ? e.message : e}`
+      })
+    </script>
+  </body>
+</html>

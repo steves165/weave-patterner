@@ -19,8 +19,8 @@ describe('search and sharing metadata', () => {
   })
 
   it('has a canonical link and share previews with an absolute image of the right size', () => {
-    expect(html).toContain('<link rel="canonical" href="https://steves165.github.io/weave-patterner/" />')
-    expect(meta('property', 'og:image')).toBe('https://steves165.github.io/weave-patterner/og-image.png')
+    expect(html).toContain('<link rel="canonical" href="https://weave-patterner.com/" />')
+    expect(meta('property', 'og:image')).toBe('https://weave-patterner.com/og-image.png')
     expect(meta('name', 'twitter:card')).toBe('summary_large_image')
     const png = readFileSync(new URL('../public/og-image.png', import.meta.url))
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
@@ -31,7 +31,7 @@ describe('search and sharing metadata', () => {
     const data = JSON.parse(json)
     expect(data['@type']).toBe('WebApplication')
     expect(data.offers.price).toBe('0')
-    expect(data.url).toBe('https://steves165.github.io/weave-patterner/')
+    expect(data.url).toBe('https://weave-patterner.com/')
     expect(data.featureList.length).toBeGreaterThan(5)
   })
 
@@ -69,7 +69,7 @@ describe('Knit Patterner page metadata', () => {
     const description = knit.match(/<meta\s+name="description"\s+content="([^"]*)"/s)?.[1] ?? ''
     expect(description.length).toBeGreaterThan(120)
     expect(description.length).toBeLessThanOrEqual(200)
-    expect(knit).toContain('<link rel="canonical" href="https://steves165.github.io/weave-patterner/knit/" />')
+    expect(knit).toContain('<link rel="canonical" href="https://weave-patterner.com/knit/" />')
     const png = readFileSync(new URL('../public/knit/og-image.png', import.meta.url))
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
   })
@@ -77,7 +77,7 @@ describe('Knit Patterner page metadata', () => {
   it('has structured data, existing icons, a sitemap entry and links between the two apps', () => {
     const data = JSON.parse(knit.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '')
     expect(data.name).toBe('Knit Patterner')
-    expect(data.url).toBe('https://steves165.github.io/weave-patterner/knit/')
+    expect(data.url).toBe('https://weave-patterner.com/knit/')
     for (const [, href] of knit.matchAll(/href="\.\/([^"]+)"/g))
       if (!/^(guide|patterns)\//.test(href)) expect(existsSync(`public/knit/${href}`), href).toBe(true)
     const manifest = JSON.parse(read('public/knit/manifest.webmanifest'))
@@ -94,7 +94,7 @@ describe('Sew Patterner page metadata', () => {
     const description = sew.match(/<meta\s+name="description"\s+content="([^"]*)"/s)?.[1] ?? ''
     expect(description.length).toBeGreaterThan(120)
     expect(description.length).toBeLessThanOrEqual(200)
-    expect(sew).toContain('<link rel="canonical" href="https://steves165.github.io/weave-patterner/sew/" />')
+    expect(sew).toContain('<link rel="canonical" href="https://weave-patterner.com/sew/" />')
     const png = readFileSync(new URL('../public/sew/og-image.png', import.meta.url))
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
   })
@@ -102,7 +102,7 @@ describe('Sew Patterner page metadata', () => {
   it('has structured data, existing icons, and links between all three apps', () => {
     const data = JSON.parse(sew.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '')
     expect(data.name).toBe('Sew Patterner')
-    expect(data.url).toBe('https://steves165.github.io/weave-patterner/sew/')
+    expect(data.url).toBe('https://weave-patterner.com/sew/')
     for (const [, href] of sew.matchAll(/href="\.\/([^"]+)"/g))
       if (!/^(guide|patterns)\//.test(href)) expect(existsSync(`public/sew/${href}`), href).toBe(true)
     const manifest = JSON.parse(read('public/sew/manifest.webmanifest'))

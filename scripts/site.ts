@@ -66,6 +66,8 @@ for (const page of pages) {
   if (page.picture) await pictures(page.picture, dir)
 }
 writeFileSync(join(out, 'sitemap.xml'), sitemap(pages, date))
+// The site has its own domain, so its robots.txt is the one search engines read.
+writeFileSync(join(out, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${new URL('sitemap.xml', SITE_URL)}\n`)
 // The apps' fonts for the pages: Nunito for text, Fredoka for the names and headings.
 mkdirSync(join(out, 'fonts'), { recursive: true })
 for (const font of Object.values(fonts))

@@ -9,11 +9,16 @@ export const sampleText = () => readFileSync(SAMPLE, 'utf8')
 /** Google Analytics' servers: tests must never send hits to the real analytics. */
 export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|analytics\.google\.com/
 
-/** A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way. */
+/**
+ * A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way; nor does the
+ * offer to bring patterns from the old address (on the live site), unless a test asks for it.
+ */
 async function tourSeen(page: Page) {
   await page.addInitScript(() => {
     if (!localStorage.getItem('wp-tour-seen'))
       localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true,"sew":true}')
+    if (!localStorage.getItem('wp-move-offer') && !localStorage.getItem('wp-moved'))
+      localStorage.setItem('wp-moved', 'dismissed')
   })
 }
 

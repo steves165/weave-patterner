@@ -126,7 +126,7 @@ export function nestedPieces(p: Project): { name: string; pieces: Piece[] }[] {
 
 /** Share links: `?project=…`, the project packed small. */
 export const PROJECT_KEY = 'project'
-export const SEW_URL = 'https://steves165.github.io/weave-patterner/sew/'
+export const SEW_URL = 'https://weave-patterner.com/sew/'
 
 export async function encodeProject(name: string, p: Project): Promise<string> {
   return packJson({ name, project: p })

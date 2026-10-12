@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true}')
     localStorage.setItem('weave-analytics-consent', 'denied')
+    localStorage.setItem('wp-moved', 'dismissed')
   })
 })
 
@@ -59,8 +60,8 @@ test('the apps link to the guides, and the sitemap lists them', async ({ page })
   await page.getByRole('contentinfo').getByRole('link', { name: 'Guides' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Weave Patterner guides' })).toBeVisible()
   const sitemap = await (await page.request.get('./sitemap.xml')).text()
-  expect(sitemap).toContain('/weave-patterner/guide/treadling/</loc>')
-  expect(sitemap).toContain('/weave-patterner/knit/patterns/fair-isle-peerie/</loc>')
+  expect(sitemap).toContain('https://weave-patterner.com/guide/treadling/</loc>')
+  expect(sitemap).toContain('https://weave-patterner.com/knit/patterns/fair-isle-peerie/</loc>')
   expect(sitemap).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/)
 })
 

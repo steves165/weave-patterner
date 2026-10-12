@@ -206,7 +206,7 @@ export function PrintSheet({ name, draft, endOneRight = false, instructions = fa
         {ticks}
       </svg>
       <footer className="print-footer">
-        Weave Patterner · steves165.github.io/weave-patterner · printed {new Date().toLocaleDateString()}
+        Weave Patterner · weave-patterner.com · printed {new Date().toLocaleDateString()}
       </footer>
       {instructions && (
         <section className="print-instructions" aria-label="Written instructions">

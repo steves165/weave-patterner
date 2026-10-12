@@ -112,7 +112,7 @@ export interface ShareCard {
   brand: Brand
   /** The design's name. */
   title: string
-  /** Where to find the app, without https://: steves165.github.io/weave-patterner. */
+  /** Where to find the app, without https://: weave-patterner.com. */
   address: string
   design: DesignPainter
 }

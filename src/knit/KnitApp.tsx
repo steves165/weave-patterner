@@ -52,6 +52,7 @@ import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
+import { MoveNotice } from '../components/MoveNotice'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
 import { FIELD_GRID, SWITCH_ROW } from '../components/SettingsPanel'
 import { ShareDialog } from '../components/ShareDialog'
@@ -1603,6 +1604,7 @@ export default function KnitApp() {
           }}
         />
       )}
+      <MoveNotice app="Knit Patterner" />
       {GA_ID && consent === null && (
         <ConsentBanner app="Knit Patterner" onChoose={(allow) => setConsent(allow ? 'granted' : 'denied')} />
       )}

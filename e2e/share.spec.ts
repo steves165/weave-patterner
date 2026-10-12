@@ -28,7 +28,7 @@ test('Share gives a link that opens the pattern, and links to share it on other 
   await toolbarButton(page, 'Share').click()
   const dialog = page.getByRole('dialog', { name: /^Share/ })
   const field = dialog.getByLabel('Anyone with this link can open the design')
-  await expect(field).toHaveValue(/^https:\/\/steves165\.github\.io\/weave-patterner\/\?pattern=[\w-]+$/)
+  await expect(field).toHaveValue(/^https:\/\/weave-patterner\.com\/\?pattern=[\w-]+$/)
   const link = await field.inputValue()
 
   await dialog.getByRole('button', { name: 'Copy the link' }).click()
@@ -100,7 +100,7 @@ test.describe('Knit Patterner', () => {
     await toolbarButton(page, 'Share').click()
     const dialog = page.getByRole('dialog', { name: 'Share “My moss”' })
     const field = dialog.getByLabel('Anyone with this link can open the design')
-    await expect(field).toHaveValue(/^https:\/\/steves165\.github\.io\/weave-patterner\/knit\/\?chart=[\w-]+$/)
+    await expect(field).toHaveValue(/^https:\/\/weave-patterner\.com\/knit\/\?chart=[\w-]+$/)
     await expect(dialog.getByRole('img', { name: /for sharing/ })).toBeVisible()
     const link = new URL(await field.inputValue())
     await page.keyboard.press('Escape')

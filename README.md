@@ -1,6 +1,6 @@
 # Weave Patterner – free online weaving draft designer
 
-**[Open Weave Patterner](https://steves165.github.io/weave-patterner/)**: it runs in your browser, free, with no account or download.
+**[Open Weave Patterner](https://weave-patterner.com/)**: it runs in your browser, free, with no account or download.
 
 ![Weave Patterner: a weaving draft designer, beside a green block-weave drawdown](public/og-image.png)
 

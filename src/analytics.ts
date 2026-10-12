@@ -88,9 +88,11 @@ export function stopAnalytics() {
   if (typeof document === 'undefined') return
   for (const cookie of document.cookie.split(';')) {
     const name = cookie.split('=')[0].trim()
-    // github.io is a shared (public suffix) domain, so Google Analytics' cookies are on the full host name.
+    // Google Analytics puts its cookies on the site's own domain (weave-patterner.com, also seen from www.), or on
+    // the full host name where it can't (a shared domain such as github.io).
     if (name !== '_ga' && !name.startsWith('_ga_')) continue
-    for (const domain of ['', `; domain=${location.hostname}`]) {
+    const site = location.hostname.replace(/^www\./, '')
+    for (const domain of ['', `; domain=${location.hostname}`, `; domain=${site}`]) {
       // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API isn't in every browser this runs in
       document.cookie = `${name}=; Max-Age=0; path=/${domain}`
     }
