@@ -23,7 +23,6 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import LayersIcon from '@mui/icons-material/Layers'
-import ListAltIcon from '@mui/icons-material/ListAlt'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
@@ -93,8 +92,8 @@ interface Props {
   onShare: () => void
   /** Opens the help. */
   onHelp: () => void
-  /** Print the draft, optionally with a page of written instructions. */
-  onPrint: (instructions: boolean) => void
+  /** Opens Print: the printed sheet's options (written instructions, a QR code), then prints. */
+  onPrint: () => void
   onWeave: () => void
   /** Opens the 3D preview of the cloth. */
   on3d: () => void
@@ -182,12 +181,10 @@ export function AppToolbar(p: Props) {
   const narrow = useNarrow() || p.compact
   const [toolQuery, setToolQuery] = useState('')
   const [fileAnchor, setFileAnchor] = useState<HTMLElement | null>(null)
-  const [printAnchor, setPrintAnchor] = useState<HTMLElement | null>(null)
   const close = () => {
     setExportAnchor(null)
     setToolsAnchor(null)
     setFileAnchor(null)
-    setPrintAnchor(null)
   }
   const then = (fn: () => void) => () => {
     close()
@@ -206,20 +203,6 @@ export function AppToolbar(p: Props) {
         <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
-  ]
-  const printItems = [
-    <MenuItem key="draft" onClick={then(() => p.onPrint(false))}>
-      <ListItemIcon>
-        <PrintIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText primary="Print draft" />
-    </MenuItem>,
-    <MenuItem key="instructions" onClick={then(() => p.onPrint(true))}>
-      <ListItemIcon>
-        <ListAltIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText primary="Print draft and written instructions" secondary="Adds threading and treadling lists" />
-    </MenuItem>,
   ]
 
   // Every tool, by group, so the menu can be searched.
@@ -453,8 +436,12 @@ export function AppToolbar(p: Props) {
       </ListItemIcon>
       Import
     </MenuItem>,
-    <MenuHeading key="print">Print</MenuHeading>,
-    ...printItems,
+    <MenuItem key="print" onClick={then(p.onPrint)}>
+      <ListItemIcon>
+        <PrintIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText primary="Print…" secondary="The draft, with a QR code and written instructions if you like" />
+    </MenuItem>,
     <MenuHeading key="export">Export</MenuHeading>,
     ...exportItems,
     <Divider key="d3" />,
@@ -557,15 +544,7 @@ export function AppToolbar(p: Props) {
               <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={close}>
                 {exportItems}
               </Menu>
-              <Action
-                compact={fileCompact}
-                icon={<PrintIcon />}
-                label="Print"
-                onClick={(e) => setPrintAnchor(e.currentTarget)}
-              />
-              <Menu anchorEl={printAnchor} open={printAnchor !== null} onClose={close}>
-                {printItems}
-              </Menu>
+              <Action compact={fileCompact} icon={<PrintIcon />} label="Print" onClick={p.onPrint} />
               <Action compact={fileCompact} icon={<IosShareIcon />} label="Share" onClick={p.onShare} />
             </Box>
           )}

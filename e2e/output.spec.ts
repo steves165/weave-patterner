@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs'
+import { createCanvas, loadImage } from '@napi-rs/canvas'
 import { expect, test } from '@playwright/test'
+import jsQR from 'jsqr'
 import { importFile, openApp, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => {
@@ -16,24 +18,56 @@ test('prints written instructions only when asked', async ({ page }) => {
     }
   })
   const instructions = page.getByRole('region', { name: 'Written instructions' })
-  // Choose from the menu on screen, then look at the page as the printer would see it.
-  const printVia = async (item: string | RegExp) => {
+  // Choose in the Print dialog, then look at the page as the printer would see it.
+  const printWith = async (written: boolean) => {
     await page.emulateMedia({ media: 'screen' })
     await toolbarButton(page, 'Print').click()
-    await page.getByRole('menuitem', { name: item, exact: typeof item === 'string' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Print' })
+    await dialog.getByRole('checkbox', { name: /Written instructions/ }).setChecked(written)
+    await dialog.getByRole('button', { name: 'Print' }).click()
     await page.emulateMedia({ media: 'print' })
   }
 
-  await printVia('Print draft')
+  await printWith(false)
   await expect(page.locator('.print-draft')).toBeVisible()
+  await expect(page.locator('.print-sheet h1')).toHaveText('Green blocks')
+  await expect(page.locator('.print-made')).toHaveText('Made with Weave Patterner · weave-patterner.com')
+  await expect(page.getByRole('img', { name: 'The woven cloth of Green blocks' })).toBeVisible()
   await expect(instructions).toHaveCount(0)
 
-  await printVia(/Print draft and written instructions/)
+  await printWith(true)
   await expect(instructions).toBeVisible()
   await expect(instructions).toContainText('Ends 1–16: 3 3 1 4 2 2 4 1 3 3 1 4 2 2 4 1')
   await expect(instructions).toContainText('Treadle 1: shafts 3, 4')
   await expect(instructions).toContainText('Picks 1–16:')
   expect(await page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(2)
+})
+
+test('the printed QR code opens the pattern in the app when scanned', async ({ page, browser }) => {
+  await page.evaluate(() => {
+    window.print = () => {}
+  })
+  await toolbarButton(page, 'Print').click()
+  const dialog = page.getByRole('dialog', { name: 'Print' })
+  await expect(dialog.getByRole('checkbox', { name: /QR code/ })).toBeChecked()
+  await dialog.getByRole('button', { name: 'Print' }).click()
+  await page.emulateMedia({ media: 'print' })
+  const code = page.getByRole('img', { name: 'QR code that opens Green blocks in Weave Patterner' })
+  await expect(code).toBeVisible()
+  await expect(page.getByText('Scan with your phone’s camera to open this pattern in Weave Patterner')).toBeVisible()
+
+  // Scan it as a phone would: a picture of the printed code, decoded.
+  const link = await scanQr(await code.screenshot())
+  expect(link).toMatch(/^https:\/\/weave-patterner\.com\/\?pattern=/)
+
+  // Opening the link (here, on this copy of the site) imports the pattern in a fresh browser.
+  const phone = await browser.newContext()
+  const opened = await phone.newPage()
+  await opened.addInitScript(() => localStorage.setItem('weave-analytics-consent', 'denied'))
+  await opened.goto(`./${new URL(link ?? '').search}`)
+  await expect(opened.getByText('Green blocks').first()).toBeVisible()
+  await expect(opened.getByTestId('draft-summary')).toContainText('4 shafts')
+  await phone.close()
 })
 
 test('exports the draft as SVG and PNG images', async ({ page }) => {
@@ -88,3 +122,13 @@ test('exports bitmaps: black and white for jacquard looms, and in the thread col
     )
   }
 })
+
+/** The text in a QR code, read from a PNG screenshot of it. */
+async function scanQr(png: Buffer): Promise<string | null> {
+  const image = await loadImage(png)
+  const canvas = createCanvas(image.width, image.height)
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(image, 0, 0)
+  const { data, width, height } = ctx.getImageData(0, 0, image.width, image.height)
+  return jsQR(new Uint8ClampedArray(data), width, height)?.data ?? null
+}

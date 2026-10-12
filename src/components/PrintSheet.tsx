@@ -1,7 +1,10 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { liftplanLines, threadingLines, tieupLines, treadlingLines } from '../instructions'
 import { isDirectTieup } from '../liftplan'
+import { qrPath } from '../qr'
+import { clothPainter } from '../shareImage'
 import { computeDrawdown, type Draft } from '../weave'
+import { WeaveMark } from './Logo'
 
 /** Cell size in SVG units; the SVG scales to the printed page. */
 const C = 10
@@ -18,13 +21,41 @@ interface Props {
   instructions?: boolean
   /** Leave the tie-up out of a lift plan, for looms without one. */
   noTieup?: boolean
+  /** A link that opens this pattern in the app, printed as a QR code to scan with a phone's camera. */
+  qr?: string | null
+}
+
+/** The woven cloth, as a picture: the same weave the Instagram picture shows (clothPainter). */
+function clothPicture(draft: Draft): string | null {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1600
+  canvas.height = 760
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  clothPainter(draft)(ctx, 0, 0, canvas.width, canvas.height)
+  try {
+    return canvas.toDataURL('image/png')
+  } catch {
+    return null
+  }
 }
 
 /**
- * A print-only rendering of the full draft in the classic layout: warp colours and threading above the
- * drawdown, tie-up top right, treadling and weft colours to the right, with a tick and number every 4 threads.
+ * The printed page, in the style of the pictures made for Instagram: the app's mark and the pattern's name, the woven
+ * cloth in a big rounded picture, a QR code that opens the pattern (if wanted), its colours, and the full draft in the
+ * classic layout: warp colours and threading above the drawdown, tie-up top right, treadling and weft colours to the
+ * right, with a tick and number every 4 threads.
  */
-export function PrintSheet({ name, draft, endOneRight = false, instructions = false, noTieup = false }: Props) {
+export function PrintSheet({
+  name,
+  draft,
+  endOneRight = false,
+  instructions = false,
+  noTieup = false,
+  qr = null,
+}: Props) {
+  const cloth = useMemo(() => clothPicture(draft), [draft])
+  const code = useMemo(() => (qr ? qrPath(qr) : null), [qr])
   const { shafts, treadles, ends, picks } = draft
   const hideTieup = noTieup && isDirectTieup(draft)
   const drawdown = computeDrawdown(draft)
@@ -174,37 +205,59 @@ export function PrintSheet({ name, draft, endOneRight = false, instructions = fa
   return (
     <div className="print-sheet">
       <header className="print-header">
-        <h1>{name}</h1>
-        <p>
-          {hideTieup ? `${shafts} shafts · lift plan` : `${shafts} shafts · ${treadles} treadles`} · {ends} ends ×{' '}
-          {picks} picks · rising shed
-        </p>
-        <div className="print-palette">
-          {palette.map((c) => (
-            <span key={c}>
-              <i style={{ background: c }} />
-              {c}
-            </span>
-          ))}
+        <WeaveMark size={46} />
+        <div>
+          <h1>{name}</h1>
+          <p className="print-made">Made with Weave Patterner · weave-patterner.com</p>
+          <p className="print-specs">
+            {hideTieup ? `${shafts} shafts · lift plan` : `${shafts} shafts · ${treadles} treadles`} · {ends} ends ×{' '}
+            {picks} picks · rising shed
+          </p>
         </div>
       </header>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox={`-2 -2 ${width + 4} ${height + 4}`}
-        data-width={width + 4}
-        data-height={height + 4}
-        className="print-draft"
-        role="img"
-        aria-label={`Draft of ${name}`}
-      >
-        {grid('gt', x0, yThread, ends, shafts)}
-        {!hideTieup && grid('gu', xTie, yThread, treadles, shafts)}
-        {grid('gr', xTie, yDraw, treadles, picks)}
-        {cells}
-        {drawLines}
-        {frames}
-        {ticks}
-      </svg>
+      <div className="print-hero">
+        {cloth && <img className="print-cloth" src={cloth} alt={`The woven cloth of ${name}`} />}
+        {code && (
+          <figure className="print-qr">
+            <svg
+              viewBox={`-2 -2 ${code.size + 4} ${code.size + 4}`}
+              role="img"
+              aria-label={`QR code that opens ${name} in Weave Patterner`}
+            >
+              <rect x={-2} y={-2} width={code.size + 4} height={code.size + 4} fill="#fff" />
+              <path d={code.d} fill="#000" />
+            </svg>
+            <figcaption>Scan with your phone’s camera to open this pattern in Weave Patterner</figcaption>
+          </figure>
+        )}
+      </div>
+      <div className="print-palette">
+        {palette.map((c) => (
+          <span key={c}>
+            <i style={{ background: c }} />
+            {c}
+          </span>
+        ))}
+      </div>
+      <div className="print-draft-card">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={`-2 -2 ${width + 4} ${height + 4}`}
+          data-width={width + 4}
+          data-height={height + 4}
+          className="print-draft"
+          role="img"
+          aria-label={`Draft of ${name}`}
+        >
+          {grid('gt', x0, yThread, ends, shafts)}
+          {!hideTieup && grid('gu', xTie, yThread, treadles, shafts)}
+          {grid('gr', xTie, yDraw, treadles, picks)}
+          {cells}
+          {drawLines}
+          {frames}
+          {ticks}
+        </svg>
+      </div>
       <footer className="print-footer">
         Weave Patterner · weave-patterner.com · printed {new Date().toLocaleDateString()}
       </footer>

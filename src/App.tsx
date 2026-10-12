@@ -6,7 +6,7 @@ import { forgetStripe, withStripe } from './colors'
 import { PHONE_NAV_HEIGHT, SkipLink } from './components/AppBarParts'
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
-import { DraftView } from './components/DraftView'
+import { SteadyDraftView } from './components/DraftView'
 import { FooterLinks } from './components/FooterLinks'
 import { BIG_DRAFT, LoomLoader, useBusy } from './components/LoomLoader'
 import { MoveNotice } from './components/MoveNotice'
@@ -17,6 +17,7 @@ import { StatusBar } from './components/StatusBar'
 import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
+import { PrintDialog, type PrintOptions, printOptions } from './dialogs/PrintDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { drawSquare, pruneAdded } from './drawCloth'
 import { HelpCenter } from './help/HelpCenter'
@@ -98,6 +99,7 @@ type DialogName =
   | 'yarns'
   | 'blocks'
   | 'share'
+  | 'print'
 
 /**
  * A key for the draft's grids that changes when the draft grows a lot at once (a tartan preset, a big pattern opened):
@@ -180,10 +182,25 @@ export default function App() {
   // Whether the next print includes the written-instructions page.
   // The print sheet (a picture of the whole draft) is only on the page while printing: kept there, a big draft's
   // thousands of shapes would be redrawn on every change.
-  const [printing, setPrinting] = useState<{ instructions: boolean } | null>(null)
+  const [printing, setPrinting] = useState<PrintOptions | null>(null)
+  // The link that opens this pattern, kept ready (it takes a moment to make) for the QR code on the printed sheet.
+  const [link, setLink] = useState<string | null>(null)
+  useEffect(() => {
+    let current = true
+    setLink(null)
+    const later = setTimeout(() => {
+      patternUrl(name ?? 'Shared pattern', draft)
+        .then((l) => current && setLink(l))
+        .catch(() => {})
+    }, 400)
+    return () => {
+      current = false
+      clearTimeout(later)
+    }
+  }, [name, draft])
   useEffect(() => {
     // Ctrl+P and the browser's own Print: draw the sheet just before the browser takes its picture of the page.
-    const before = () => flushSync(() => setPrinting((p) => p ?? { instructions: false }))
+    const before = () => flushSync(() => setPrinting((p) => p ?? printOptions()))
     const after = () => setPrinting(null)
     window.addEventListener('beforeprint', before)
     window.addEventListener('afterprint', after)
@@ -194,7 +211,7 @@ export default function App() {
   }, [])
   /** Draws the print sheet while `f` runs (image export copies its picture of the draft), then takes it away. */
   const withSheet = <T,>(f: () => T): T => {
-    flushSync(() => setPrinting((p) => p ?? { instructions: false }))
+    flushSync(() => setPrinting((p) => p ?? { instructions: false, qr: false }))
     try {
       return f()
     } finally {
@@ -405,11 +422,7 @@ export default function App() {
           onImport={() => setDialog('import')}
           onHelp={() => openHelp(null)}
           onShare={() => setDialog('share')}
-          onPrint={(instructions) => {
-            // Render the print sheet with or without instructions before the print dialog snapshots the page.
-            flushSync(() => setPrinting({ instructions }))
-            window.print()
-          }}
+          onPrint={() => setDialog('print')}
           onWeave={() => setDialog('weave')}
           on3d={() => setDialog('3d')}
           onSequenceTools={() => setDialog('tools')}
@@ -478,7 +491,7 @@ export default function App() {
             sx={{ ...(pageScroll ? { flex: '1 0 auto' } : { flex: '1 1 auto', minWidth: 0 }), outline: 'none' }}
           >
             <h1 className="sr-only">Weave Patterner: weaving draft designer</h1>
-            <DraftView
+            <SteadyDraftView
               key={gridKey}
               draft={draft}
               onView={changeView}
@@ -670,6 +683,21 @@ export default function App() {
             />
           </Suspense>
         )}
+        <PrintDialog
+          open={dialog === 'print'}
+          link={link}
+          onClose={() => setDialog(null)}
+          onPrint={async (options) => {
+            setDialog(null)
+            const qr = options.qr ? (link ?? (await patternUrl(name ?? 'Shared pattern', draft))) : null
+            // Draw the sheet before the browser's print takes its picture of the page.
+            flushSync(() => {
+              if (qr) setLink(qr)
+              setPrinting({ ...options, qr: qr !== null })
+            })
+            window.print()
+          }}
+        />
         {seen.has('share') && (
           <Suspense fallback={<LoomLoader />}>
             <ShareDialog
@@ -865,6 +893,7 @@ export default function App() {
           endOneRight={view.endOneRight}
           instructions={printing.instructions}
           noTieup={view.noTieup}
+          qr={printing.qr ? link : null}
         />
       )}
     </>

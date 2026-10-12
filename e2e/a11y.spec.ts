@@ -35,12 +35,12 @@ test.describe('Weave Patterner: axe finds no accessibility problems', () => {
 
   test('the file dialogs and menus, weaving mode, help and the tour', async ({ page }) => {
     await openApp(page)
-    for (const name of ['Save', 'Load', 'Share']) {
+    for (const name of ['Save', 'Load', 'Share', 'Print']) {
       await toolbarButton(page, name).click()
       expect(await a11yProblems(page, '[role="dialog"]'), name).toEqual([])
       await closeDialog(page)
     }
-    for (const name of ['Export', 'Print']) {
+    for (const name of ['Export']) {
       await toolbarButton(page, name).click()
       expect(await a11yProblems(page, '[role="menu"]'), name).toEqual([])
       await page.keyboard.press('Escape')

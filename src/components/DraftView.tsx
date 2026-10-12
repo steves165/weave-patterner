@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
 import { useCompact, usePhone, useTouch } from '../layout'
@@ -532,4 +532,25 @@ export function DraftView(p: Props) {
       </Box>
     </Box>
   )
+}
+
+const DraftViewMemo = memo(DraftView)
+
+/**
+ * The draft view, drawn again only when what it shows changes: not when a menu or dialog opens elsewhere, which for a
+ * big draft (a whole tartan sett) would redraw tens of thousands of squares. Its handlers are swapped for steady ones
+ * that always call the latest, so they never go stale.
+ */
+export function SteadyDraftView(p: Props) {
+  const latest = useRef(p)
+  latest.current = p
+  const steady = useRef<Partial<Props>>({})
+  const props = { ...p }
+  for (const [k, v] of Object.entries(p) as [keyof Props, unknown][]) {
+    if (typeof v !== 'function') continue
+    steady.current[k] ??= ((...args: unknown[]) =>
+      (latest.current[k] as (...a: unknown[]) => unknown)(...args)) as never
+    ;(props as Record<string, unknown>)[k] = steady.current[k]
+  }
+  return <DraftViewMemo {...props} />
 }

@@ -6,6 +6,9 @@ import '@fontsource/fredoka/600.css'
 import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'
 
+/** How long menus and popovers take to open and close (ms). */
+const QUICK = { enter: 160, exit: 110 }
+
 /**
  * Weave Patterner's look: a magenta accent on blush pink (deep plum in dark mode), Nunito for text, Fredoka for the
  * name and headings, IBM Plex Mono for numbers. Pill-shaped buttons and segmented controls, rounded fields and cards.
@@ -122,7 +125,9 @@ export const makeTheme = (b: Brand) =>
         },
       },
       MuiDialog: { styleOverrides: { paper: { borderRadius: 24 } } },
-      MuiMenu: { styleOverrides: { paper: { borderRadius: 16 } } },
+      // Menus open quickly: MUI's own timing grows with a menu's height, so a menu filling a phone took ~0.4 s.
+      MuiPopover: { defaultProps: { transitionDuration: QUICK } },
+      MuiMenu: { defaultProps: { transitionDuration: QUICK }, styleOverrides: { paper: { borderRadius: 16 } } },
       MuiAlert: { styleOverrides: { root: { borderRadius: 16 } } },
       MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 14 } } },
       // A small pill switch: 36 × 20 track, 16 px thumb.
