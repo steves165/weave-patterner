@@ -1,0 +1,40 @@
+# Searches the search monitor (search-monitor.ts) looks for us in, one per line. Lines starting with # are ignored.
+# Matching is exact (ignoring case), as Google reports what people typed.
+
+# The apps by name
+weave patterner
+knit patterner
+sew patterner
+
+# Weaving
+weaving draft designer
+online weaving draft
+weaving draft software
+free weaving software
+weaving drawdown
+weaving drawdown generator
+wif editor
+wif file viewer
+weaving draft maker
+houndstooth weaving draft
+glen check weaving draft
+herringbone weaving draft
+overshot weaving draft
+twill weaving draft
+tartan weaving draft
+clan cameron tartan threadcount
+cameron of erracht tartan
+tablet weaving designer
+rigid heddle pattern generator
+
+# Knitting
+knitting chart maker
+knitting chart generator
+free knitting chart maker
+colourwork knitting chart
+fair isle chart maker
+
+# Sewing
+sewing pattern generator
+made to measure sewing pattern
+free sewing pattern generator
