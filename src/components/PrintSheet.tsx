@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo } from 'react'
+import { type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
 import { liftplanLines, threadingLines, tieupLines, treadlingLines } from '../instructions'
 import { isDirectTieup } from '../liftplan'
 import { qrPath } from '../qr'
@@ -25,21 +25,6 @@ interface Props {
   qr?: string | null
 }
 
-/** The woven cloth, as a picture: the same weave the Instagram picture shows (clothPainter). */
-function clothPicture(draft: Draft): string | null {
-  const canvas = document.createElement('canvas')
-  canvas.width = 1600
-  canvas.height = 760
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-  clothPainter(draft)(ctx, 0, 0, canvas.width, canvas.height)
-  try {
-    return canvas.toDataURL('image/png')
-  } catch {
-    return null
-  }
-}
-
 /**
  * The printed page, in the style of the pictures made for Instagram: the app's mark and the pattern's name, the woven
  * cloth in a big rounded picture, a QR code that opens the pattern (if wanted), its colours, and the full draft in the
@@ -54,7 +39,13 @@ export function PrintSheet({
   noTieup = false,
   qr = null,
 }: Props) {
-  const cloth = useMemo(() => clothPicture(draft), [draft])
+  // The woven cloth, as the Instagram picture shows it (clothPainter), drawn straight onto a canvas as the sheet
+  // appears: the browser's print takes its picture of the page at once, before an image made then would have loaded.
+  const cloth = useRef<HTMLCanvasElement>(null)
+  useLayoutEffect(() => {
+    const ctx = cloth.current?.getContext('2d')
+    if (ctx) clothPainter(draft)(ctx, 0, 0, ctx.canvas.width, ctx.canvas.height)
+  }, [draft])
   const code = useMemo(() => (qr ? qrPath(qr) : null), [qr])
   const { shafts, treadles, ends, picks } = draft
   const hideTieup = noTieup && isDirectTieup(draft)
@@ -216,7 +207,14 @@ export function PrintSheet({
         </div>
       </header>
       <div className="print-hero">
-        {cloth && <img className="print-cloth" src={cloth} alt={`The woven cloth of ${name}`} />}
+        <canvas
+          ref={cloth}
+          className="print-cloth"
+          width={1600}
+          height={760}
+          role="img"
+          aria-label={`The woven cloth of ${name}`}
+        />
         {code && (
           <figure className="print-qr">
             <svg

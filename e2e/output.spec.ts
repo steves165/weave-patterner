@@ -43,6 +43,30 @@ test('prints written instructions only when asked', async ({ page }) => {
   expect(await page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(2)
 })
 
+test('the cloth picture is already drawn when the browser prints', async ({ page }) => {
+  // The browser takes its picture of the page as print() is called: look at the cloth right then.
+  await page.evaluate(() => {
+    const w = window as unknown as { drawn: boolean | null }
+    w.drawn = null
+    window.print = () => {
+      const canvas = document.querySelector<HTMLCanvasElement>('.print-cloth')
+      const px = canvas?.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data
+      // Drawn: no pixel left transparent.
+      w.drawn = !!px && px.every((v, i) => i % 4 !== 3 || v === 255)
+    }
+  })
+  await toolbarButton(page, 'Print').click()
+  await page.getByRole('dialog', { name: 'Print' }).getByRole('button', { name: 'Print' }).click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { drawn: boolean | null }).drawn)).toBe(true)
+  // And the same through the browser's own Print (Ctrl+P), which draws the sheet as it starts.
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('beforeprint'))
+    window.print()
+  })
+  expect(await page.evaluate(() => (window as unknown as { drawn: boolean | null }).drawn)).toBe(true)
+})
+
 test('the printed QR code opens the pattern in the app when scanned', async ({ page, browser }) => {
   await page.evaluate(() => {
     window.print = () => {}
