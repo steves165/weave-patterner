@@ -124,6 +124,10 @@ test.describe('keyboard and screen readers', () => {
   test('the Tools search goes to the tools found with the down arrow', async ({ page }) => {
     await openApp(page)
     await toolbarButton(page, 'Tools').click()
+    // The search isn't focused as the menu opens (a phone would bring up its keyboard); Tab goes to it first.
+    await expect(page.getByLabel('Find a tool')).not.toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(page.getByLabel('Find a tool')).toBeFocused()
     await page.keyboard.type('calculator')
     await page.keyboard.press('ArrowDown')
     await expect(page.getByRole('menuitem', { name: /Warp calculator/ })).toBeFocused()

@@ -794,7 +794,6 @@ export default function KnitApp() {
       </ListItemIcon>
       Print…
     </MenuItem>,
-    <Divider key="d" />,
     <MenuHeading key="export">Export</MenuHeading>,
     <MenuItem key="png" onClick={closeThen(() => exportAs('png'))}>
       <ListItemIcon>

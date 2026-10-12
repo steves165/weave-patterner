@@ -453,10 +453,8 @@ export function AppToolbar(p: Props) {
       </ListItemIcon>
       Import
     </MenuItem>,
-    <Divider key="d1" />,
     <MenuHeading key="print">Print</MenuHeading>,
     ...printItems,
-    <Divider key="d2" />,
     <MenuHeading key="export">Export</MenuHeading>,
     ...exportItems,
     <Divider key="d3" />,
@@ -639,10 +637,7 @@ export function AppToolbar(p: Props) {
               setToolQuery('')
             }}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            // The search box takes focus as it opens, not the popover itself.
-            disableAutoFocus
             slotProps={{
-              transition: { onEntering: () => toolSearch.current?.focus() },
               paper: {
                 sx: {
                   maxHeight: '80vh',

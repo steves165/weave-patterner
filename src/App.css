@@ -655,3 +655,28 @@
 .drawdown.drawing .cell {
   cursor: crosshair;
 }
+
+/* Touch screens: a handle at the top of every menu and popover, which can be swiped down to close it (swipeClose.ts). */
+@media (pointer: coarse) {
+  .MuiPopover-paper {
+    overscroll-behavior: contain;
+  }
+  .MuiPopover-paper::before {
+    content: "";
+    display: block;
+    flex: none;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: 20px;
+    background:
+      linear-gradient(var(--mui-palette-text-disabled), var(--mui-palette-text-disabled)) center 8px / 36px 4px
+      no-repeat;
+    background-color: inherit;
+    border-radius: inherit;
+  }
+  /* Section headings stick under the handle, not behind it. */
+  .MuiPopover-paper .MuiListSubheader-sticky {
+    top: 20px;
+  }
+}

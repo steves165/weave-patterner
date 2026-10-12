@@ -3,11 +3,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { SeasonalTheme } from './SeasonalTheme'
+import { swipeMenusToClose } from './swipeClose'
 import { WEAVE } from './theme'
 import './App.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')
+swipeMenusToClose()
 
 createRoot(root).render(
   <StrictMode>

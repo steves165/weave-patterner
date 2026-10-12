@@ -771,7 +771,6 @@ export default function SewApp() {
       </ListItemIcon>
       Help
     </MenuItem>,
-    <Divider key="d" />,
     <MenuHeading key="export">Export</MenuHeading>,
     ...exportItems(exportAs),
   ]
