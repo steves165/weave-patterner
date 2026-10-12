@@ -27,6 +27,7 @@ import { usePhone } from '../layout'
 import { bringOver, onNewAddress } from '../move'
 import { MAX_PATTERNS, type PatternStore, type Saved, weaveStore } from '../storage'
 import type { Draft } from '../weave'
+import { BackupDialog } from './BackupDialog'
 
 interface Props<T> {
   open: boolean
@@ -65,6 +66,7 @@ export function LoadDialog<T = Draft>({
   const [editing, setEditing] = useState<{ from: string; to: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
+  const [backup, setBackup] = useState(false)
 
   const refresh = useCallback(
     () =>
@@ -216,7 +218,10 @@ export function LoadDialog<T = Draft>({
           )}
         </List>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
+        <Button onClick={() => setBackup(true)} sx={onNewAddress() ? undefined : { mr: 'auto' }}>
+          Back up or restore…
+        </Button>
         {onNewAddress() && (
           <Button
             disabled={moving}
@@ -235,6 +240,7 @@ export function LoadDialog<T = Draft>({
         )}
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+      <BackupDialog open={backup} onClose={() => setBackup(false)} />
     </Dialog>
   )
 }

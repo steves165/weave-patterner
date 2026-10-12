@@ -270,6 +270,10 @@ export const KNIT_HELP: Topic[] = [
     title: 'Saving, sharing and printing',
     summary: 'Save, load, import, export, share, booklets and printing',
     keywords: [
+      'backup',
+      'restore',
+      'new device',
+      'transfer',
       'save',
       'load',
       'export',
@@ -295,6 +299,7 @@ export const KNIT_HELP: Topic[] = [
         list: [
           '**Save** keeps the chart in this browser, by name. **Load** opens, renames or deletes saved charts.',
           'The chart you are working on is kept automatically.',
+          '**Load › Back up or restore…** saves every pattern from Weave, Knit and Sew Patterner, with your colours and settings, to one file. Restore it in any browser, such as on a new computer or phone, to bring your patterns there: they are added beside the ones already saved.',
           '**Import**: a chart file, or a **written pattern** you paste in (Row 1: k2, p2…).',
           '**Export**: a **pattern booklet (PDF)** with gauge, materials, the chart and key, and the written rows; the chart as a picture with its key; the written pattern as text; or a chart file to open again.',
           '**Share** makes a link that opens the chart for anyone, to copy or send to Pinterest, Facebook, X, WhatsApp or email (on a phone, through its share menu). It also makes a picture of the knitted fabric: square for Instagram, tall for Pinterest.',

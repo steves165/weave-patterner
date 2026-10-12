@@ -230,11 +230,27 @@ export const SEW_HELP: Topic[] = [
     id: 'files',
     title: 'Save, load, share and export',
     summary: 'Keep projects in this browser, or share them as links and files',
-    keywords: ['save', 'load', 'open', 'file', 'share', 'link', 'export', 'svg', 'dxf', 'undo'],
+    keywords: [
+      'backup',
+      'restore',
+      'new device',
+      'transfer',
+      'save',
+      'load',
+      'open',
+      'file',
+      'share',
+      'link',
+      'export',
+      'svg',
+      'dxf',
+      'undo',
+    ],
     body: [
       {
         list: [
           '**Save** keeps the project (design, options, size or measurements, allowances) in this browser; **Load** opens one again.',
+          '**Load › Back up or restore…** saves every pattern from Weave, Knit and Sew Patterner, with your colours and settings, to one file. Restore it in any browser, such as on a new computer or phone, to bring your patterns there: they are added beside the ones already saved.',
           '**Share** makes a link with the whole project in it, links for Pinterest, Facebook, X, WhatsApp and email, and a picture of the sketch.',
           '**Export** saves PDFs, SVG, DXF or a project file to open again with **Import**.',
           '**Undo** and **Redo** (Ctrl+Z, Ctrl+Y) step back and forward through your changes.',

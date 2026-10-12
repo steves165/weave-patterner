@@ -16,8 +16,22 @@ export const PATTERN_DBS = ['weave-patterner', 'knit-patterner', 'sew-patterner'
 export const MOVED_KEY = 'wp-moved'
 /** Set to show the offer anywhere (for tests). */
 export const OFFER_KEY = 'wp-move-offer'
-/** What was brought over, for the notice after the reload. */
+/** What was brought over or restored, for the notice after the reload. */
 const DONE_KEY = 'wp-move-done'
+
+/** The localStorage items the apps own (the mover page keeps a copy of this list). */
+const OWN_PREFIXES = ['weave-', 'wp-', 'knit-', 'sew-', 'thread-progress:']
+const OWN_EXTRA = ['mui-mode']
+/** Never carried over: the analytics choice (asked again) and the move's own state. */
+const NOT_CARRIED = ['weave-analytics-consent', MOVED_KEY, OFFER_KEY, DONE_KEY]
+/** The pattern being worked on in each app: moved to the new address, but not in backups (so a restore keeps it). */
+const WORKING = ['weave-current', 'knit-current', 'sew-current']
+
+/** Whether a localStorage item is the apps' own, to carry to another address (`working`) or device. */
+export const carried = (key: string, working = false) =>
+  !NOT_CARRIED.includes(key) &&
+  (working || !WORKING.includes(key)) &&
+  (OWN_EXTRA.includes(key) || OWN_PREFIXES.some((p) => key.startsWith(p)))
 
 export interface MoveData {
   type: 'patterner-move'
@@ -29,6 +43,8 @@ export interface MoveData {
 }
 
 export interface MoveResult {
+  /** Brought from the old address, or restored from a backup file. */
+  kind: 'move' | 'backup'
   patterns: number
   renamed: number
   skipped: number
@@ -63,9 +79,9 @@ export function asMoveData(x: unknown): MoveData | null {
 }
 
 /** A name not in `taken`: "Name (old address)", then "Name (old address 2)" and so on. */
-export function freeName(name: string, taken: Set<string>): string {
+export function freeName(name: string, taken: Set<string>, from = 'old address'): string {
   for (let i = 1; ; i++) {
-    const n = `${name} (old address${i > 1 ? ` ${i}` : ''})`
+    const n = `${name} (${from}${i > 1 ? ` ${i}` : ''})`
     if (!taken.has(n)) return n
   }
 }
@@ -86,13 +102,16 @@ function openDb(name: string): Promise<IDBDatabase> {
 }
 
 /**
- * Adds what the mover sent. Settings replace this address's (it has had little use yet); patterns are added beside
- * the ones here, keeping both when names clash (unless they're the same), up to MAX_PATTERNS.
+ * Adds what the mover sent, or a backup holds. Settings replace the ones here (unless `settings` is false); patterns
+ * are added beside the ones here, keeping both when names clash (unless they're the same), up to MAX_PATTERNS.
  */
-export async function applyMove(data: MoveData): Promise<MoveResult> {
-  const result: MoveResult = { patterns: 0, renamed: 0, skipped: 0, settings: 0 }
-  for (const [k, v] of Object.entries(data.local)) {
-    if (typeof v !== 'string' || k === MOVED_KEY || k === OFFER_KEY || k === DONE_KEY) continue
+export async function applyMove(
+  data: MoveData,
+  { kind = 'move', settings = true }: { kind?: MoveResult['kind']; settings?: boolean } = {},
+): Promise<MoveResult> {
+  const result: MoveResult = { kind, patterns: 0, renamed: 0, skipped: 0, settings: 0 }
+  for (const [k, v] of Object.entries(settings ? data.local : {})) {
+    if (typeof v !== 'string' || !carried(k, kind === 'move')) continue
     safe(() => {
       localStorage.setItem(k, v)
       result.settings++
@@ -111,12 +130,15 @@ export async function applyMove(data: MoveData): Promise<MoveResult> {
       let count = here.length
       for (const p of incoming) {
         const same = byName.get(p.name)
-        if (same && JSON.stringify(same.draft) === JSON.stringify(p.draft)) continue
+        // Already here, under its own name or as a copy an earlier move or restore made ("Name (from backup)").
+        const json = JSON.stringify(p.draft)
+        const copies = here.filter((h) => h.name === p.name || h.name.startsWith(`${p.name} (`))
+        if (copies.some((h) => JSON.stringify(h.draft) === json)) continue
         if (count >= MAX_PATTERNS) {
           result.skipped++
           continue
         }
-        const name = same ? freeName(p.name, taken) : p.name
+        const name = same ? freeName(p.name, taken, kind === 'backup' ? 'from backup' : 'old address') : p.name
         if (same) result.renamed++
         taken.add(name)
         await promisify(
@@ -138,8 +160,36 @@ export async function applyMove(data: MoveData): Promise<MoveResult> {
       conn.close()
     }
   }
-  safe(() => localStorage.setItem(MOVED_KEY, 'done'), undefined)
+  if (kind === 'move') safe(() => localStorage.setItem(MOVED_KEY, 'done'), undefined)
   return result
+}
+
+/** Everything the apps keep in this browser: every app's saved patterns, and their settings. */
+export async function collectBundle(): Promise<MoveData> {
+  const local: Record<string, string> = {}
+  safe(() => {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      const v = k === null ? null : localStorage.getItem(k)
+      if (k !== null && v !== null && carried(k)) local[k] = v
+    }
+  }, undefined)
+  const patterns: MoveData['patterns'] = {}
+  for (const db of PATTERN_DBS) {
+    const conn = await openDb(db)
+    try {
+      patterns[db] = await promisify(conn.transaction('patterns').objectStore('patterns').getAll())
+    } finally {
+      conn.close()
+    }
+  }
+  return { type: 'patterner-move', version: 1, local, patterns }
+}
+
+/** Shows what came in: the page reloads (the apps read their settings as they start), then says so. */
+export function reloadWith(r: MoveResult) {
+  safe(() => sessionStorage.setItem(DONE_KEY, JSON.stringify(r)), undefined)
+  location.reload()
 }
 
 /**
@@ -165,9 +215,8 @@ export function bringOver(timeoutMs = 60_000): Promise<MoveResult> {
       window.clearTimeout(timer)
       try {
         const r = await applyMove(data)
-        safe(() => sessionStorage.setItem(DONE_KEY, JSON.stringify(r)), undefined)
         resolve(r)
-        location.reload()
+        reloadWith(r)
       } catch (err) {
         reject(err instanceof Error ? err : new Error(String(err)))
       }
@@ -188,12 +237,15 @@ export function takeMoveResult(): MoveResult | null {
 /** "Brought over 3 patterns and your settings." */
 export function describeMove(r: MoveResult): string {
   const n = r.patterns
+  const backup = r.kind === 'backup'
   const parts = [
-    n ? `Brought over ${n} pattern${n === 1 ? '' : 's'}` : 'No new patterns to bring over',
+    n
+      ? `${backup ? 'Restored' : 'Brought over'} ${n} pattern${n === 1 ? '' : 's'}`
+      : `No new patterns to ${backup ? 'restore' : 'bring over'}`,
     r.settings ? 'and your settings' : '',
   ].filter(Boolean)
   let s = `${parts.join(' ')}.`
-  if (r.renamed) s += ` ${r.renamed} with names already used here end in “(old address)”.`
+  if (r.renamed) s += ` ${r.renamed} with names already used here end in “(${backup ? 'from backup' : 'old address'})”.`
   if (r.skipped) s += ` ${r.skipped} didn’t fit: you can keep up to ${MAX_PATTERNS} patterns.`
   return s
 }

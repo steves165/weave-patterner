@@ -51,7 +51,7 @@ describe('moving from the old address', () => {
         { 'wp-colours': '{"favourites":["#123456"]}', 'mui-mode': 'dark' },
       ),
     )
-    expect(r).toEqual({ patterns: 3, renamed: 1, skipped: 0, settings: 2 })
+    expect(r).toEqual({ kind: 'move', patterns: 3, renamed: 1, skipped: 0, settings: 2 })
     const names = (await weave.listPatterns()).map((p) => p.name).sort()
     expect(names).toEqual(['Same', 'Scarf', 'Towel', 'Towel (old address)'])
     const moved = (await weave.listPatterns()).find((p) => p.name === 'Towel (old address)')
@@ -76,9 +76,11 @@ describe('moving from the old address', () => {
   it('names clashes and says what came over', () => {
     expect(freeName('A', new Set())).toBe('A (old address)')
     expect(freeName('A', new Set(['A (old address)']))).toBe('A (old address 2)')
-    expect(describeMove({ patterns: 1, renamed: 0, skipped: 0, settings: 3 })).toBe(
+    expect(describeMove({ kind: 'move', patterns: 1, renamed: 0, skipped: 0, settings: 3 })).toBe(
       'Brought over 1 pattern and your settings.',
     )
-    expect(describeMove({ patterns: 0, renamed: 0, skipped: 0, settings: 0 })).toBe('No new patterns to bring over.')
+    expect(describeMove({ kind: 'move', patterns: 0, renamed: 0, skipped: 0, settings: 0 })).toBe(
+      'No new patterns to bring over.',
+    )
   })
 })

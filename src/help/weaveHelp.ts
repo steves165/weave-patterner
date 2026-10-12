@@ -399,6 +399,10 @@ export const WEAVE_HELP: Topic[] = [
     title: 'Saving, sharing and printing',
     summary: 'Save in the browser, export files, share links and print',
     keywords: [
+      'backup',
+      'restore',
+      'new device',
+      'transfer',
       'save',
       'load',
       'export',
@@ -423,6 +427,7 @@ export const WEAVE_HELP: Topic[] = [
         list: [
           '**Save** keeps the pattern in this browser, by name (up to 200). **Load** opens, renames or deletes them.',
           'The pattern you are working on is kept automatically, so it is still there next time.',
+          '**Load › Back up or restore…** saves every pattern from Weave, Knit and Sew Patterner, with your colours and settings, to one file. Restore it in any browser, such as on a new computer or phone, to bring your patterns there: they are added beside the ones already saved.',
           '**Export**: a pattern file (.weave.json), WIF for weaving software and computer looms, a WIF lift plan for dobby looms, or a PNG or SVG picture.',
           '**Export › Bitmap (BMP)**: the cloth one pixel per crossing, as on screen (pick 1 at the top). **Black and white** (black where the warp is up) is what jacquard looms such as the TC2 read; **colours** uses the thread colours.',
           '**Share** makes a link that opens the pattern for anyone, to copy or send to Pinterest, Facebook, X, WhatsApp or email (on a phone, through its share menu). It also makes a picture of the cloth: square for Instagram, tall for Pinterest.',
