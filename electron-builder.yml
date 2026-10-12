@@ -24,8 +24,10 @@ mac:
   target:
     - target: dmg
       arch: [x64, arm64]
-  # Not signed with an Apple Developer ID yet: ad hoc signed, so it runs on Apple silicon.
+  # Not signed with an Apple Developer ID yet: ad hoc signed, so it runs on Apple silicon. The hardened runtime is
+  # for notarising (which needs a Developer ID); with an ad hoc signature it can stop the app's libraries loading.
   identity: "-"
+  hardenedRuntime: false
 linux:
   target: AppImage
   category: Graphics
