@@ -127,17 +127,12 @@ export function StripeEditor({ runs, onChange, dense = false, label = 'Stripe' }
               value={r.color}
               onChange={(c) => setRun(i, { color: c }, `color:${i}`)}
             />
-            <TextField
-              size="small"
-              type="number"
+            <CountField
               label={dense ? 'Threads' : `${label} ${i + 1} threads`}
+              name={`${label} ${i + 1} threads`}
               value={r.count}
-              onChange={(e) => {
-                const n = Math.round(Number(e.target.value))
-                if (Number.isFinite(n) && n >= 1 && n <= 1000) setRun(i, { count: n }, `count:${i}`)
-              }}
-              slotProps={{ htmlInput: { min: 1, max: 1000, 'aria-label': `${label} ${i + 1} threads` } }}
-              sx={{ width: dense ? 96 : 150 }}
+              width={dense ? 96 : 150}
+              onChange={(n) => setRun(i, { count: n }, `count:${i}`)}
             />
             <IconButton
               aria-label={`Remove ${label.toLowerCase()} ${i + 1}`}
@@ -183,5 +178,47 @@ export function StripeEditor({ runs, onChange, dense = false, label = 'Stripe' }
         </Box>
       </Stack>
     </Stack>
+  )
+}
+
+/**
+ * A stripe's thread count. It can be cleared while typing a new number; left empty or out of range, it becomes 1
+ * (or the nearest allowed count) when it loses focus.
+ */
+function CountField({
+  label,
+  name,
+  value,
+  width,
+  onChange,
+}: {
+  label: string
+  name: string
+  value: number
+  width: number
+  onChange: (n: number) => void
+}) {
+  const [text, setText] = useState<string | null>(null)
+  return (
+    <TextField
+      size="small"
+      type="number"
+      label={label}
+      value={text ?? value}
+      onChange={(e) => {
+        setText(e.target.value)
+        const n = Math.round(Number(e.target.value))
+        if (e.target.value.trim() && Number.isFinite(n) && n >= 1 && n <= 1000) onChange(n)
+      }}
+      onBlur={() => {
+        if (text === null) return
+        const n = Math.round(Number(text))
+        const fixed = text.trim() && Number.isFinite(n) ? Math.max(1, Math.min(1000, n)) : 1
+        if (fixed !== value) onChange(fixed)
+        setText(null)
+      }}
+      slotProps={{ htmlInput: { min: 1, max: 1000, 'aria-label': name } }}
+      sx={{ width }}
+    />
   )
 }

@@ -110,3 +110,21 @@ test('the colour picker: basic colours, favourites and palettes', async ({ page 
   await expect(weftPicker.getByRole('button', { name: 'Remove Favourite #123456' })).toBeVisible()
   await expect(weftPicker.getByRole('button', { name: 'Remove Favourite #c62828' })).toHaveCount(0)
 })
+
+test('a thread count can be cleared to type a new one, and becomes 1 if left empty', async ({ page }) => {
+  await applyStripe(page)
+  const count = sidebar(page).getByTestId('warp-stripes').getByLabel('Warp stripe 1 threads')
+  await count.click()
+  await count.press('End')
+  await count.press('Backspace')
+  await expect(count).toHaveValue('')
+  await count.pressSequentially('4')
+  await expect(count).toHaveValue('4')
+  expect(await warpColours(page, 5)).toEqual([BLUE, BLUE, BLUE, BLUE, YELLOW])
+
+  await count.press('Backspace')
+  await expect(count).toHaveValue('')
+  await count.blur()
+  await expect(count).toHaveValue('1')
+  expect(await warpColours(page, 3)).toEqual([BLUE, YELLOW, BLUE])
+})

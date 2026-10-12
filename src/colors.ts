@@ -98,6 +98,12 @@ const herringbone = [1, 2, 3, 4, 1, 2, 3, 4, 2, 1, 4, 3, 2, 1, 4, 3]
  */
 export const PRESETS: Preset[] = [
   {
+    id: 'plain-weave',
+    name: 'Plain weave',
+    description: 'Tabby on 2 shafts, over one and under one: dark warp and light weft',
+    build: (dark, light) => draftFrom([1, 2], [[1], [2]], [1, 2], [dark], [light]),
+  },
+  {
     id: 'houndstooth',
     name: 'Houndstooth',
     description: '2/2 twill, 4 dark and 4 light in warp and weft',

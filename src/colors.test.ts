@@ -53,6 +53,18 @@ describe('colour-and-weave presets', () => {
     expect(ascii(d)[0].slice(0, 8)).toBe('##..##..')
   })
 
+  it('plain weave: tabby on 2 shafts, dark warp and light weft', () => {
+    const d = build('plain-weave')
+    expect([d.shafts, d.treadles]).toEqual([2, 2])
+    expect(
+      ascii(d)
+        .slice(0, 2)
+        .map((r) => r.slice(0, 4)),
+    ).toEqual(['#.#.', '.#.#'])
+    expect(new Set(d.warpColors)).toEqual(new Set(['#000000']))
+    expect(new Set(d.weftColors)).toEqual(new Set(['#ffffff']))
+  })
+
   it('gingham and log cabin are plain weave', () => {
     for (const id of ['gingham', 'log-cabin']) {
       const rows = ascii(build(id))
