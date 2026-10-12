@@ -1,0 +1,37 @@
+# The desktop app (Weave, Knit and Sew Patterner): prepare it with scripts/desktop.ts, then `npx electron-builder`.
+appId: com.weave-patterner.app
+productName: Weave Patterner
+copyright: Copyright © Stephen Skidmore
+electronVersion: 44.7.0
+directories:
+  app: desktop/app
+  buildResources: desktop/build
+  output: desktop/release
+files:
+  - "**/*"
+  # The site's libraries are bundled into dist/ by Vite: none are needed beside it.
+  - "!node_modules{,/**/*}"
+artifactName: Weave-Patterner-${version}-${os}-${arch}.${ext}
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Weave Patterner
+mac:
+  category: public.app-category.graphics-design
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  # Not signed with an Apple Developer ID yet: ad hoc signed, so it runs on Apple silicon.
+  identity: "-"
+linux:
+  target: AppImage
+  category: Graphics
+  synopsis: Weaving drafts, knitting charts and sewing patterns
+publish:
+  provider: github
+  owner: steves165
+  repo: weave-patterner
+  releaseType: release

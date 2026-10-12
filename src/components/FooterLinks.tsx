@@ -5,6 +5,7 @@ import PaletteIcon from '@mui/icons-material/PaletteOutlined'
 import { Link } from '@mui/material'
 import { useState } from 'react'
 import { DONATE_URL } from '../donate'
+import { DESKTOP, DESKTOP_DOWNLOAD } from '../platform'
 import { ThemeDialog } from '../SeasonalTheme'
 
 interface Props {
@@ -52,6 +53,17 @@ export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Prop
           {o.label}
         </Link>
       ))}
+      {!DESKTOP && (
+        <Link
+          href={DESKTOP_DOWNLOAD}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Download Weave, Knit and Sew Patterner for Windows, macOS or Linux (opens in a new tab)"
+          sx={{ fontSize }}
+        >
+          Desktop app
+        </Link>
+      )}
       {onAnalytics && (
         <Link component="button" onClick={onAnalytics} sx={{ fontSize }}>
           Analytics

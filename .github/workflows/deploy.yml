@@ -12,6 +12,10 @@ permissions:
   # To open an issue when the live site fails its browser tests.
   issues: write
 
+env:
+  # The website doesn't need Electron (the desktop app's runtime), so skip its large download.
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
 concurrency:
   group: pages
   cancel-in-progress: true

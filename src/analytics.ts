@@ -3,14 +3,15 @@
  * without a measurement ID configured (VITE_GA_ID at build time) analytics is off entirely and never asks.
  */
 
+import { DESKTOP } from './platform'
+
 export type Consent = 'granted' | 'denied'
 
 const KEY = 'weave-analytics-consent'
 
-/** The measurement ID this build was made with, or null for none. */
-export const GA_ID: string | null = /^G-[A-Z0-9]+$/.test(import.meta.env.VITE_GA_ID ?? '')
-  ? (import.meta.env.VITE_GA_ID as string)
-  : null
+/** The measurement ID this build was made with, or null for none (and always none in the desktop app). */
+export const GA_ID: string | null =
+  !DESKTOP && /^G-[A-Z0-9]+$/.test(import.meta.env.VITE_GA_ID ?? '') ? (import.meta.env.VITE_GA_ID as string) : null
 
 /** The visitor's choice, or null if they haven't made one. */
 export function loadConsent(): Consent | null {

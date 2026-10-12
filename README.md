@@ -21,6 +21,18 @@ npm run test:e2e:live     # against the live site (what CI runs after deploying)
 npm run lint      # Biome lint + format check (npm run format to fix)
 ```
 
+## Desktop app
+
+Weave, Knit and Sew Patterner are also a desktop app for Windows, macOS and Linux: download the installer for your
+computer from the [latest release](https://github.com/steves165/weave-patterner/releases/latest). It's the same app,
+working offline, with your patterns kept in the app (move them from the website with **Load › Back up or restore…**).
+It isn't code-signed yet, so Windows and macOS ask you to confirm the first time you open it.
+
+To build it: `npm run build`, then `npx tsx scripts/desktop.ts && npx electron-builder` (installers in
+`desktop/release/`). `npx electron desktop/main.cjs` runs it straight from `dist/`, and
+`npx playwright test -c playwright.desktop.config.ts` tests it. Pushing a version tag (`v1.2.3`, matching
+`package.json`) builds all three and puts them on that version's release.
+
 ## Privacy
 
 Patterns stay in your browser: nothing you design is sent anywhere. The live site can use Google Analytics (GA4) to
