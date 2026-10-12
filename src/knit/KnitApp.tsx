@@ -2,10 +2,12 @@ import AddIcon from '@mui/icons-material/Add'
 import CheckIcon from '@mui/icons-material/Check'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import DataObjectIcon from '@mui/icons-material/DataObject'
 import DownloadIcon from '@mui/icons-material/Download'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
+import Grid4x4Icon from '@mui/icons-material/Grid4x4'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import GridViewIcon from '@mui/icons-material/GridView'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
@@ -15,6 +17,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
 import NotesIcon from '@mui/icons-material/Notes'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
@@ -794,18 +797,33 @@ export default function KnitApp() {
     <Divider key="d" />,
     <MenuHeading key="export">Export</MenuHeading>,
     <MenuItem key="png" onClick={closeThen(() => exportAs('png'))}>
+      <ListItemIcon>
+        <ImageIcon fontSize="small" />
+      </ListItemIcon>
       Chart image (PNG)
     </MenuItem>,
     <MenuItem key="bmp" onClick={closeThen(() => exportAs('bmp'))}>
+      <ListItemIcon>
+        <Grid4x4Icon fontSize="small" />
+      </ListItemIcon>
       Bitmap (BMP), for knitting machines
     </MenuItem>,
     <MenuItem key="pdf" onClick={closeThen(() => exportAs('pdf'))}>
+      <ListItemIcon>
+        <PictureAsPdfIcon fontSize="small" />
+      </ListItemIcon>
       Pattern booklet (PDF)
     </MenuItem>,
     <MenuItem key="text" onClick={closeThen(() => exportAs('text'))}>
+      <ListItemIcon>
+        <NotesIcon fontSize="small" />
+      </ListItemIcon>
       Written pattern (text)
     </MenuItem>,
     <MenuItem key="file" onClick={closeThen(() => exportAs('file'))}>
+      <ListItemIcon>
+        <DataObjectIcon fontSize="small" />
+      </ListItemIcon>
       Chart file (to open again)
     </MenuItem>,
   ]
@@ -1008,6 +1026,9 @@ export default function KnitApp() {
             fileInput.current?.click()
           }}
         >
+          <ListItemIcon>
+            <DataObjectIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText primary="Chart file…" secondary="A .knit.json file exported from Knit Patterner" />
         </MenuItem>
         <MenuItem
@@ -1016,6 +1037,9 @@ export default function KnitApp() {
             setDialog('written')
           }}
         >
+          <ListItemIcon>
+            <NotesIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText primary="Written pattern…" secondary="Paste the rows and get the chart" />
         </MenuItem>
       </Menu>
@@ -1085,22 +1109,40 @@ export default function KnitApp() {
         ))}
       </Menu>
       <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
-        <MenuItem onClick={() => exportAs('png')}>Chart image (PNG)</MenuItem>
+        <MenuItem onClick={() => exportAs('png')}>
+          <ListItemIcon>
+            <ImageIcon fontSize="small" />
+          </ListItemIcon>
+          Chart image (PNG)
+        </MenuItem>
         <MenuItem onClick={() => exportAs('bmp')}>
+          <ListItemIcon>
+            <Grid4x4Icon fontSize="small" />
+          </ListItemIcon>
           <ListItemText
             primary="Bitmap (BMP)"
             secondary="One pixel per stitch in the chart's colours (A, B…), for knitting machines and AYAB"
           />
         </MenuItem>
         <MenuItem onClick={() => exportAs('pdf')}>
+          <ListItemIcon>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
           <ListItemText
             primary="Pattern booklet (PDF)"
             secondary="Gauge, materials, chart with key and the written rows, ready to print or share"
           />
         </MenuItem>
-        <MenuItem onClick={() => exportAs('text')}>Written pattern (text)</MenuItem>
+        <MenuItem onClick={() => exportAs('text')}>
+          <ListItemIcon>
+            <NotesIcon fontSize="small" />
+          </ListItemIcon>
+          Written pattern (text)
+        </MenuItem>
         <MenuItem onClick={() => exportAs('file')}>
-          <SaveIcon fontSize="small" sx={{ mr: 1 }} />
+          <ListItemIcon>
+            <DataObjectIcon fontSize="small" />
+          </ListItemIcon>
           Chart file (to open again)
         </MenuItem>
       </Menu>

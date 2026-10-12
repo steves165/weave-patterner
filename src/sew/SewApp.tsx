@@ -1,15 +1,19 @@
 import AddIcon from '@mui/icons-material/Add'
 import CheckIcon from '@mui/icons-material/Check'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import ContentCutIcon from '@mui/icons-material/ContentCut'
+import DataObjectIcon from '@mui/icons-material/DataObject'
 import DeleteIcon from '@mui/icons-material/DeleteOutlined'
 import DownloadIcon from '@mui/icons-material/Download'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered'
+import GestureIcon from '@mui/icons-material/Gesture'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
 import IosShareIcon from '@mui/icons-material/IosShare'
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
 import SaveIcon from '@mui/icons-material/Save'
@@ -1469,31 +1473,54 @@ export default function SewApp() {
 function exportItems(exportAs: (f: PaperSize | 'svg' | 'dxf' | 'file') => void) {
   return [
     <MenuItem key="a4" onClick={() => exportAs('a4')}>
+      <ListItemIcon>
+        <PictureAsPdfIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText
         primary="PDF for home printing (A4)"
         secondary="Booklet, test square and the pattern tiled over pages"
       />
     </MenuItem>,
     <MenuItem key="letter" onClick={() => exportAs('letter')}>
+      <ListItemIcon>
+        <PictureAsPdfIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="PDF for home printing (US Letter)" />
     </MenuItem>,
     <MenuItem key="a0" onClick={() => exportAs('a0')}>
+      <ListItemIcon>
+        <PictureAsPdfIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="PDF for a copy shop (A0)" secondary="The pattern on large sheets" />
     </MenuItem>,
     <MenuItem key="full" onClick={() => exportAs('full')}>
+      <ListItemIcon>
+        <PictureAsPdfIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="Full-size PDF" secondary="One big page, for a plotter or wide-format printer" />
     </MenuItem>,
     <MenuItem key="projector" onClick={() => exportAs('projector')}>
+      <ListItemIcon>
+        <VideocamIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="Projector PDF" secondary="Full size, light lines on black" />
     </MenuItem>,
     <MenuItem key="svg" onClick={() => exportAs('svg')}>
+      <ListItemIcon>
+        <GestureIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="SVG" secondary="Full size, for Inkscape or Illustrator" />
     </MenuItem>,
     <MenuItem key="dxf" onClick={() => exportAs('dxf')}>
+      <ListItemIcon>
+        <ContentCutIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="DXF (AAMA)" secondary="For pattern CAD and cutting machines" />
     </MenuItem>,
     <MenuItem key="file" onClick={() => exportAs('file')}>
-      <SaveIcon fontSize="small" sx={{ mr: 1 }} />
+      <ListItemIcon>
+        <DataObjectIcon fontSize="small" />
+      </ListItemIcon>
       Project file (to open again)
     </MenuItem>,
   ]

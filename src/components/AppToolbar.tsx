@@ -1,20 +1,44 @@
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
+import AssessmentIcon from '@mui/icons-material/Assessment'
+import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic'
 import BrushIcon from '@mui/icons-material/Brush'
 import CalculateIcon from '@mui/icons-material/Calculate'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import DataObjectIcon from '@mui/icons-material/DataObject'
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner'
+import DrawIcon from '@mui/icons-material/Draw'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered'
+import GestureIcon from '@mui/icons-material/Gesture'
+import Grid4x4Icon from '@mui/icons-material/Grid4x4'
 import GridOnIcon from '@mui/icons-material/GridOn'
+import GridViewIcon from '@mui/icons-material/GridView'
 import HandymanIcon from '@mui/icons-material/Handyman'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import ImageIcon from '@mui/icons-material/Image'
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
+import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import IosShareIcon from '@mui/icons-material/IosShare'
+import LayersIcon from '@mui/icons-material/Layers'
+import ListAltIcon from '@mui/icons-material/ListAlt'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
+import RepeatIcon from '@mui/icons-material/Repeat'
+import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw'
 import SaveIcon from '@mui/icons-material/Save'
+import StyleIcon from '@mui/icons-material/Style'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import TableRowsIcon from '@mui/icons-material/TableRows'
 import UndoIcon from '@mui/icons-material/Undo'
+import ViewColumnIcon from '@mui/icons-material/ViewColumn'
 import ViewInArIcon from '@mui/icons-material/ViewInAr'
+import ViewModuleIcon from '@mui/icons-material/ViewModule'
+import WavesIcon from '@mui/icons-material/Waves'
 import {
   AppBar,
   Box,
@@ -33,7 +57,9 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
+import { KnitMark } from '../knit/KnitLogo'
 import { useMidWidth, useNarrow } from '../layout'
+import { SewMark } from '../sew/SewLogo'
 import { Action, MenuHeading, NavTab, PhoneNav, Rule } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -97,32 +123,51 @@ interface Props {
   isLiftplan: boolean
 }
 
-const EXPORTS: { format: ExportFormat; primary: string; secondary: string }[] = [
-  { format: 'json', primary: 'Pattern file (.weave.json)', secondary: 'Re-import into Weave Patterner' },
+const EXPORTS: { format: ExportFormat; primary: string; secondary: string; icon: ReactNode }[] = [
+  {
+    format: 'json',
+    primary: 'Pattern file (.weave.json)',
+    secondary: 'Re-import into Weave Patterner',
+    icon: <DataObjectIcon fontSize="small" />,
+  },
   {
     format: 'wif',
     primary: 'WIF (.wif)',
     secondary: 'Threading, tie-up and treadling for weaving software and treadle looms',
+    icon: <InsertDriveFileIcon fontSize="small" />,
   },
   {
     format: 'liftplan',
     primary: 'WIF lift plan (.wif)',
     secondary: 'Shafts lifted per pick, for computer-dobby looms',
+    icon: <TableRowsIcon fontSize="small" />,
   },
 ]
 
-const IMAGES: { format: ImageFormat; primary: string; secondary: string }[] = [
-  { format: 'png', primary: 'Image (PNG)', secondary: 'Picture of the draft to share' },
-  { format: 'svg', primary: 'Image (SVG)', secondary: 'Scalable picture for printing or editing' },
+const IMAGES: { format: ImageFormat; primary: string; secondary: string; icon: ReactNode }[] = [
+  {
+    format: 'png',
+    primary: 'Image (PNG)',
+    secondary: 'Picture of the draft to share',
+    icon: <ImageIcon fontSize="small" />,
+  },
+  {
+    format: 'svg',
+    primary: 'Image (SVG)',
+    secondary: 'Scalable picture for printing or editing',
+    icon: <GestureIcon fontSize="small" />,
+  },
   {
     format: 'bmp',
     primary: 'Bitmap (BMP), black and white',
     secondary: 'One pixel per crossing, black where the warp is up: for jacquard looms such as the TC2',
+    icon: <Grid4x4Icon fontSize="small" />,
   },
   {
     format: 'bmp-color',
     primary: 'Bitmap (BMP), colours',
     secondary: 'One pixel per crossing, in the thread colours',
+    icon: <GridOnIcon fontSize="small" />,
   },
 ]
 
@@ -151,23 +196,28 @@ export function AppToolbar(p: Props) {
   const exportItems = [
     ...EXPORTS.map((x) => (
       <MenuItem key={x.format} onClick={then(() => p.onExport(x.format))}>
+        <ListItemIcon>{x.icon}</ListItemIcon>
         <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
     ...IMAGES.map((x) => (
       <MenuItem key={x.format} onClick={then(() => p.onExportImage(x.format))}>
-        <ListItemIcon>
-          <ImageIcon fontSize="small" />
-        </ListItemIcon>
+        <ListItemIcon>{x.icon}</ListItemIcon>
         <ListItemText primary={x.primary} secondary={x.secondary} />
       </MenuItem>
     )),
   ]
   const printItems = [
     <MenuItem key="draft" onClick={then(() => p.onPrint(false))}>
+      <ListItemIcon>
+        <PrintIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="Print draft" />
     </MenuItem>,
     <MenuItem key="instructions" onClick={then(() => p.onPrint(true))}>
+      <ListItemIcon>
+        <ListAltIcon fontSize="small" />
+      </ListItemIcon>
       <ListItemText primary="Print draft and written instructions" secondary="Adds threading and treadling lists" />
     </MenuItem>,
   ]
@@ -178,7 +228,7 @@ export function AppToolbar(p: Props) {
     primary: string
     secondary: string
     onClick: () => void
-    icon?: ReactNode
+    icon: ReactNode
     href?: string
   }[] = [
     {
@@ -186,12 +236,14 @@ export function AppToolbar(p: Props) {
       primary: 'Sequence tools…',
       secondary: 'Fill, repeat, mirror, reverse, insert or delete ends and picks',
       onClick: p.onSequenceTools,
+      icon: <RepeatIcon fontSize="small" />,
     },
     {
       group: 'Edit',
       primary: 'Tromp as writ',
       secondary: 'Treadle as drawn in: copy the threading to the treadling',
       onClick: p.onTrompAsWrit,
+      icon: <ContentCopyIcon fontSize="small" />,
     },
     {
       group: 'Design',
@@ -205,54 +257,63 @@ export function AppToolbar(p: Props) {
       primary: 'Draw on the drawdown',
       secondary: 'Swap squares between warp and weft, right on the drawdown',
       onClick: p.onCloth,
+      icon: <DrawIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Draw on paper…',
       secondary: 'Print a grid to colour in, then scan or photograph it as a new pattern',
       onClick: p.onPaper,
+      icon: <DocumentScannerIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Block profile…',
       secondary: 'Design in blocks: overshot, summer and winter, lace, crackle, twill…',
       onClick: p.onProfile,
+      icon: <ViewModuleIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Double cloth…',
       secondary: 'Two layers: separate, tube, double width or blocks',
       onClick: p.onDoubleCloth,
+      icon: <LayersIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Picture to draft…',
       secondary: 'Turn a picture into blocks and a draft',
       onClick: p.onPicture,
+      icon: <AddPhotoAlternateIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Echo weave…',
       secondary: 'A design line threaded with its echo, in two colours',
       onClick: p.onEcho,
+      icon: <WavesIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Variations…',
       secondary: 'Same threading, other tie-ups and treadlings',
       onClick: p.onVariations,
+      icon: <AutoAwesomeMosaicIcon fontSize="small" />,
     },
     {
       group: 'Design',
       primary: 'Colourways…',
       secondary: 'The same cloth in other colours, side by side',
       onClick: p.onColorways,
+      icon: <InvertColorsIcon fontSize="small" />,
     },
     {
       group: 'Change the whole draft',
       primary: 'Transform draft…',
       secondary: 'Turn 90°, swap face and back, flip, move the repeat',
       onClick: p.onTransform,
+      icon: <Rotate90DegreesCwIcon fontSize="small" />,
     },
     p.isLiftplan
       ? {
@@ -260,24 +321,28 @@ export function AppToolbar(p: Props) {
           primary: 'Convert to tie-up and treadling',
           secondary: 'One treadle for each different shed, for floor looms',
           onClick: p.onToTreadling,
+          icon: <SwapHorizIcon fontSize="small" />,
         }
       : {
           group: 'Change the whole draft',
           primary: 'Convert to lift plan',
           secondary: 'Shafts per pick, for dobby looms',
           onClick: p.onToLiftplan,
+          icon: <SwapHorizIcon fontSize="small" />,
         },
     {
       group: 'Change the whole draft',
       primary: 'Cloth report…',
       secondary: 'Warp and weft faces, interlacing, floats, firmness',
       onClick: p.onReport,
+      icon: <AssessmentIcon fontSize="small" />,
     },
     {
       group: 'Plan the warp',
       primary: 'Warp winding plan…',
       secondary: 'Colour order for the warping board, in bouts',
       onClick: p.onWarpPlan,
+      icon: <FormatListNumberedIcon fontSize="small" />,
     },
     {
       group: 'Plan the warp',
@@ -291,26 +356,36 @@ export function AppToolbar(p: Props) {
       primary: 'Yarn library…',
       secondary: 'Named yarns with grist and price, matched by colour',
       onClick: p.onYarns,
+      icon: <Inventory2Icon fontSize="small" />,
     },
     {
       group: 'Other looms',
       primary: 'Rigid heddle…',
       secondary: 'Weave this draft with a rigid heddle and pick-up stick',
       onClick: p.onRigidHeddle,
+      icon: <ViewColumnIcon fontSize="small" />,
     },
     {
       group: 'Other looms',
       primary: 'Drawloom…',
       secondary: 'Damask and other pattern-harness designs, drawn in units',
       onClick: p.onDrawloom,
+      icon: <GridViewIcon fontSize="small" />,
     },
-    { group: 'Other looms', primary: 'Tablet weaving…', secondary: 'Design card-woven bands', onClick: p.onTablet },
+    {
+      group: 'Other looms',
+      primary: 'Tablet weaving…',
+      secondary: 'Design card-woven bands',
+      onClick: p.onTablet,
+      icon: <StyleIcon fontSize="small" />,
+    },
     {
       group: 'Other crafts',
       primary: 'Knit Patterner',
       secondary: 'Knitting charts, written patterns and colourwork',
       onClick: close,
       href: './knit/',
+      icon: <KnitMark size={20} />,
     },
     {
       group: 'Other crafts',
@@ -318,6 +393,7 @@ export function AppToolbar(p: Props) {
       secondary: 'Made-to-measure sewing patterns, printed at home',
       onClick: close,
       href: './sew/',
+      icon: <SewMark size={20} />,
     },
   ]
   const words = toolQuery.toLowerCase().split(/\s+/).filter(Boolean)
@@ -334,6 +410,7 @@ export function AppToolbar(p: Props) {
       : []),
     t.href ? (
       <MenuItem key={t.primary} component="a" href={t.href} onClick={t.onClick}>
+        <ListItemIcon>{t.icon}</ListItemIcon>
         <ListItemText primary={t.primary} secondary={t.secondary} />
       </MenuItem>
     ) : (
@@ -345,7 +422,7 @@ export function AppToolbar(p: Props) {
           t.onClick()
         }}
       >
-        {t.icon && <ListItemIcon>{t.icon}</ListItemIcon>}
+        <ListItemIcon>{t.icon}</ListItemIcon>
         <ListItemText primary={t.primary} secondary={t.secondary} />
       </MenuItem>
     ),
@@ -569,7 +646,7 @@ export function AppToolbar(p: Props) {
               paper: {
                 sx: {
                   maxHeight: '80vh',
-                  width: 380,
+                  width: 420,
                   maxWidth: 'calc(100vw - 16px)',
                   borderRadius: '16px',
                   display: 'flex',
