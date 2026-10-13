@@ -1,12 +1,15 @@
 import FavoriteIcon from '@mui/icons-material/FavoriteBorder'
+import FeedbackIcon from '@mui/icons-material/FeedbackOutlined'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import PaletteIcon from '@mui/icons-material/PaletteOutlined'
 import { Link } from '@mui/material'
 import { useState } from 'react'
 import { DONATE_URL } from '../donate'
+import { FEEDBACK_URL } from '../feedback'
 import { DESKTOP, DESKTOP_DOWNLOAD } from '../platform'
 import { ThemeDialog } from '../SeasonalTheme'
+import { FeedbackDialog } from './FeedbackDialog'
 
 interface Props {
   /** The sister apps: Knit and Sew Patterner from Weave Patterner, and so on. */
@@ -18,9 +21,13 @@ interface Props {
   fontSize?: number
 }
 
-/** The links at the foot of the app: help, the colour theme, the other app, the analytics choice, donating and the source. */
+/**
+ * The links at the foot of the app: help, the colour theme, feedback, the other app, the analytics choice, donating and
+ * the source.
+ */
 export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Props) {
   const [theme, setTheme] = useState(false)
+  const [feedback, setFeedback] = useState(false)
   return (
     <>
       {onHelp && (
@@ -45,6 +52,19 @@ export function FooterLinks({ others, onAnalytics, onHelp, fontSize = 13 }: Prop
         Theme
       </Link>
       <ThemeDialog open={theme} onClose={() => setTheme(false)} />
+      {FEEDBACK_URL && (
+        <>
+          <Link
+            component="button"
+            onClick={() => setFeedback(true)}
+            sx={{ fontSize, display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}
+          >
+            <FeedbackIcon sx={{ fontSize: 16 }} />
+            Feedback
+          </Link>
+          <FeedbackDialog open={feedback} onClose={() => setFeedback(false)} />
+        </>
+      )}
       <Link href="./guide/" sx={{ fontSize }}>
         Guides
       </Link>

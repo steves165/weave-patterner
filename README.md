@@ -64,7 +64,7 @@ and the **Analytics** button in the footer changes your choice. Ad features are 
 
 ## Issues
 
-Bugs and feature ideas are tracked in [GitHub issues](https://github.com/steves165/weave-patterner/issues), with templates for each. If the live site fails its browser tests after a deploy, CI opens an issue automatically.
+Bugs and feature ideas are tracked in [GitHub issues](https://github.com/steves165/weave-patterner/issues), with templates for each. The **Feedback** link in the apps opens one too, without a GitHub account (posted publicly, through a small AWS function: [infra/](infra/README.md)). If the live site fails its browser tests after a deploy, CI opens an issue automatically.
 
 ## Features
 

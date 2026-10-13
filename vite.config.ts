@@ -1,10 +1,15 @@
+import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 export default defineConfig({
   // Relative asset paths so the build works from any sub-path (e.g. GitHub Pages' /weave-patterner/).
   base: './',
   plugins: [react()],
+  // The app's version (package.json), sent with feedback.
+  define: { __APP_VERSION__: JSON.stringify(version) },
   build: {
     // The largest file is the 3D preview (three.js), which loads only when it's opened.
     chunkSizeWarningLimit: 600,

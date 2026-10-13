@@ -6,3 +6,11 @@ playwright-report
 desktop/app
 desktop/release
 desktop/build/icon.png
+
+# Terraform (infra/): local state and plans, build output, and local settings such as the alert email
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/*.tfplan
+infra/**/.build/
+infra/**/terraform.tfvars

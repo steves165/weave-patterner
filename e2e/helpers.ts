@@ -8,6 +8,9 @@ export const sampleText = () => readFileSync(SAMPLE, 'utf8')
 
 /** Google Analytics' servers: tests must never send hits to the real analytics. */
 export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|analytics\.google\.com/
+/** The feedback service (infra/feedback): tests must never open real GitHub issues. A test that sends feedback routes
+ * it itself (page routes come before these). */
+export const FEEDBACK_HOSTS = /\.lambda-url\.[a-z0-9-]+\.on\.aws/
 
 /**
  * A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way; nor does the
@@ -32,6 +35,7 @@ export async function openApp(
   { analytics = 'denied', tour = 'seen' }: { analytics?: 'denied' | 'unset'; tour?: 'seen' | 'new' } = {},
 ) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  await page.context().route(FEEDBACK_HOSTS, (route) => route.abort())
   if (tour === 'seen') await tourSeen(page)
   if (analytics === 'denied')
     await page.addInitScript(() => {
@@ -102,6 +106,7 @@ export const toast = (page: Page) => page.locator('.MuiSnackbarContent-message')
 /** Opens Knit Patterner, with analytics blocked and already declined as for openApp. */
 export async function openKnit(page: Page, { tour = 'seen' }: { tour?: 'seen' | 'new' } = {}) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  await page.context().route(FEEDBACK_HOSTS, (route) => route.abort())
   if (tour === 'seen') await tourSeen(page)
   await page.addInitScript(() => {
     if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
@@ -113,6 +118,7 @@ export async function openKnit(page: Page, { tour = 'seen' }: { tour?: 'seen' | 
 /** Opens Sew Patterner, with analytics blocked and already declined as for openApp. */
 export async function openSew(page: Page, { tour = 'seen', at = '' }: { tour?: 'seen' | 'new'; at?: string } = {}) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
+  await page.context().route(FEEDBACK_HOSTS, (route) => route.abort())
   if (tour === 'seen') await tourSeen(page)
   await page.addInitScript(() => {
     if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')

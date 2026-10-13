@@ -31,7 +31,7 @@ test('steps forward and back with buttons, keys and page-turner pedals', async (
   await expect(pickNumber(page)).toContainText('Pick 6')
   for (const key of ['ArrowLeft', 'PageUp']) await page.keyboard.press(key)
   await expect(pickNumber(page)).toContainText('Pick 4')
-  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await expect(pickNumber(page)).toContainText('Pick 3')
 })
 
@@ -126,7 +126,7 @@ test.describe('chime on weft change', () => {
     expect(await chimes(page)).toBe(2) // two notes
     await page.getByRole('button', { name: 'Next pick' }).click() // pick 4: back to white
     expect(await chimes(page)).toBe(4)
-    await page.getByRole('button', { name: 'Back' }).click() // going back doesn't chime
+    await page.getByRole('button', { name: 'Back', exact: true }).click() // going back doesn't chime
     expect(await chimes(page)).toBe(4)
 
     await page.getByLabel('Chime on weft change').uncheck()

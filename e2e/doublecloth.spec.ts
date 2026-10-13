@@ -45,7 +45,7 @@ test('block double cloth swaps the layers by block, reversed on the back', async
   ])
     expect(await squareColor(page, end, pick)).toBe(LIGHT)
 
-  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   expect(await squareColor(page, 3, 3)).toBe(LIGHT)
   expect(await squareColor(page, 12, 3)).toBe(DARK)
 
@@ -62,7 +62,7 @@ test('separate layers show one layer on each side', async ({ page }) => {
   await expect(result(page)).toHaveText('Makes 4 shafts, 4 treadles, 16 ends × 16 picks')
   await dialog(page).getByRole('button', { name: 'Create draft' }).click()
   expect(await allColors(page)).toEqual([DARK])
-  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   expect(await allColors(page)).toEqual([LIGHT])
 })
 
@@ -123,8 +123,8 @@ test('the Back switch turns the whole draft over, mirroring it left to right', a
   const firstThreading = () =>
     page.getByRole('group', { name: 'Threading' }).locator('[role=checkbox]').first().getAttribute('aria-label')
   expect(await firstColumn()).toBe('0')
-  await page.getByRole('button', { name: 'Back' }).click()
-  await expect(page.getByRole('button', { name: 'Back' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('back-note')).toHaveText(/end 1 is on the right/)
   expect(await firstColumn()).toBe('31') // end 32 is now on the left
   expect(await firstThreading()).toMatch(/^End 32,/) // the threading turns over with it
