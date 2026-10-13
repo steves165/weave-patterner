@@ -1,8 +1,8 @@
 /**
  * Keeping the desktop app up to date from its GitHub releases (.github/workflows/desktop.yml publishes them).
  *
- * - Windows and Linux (the AppImage): electron-updater checks on launch, downloads a newer version in the background,
- *   and installs it when the app is next closed.
+ * - Windows and Linux (the AppImage): electron-updater checks on launch and downloads a newer version in the
+ *   background, then asks whether to restart into it now or install it when the app is next closed.
  * - macOS: installing an update needs an Apple Developer ID signature, which the app doesn't have yet (it's ad hoc
  *   signed), so it only says a newer version is out and offers its download page.
  *
@@ -60,6 +60,34 @@ async function offerDownload(win, byHand) {
 const upToDate = (win) =>
   dialog.showMessageBox(win, { type: 'info', message: `Weave Patterner ${app.getVersion()} is the latest version.` })
 
+/** Once an update has downloaded: asks to restart into it now, or leaves it to install when the app is next closed. */
+async function offerRestart(win, version) {
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'info',
+    message: `Weave Patterner ${version} is ready to install`,
+    detail:
+      'Restart now to update: the pattern you have open stays as it is. Or choose Later, and it will be installed the next time you close Weave Patterner.',
+    buttons: ['Restart now', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
+  })
+  if (response === 0) require('electron-updater').autoUpdater.quitAndInstall()
+}
+
+/** The updater, set up once: it downloads in the background, then asks (offerRestart). */
+let updater
+function getUpdater(win) {
+  if (updater) return updater
+  // Loaded only when needed: it's bundled into the packaged app (scripts/desktop.ts).
+  updater = require('electron-updater').autoUpdater
+  updater.autoDownload = true
+  updater.autoInstallOnAppQuit = true
+  // A download that fails in the background is tried again next launch.
+  updater.on('error', () => {})
+  updater.on('update-downloaded', (info) => offerRestart(win, info.version))
+  return updater
+}
+
 /** Checks for a newer version: on launch (quietly, unless there is one), or by hand from the Help menu. */
 async function checkForUpdates(win, { byHand = false } = {}) {
   if (!app.isPackaged) {
@@ -68,21 +96,13 @@ async function checkForUpdates(win, { byHand = false } = {}) {
   }
   try {
     if (!canInstall()) return await offerDownload(win, byHand)
-    // Loaded only when needed: it's bundled into the packaged app (scripts/desktop.ts).
-    const { autoUpdater } = require('electron-updater')
-    autoUpdater.autoInstallOnAppQuit = true
-    // A download that fails in the background is tried again next launch.
-    if (autoUpdater.listenerCount('error') === 0) autoUpdater.on('error', () => {})
-    const result = await autoUpdater.checkForUpdatesAndNotify({
-      title: 'Weave Patterner update ready',
-      body: 'Version {version} will be installed when you close Weave Patterner.',
-    })
+    const result = await getUpdater(win).checkForUpdates()
     if (byHand && !result?.isUpdateAvailable) await upToDate(win)
     else if (byHand)
       await dialog.showMessageBox(win, {
         type: 'info',
         message: `Weave Patterner ${result.updateInfo.version} is downloading`,
-        detail: 'It will be installed when you close Weave Patterner.',
+        detail: 'You’ll be asked to restart into it once it has downloaded.',
       })
   } catch (err) {
     // Offline, or GitHub couldn't be reached: try again next launch, and only say so when asked.

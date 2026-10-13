@@ -95,6 +95,9 @@ function menu() {
   ])
 }
 
+// Windows shows the app's notifications only under its own app ID (electron-builder.yml's appId).
+if (process.platform === 'win32') app.setAppUserModelId('com.weave-patterner.app')
+
 // One window's worth of app: opening it again brings the existing window forward.
 if (!app.requestSingleInstanceLock()) app.quit()
 else {

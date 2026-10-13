@@ -43,8 +43,8 @@ example, by opening a help page or a share link in your browser). It has no anal
 whether to check for updates; only if you agree does it ask GitHub for the latest release each time it opens (and you
 can change that under **Help › Check for updates automatically**). **Help › Check for updates…** checks once.
 
-**Updates:** on Windows and as the Linux AppImage, an update downloads in the background and is installed when you
-close the app. On macOS (not yet signed with an Apple Developer ID) the app says a new version is out and opens its
+**Updates:** on Windows and as the Linux AppImage, an update downloads in the background, then the app asks whether to
+restart into it now or install it when you next close the app. On macOS (not yet signed with an Apple Developer ID) the app says a new version is out and opens its
 download page; install it over the old one, and your patterns stay as they are.
 
 To build it: `npm run build`, then `npx tsx scripts/desktop.ts && npx electron-builder` (installers in
