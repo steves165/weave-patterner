@@ -26,7 +26,20 @@ npm run lint      # Biome lint + format check (npm run format to fix)
 Weave, Knit and Sew Patterner are also a desktop app for Windows, macOS and Linux: download the installer for your
 computer from the [latest release](https://github.com/steves165/weave-patterner/releases/latest). It's the same app,
 working offline, with your patterns kept in the app (move them from the website with **Load › Back up or restore…**).
-It isn't code-signed yet, so Windows and macOS ask you to confirm the first time you open it.
+Until the first signed release, Windows and macOS ask you to confirm the first time you open it.
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/).
+
+- Committers and reviewers: [steves165](https://github.com/steves165)
+- Approvers: [steves165](https://github.com/steves165)
+
+Only installers built by this repository's GitHub Actions, from a version tag, are signed.
+
+**Privacy:** the desktop app doesn't transfer any information to other networked systems unless you ask it to (for
+example, by opening a help page or a share link in your browser). It has no analytics.
 
 To build it: `npm run build`, then `npx tsx scripts/desktop.ts && npx electron-builder` (installers in
 `desktop/release/`). `npx electron desktop/main.cjs` runs it straight from `dist/`, and

@@ -41,11 +41,13 @@ jobs:
             --title "Weave Patterner $GITHUB_REF_NAME for the desktop" \
             --notes "Weave, Knit and Sew Patterner as a desktop app. Download the installer for your computer below:
 
-          - **Windows**: Weave-Patterner-…-win-x64.exe. Windows may say it protected your PC (the app isn't code-signed yet): choose **More info › Run anyway**.
+          - **Windows**: Weave-Patterner-…-win-x64.exe. Windows may say it protected your PC if this release isn't signed yet: choose **More info › Run anyway**.
           - **macOS**: …-mac-arm64.dmg for Apple silicon (M1 and later), …-mac-x64.dmg for Intel. The first time, macOS may say it can't check the app: open **System Settings › Privacy & Security** and choose **Open Anyway**.
           - **Linux**: …-linux-x86_64.AppImage. Make it executable (chmod +x) and run it.
 
-          Your patterns are kept in the app. To bring patterns from the website, use **Load › Back up or restore…** there, then restore the file in the app."
+          Your patterns are kept in the app. To bring patterns from the website, use **Load › Back up or restore…** there, then restore the file in the app.
+
+          Windows code signing: free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/). See the [code signing policy](https://github.com/steves165/weave-patterner#code-signing-policy)."
 
   build:
     needs: [test, release]
