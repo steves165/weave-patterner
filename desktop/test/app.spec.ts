@@ -83,3 +83,33 @@ test('the Help menu checks for updates, and has the choice to check automaticall
   expect(items).toContainEqual({ label: 'Check for updates automatically', checked: false })
   await app.close()
 })
+
+test('feedback is sent from the app’s own address, marked as the desktop app', async () => {
+  const app = await launch()
+  const page = await app.firstWindow()
+  // Never the real feedback service: the request is answered here.
+  let sent: { origin?: string; body: Record<string, unknown> } | null = null
+  await page.context().route(/\.lambda-url\.[a-z0-9-]+\.on\.aws/, async (route) => {
+    if (route.request().method() === 'OPTIONS')
+      return route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'content-type',
+          'Access-Control-Allow-Methods': 'POST',
+        },
+      })
+    sent = { origin: (await route.request().headerValue('origin')) ?? undefined, body: route.request().postDataJSON() }
+    await route.fulfill({
+      json: { url: 'https://github.com/steves165/weave-patterner/issues/999' },
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    })
+  })
+  await page.getByRole('button', { name: 'Feedback' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Feedback' })
+  await dialog.getByLabel('Your message').fill('Testing feedback from the desktop app')
+  await dialog.getByRole('button', { name: 'Send' }).click()
+  await expect(dialog.getByRole('link', { name: /issues\/999/ })).toBeVisible()
+  expect(sent).toMatchObject({ origin: 'app://patterner', body: { platform: 'desktop', app: 'weave' } })
+  await app.close()
+})
