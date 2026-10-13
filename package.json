@@ -1,7 +1,7 @@
 {
   "name": "weave-patterner",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Free online weaving draft designer: threading, tie-up, treadling and live drawdown, WIF export for looms, 3D cloth preview, double cloth and block weaves",
   "license": "MIT",
   "author": "Stephen Skidmore (https://github.com/steves165)",
