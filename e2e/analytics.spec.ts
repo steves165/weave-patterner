@@ -28,7 +28,7 @@ test('loads Google Analytics after Allow, and records which tools are used', asy
   await openApp(page, { analytics: 'unset' })
   await page.getByTestId('analytics-consent').getByRole('button', { name: 'Allow' }).click()
   await expect(toast(page)).toContainText('analytics is on')
-  await expect.poll(() => requests.find((u) => u.includes('gtag/js'))).toContain('id=G-BR13D3EWT0')
+  await expect.poll(() => requests.find((u) => u.includes('gtag/js'))).toContain('id=G-F54WVZV6CF')
 
   await openTool(page, /Colourways/)
   const events = await page.evaluate(() =>
