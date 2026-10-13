@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   LinearProgress,
   Stack,
   Table,
@@ -13,6 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { clothStats } from '../stats'
 import type { Draft } from '../weave'
@@ -40,7 +40,7 @@ export function ClothReportDialog({ open, draft, onClose }: Props) {
   const s = useMemo(() => (open ? clothStats(draft) : null), [open, draft])
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="xs">
-      <DialogTitle>Cloth report</DialogTitle>
+      <DialogTitle onClose={onClose}>Cloth report</DialogTitle>
       <DialogContent>
         {s && (
           <Stack sx={{ gap: 2 }}>

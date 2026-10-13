@@ -55,6 +55,12 @@ export function ColourInput({ label, value, onChange, className = 'picker', styl
             paper: { role: 'dialog', 'aria-label': `Colours for ${label}`, sx: { p: 2, width: 300, maxWidth: '92vw' } },
           }}
         >
+          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mt: -1, mr: -1 }}>
+            <Typography variant="subtitle2">Colours for {label}</Typography>
+            <IconButton size="small" aria-label="Close colours" onClick={() => setAnchor(null)}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Stack>
           <Palettes
             value={value}
             onPick={(c) => {

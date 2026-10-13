@@ -1,5 +1,6 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { Alert, Button, Dialog, DialogActions, DialogContent, TextField } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { MAX_PATTERNS, nextPatternName, type PatternStore, weaveStore } from '../storage'
 import type { Draft } from '../weave'
@@ -66,7 +67,7 @@ export function SaveDialog<T = Draft>({
           if (trimmed && !full) save()
         }}
       >
-        <DialogTitle>Save pattern</DialogTitle>
+        <DialogTitle onClose={onClose}>Save pattern</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus

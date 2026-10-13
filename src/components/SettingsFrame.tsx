@@ -110,7 +110,8 @@ export function SettingsSidebar({
 
 /**
  * Phones and portrait tablets: a bar at the bottom of the screen with the loom size, which brings the pattern
- * settings up in a sheet, which can also hold the links that sit in the status bar on wider screens.
+ * settings up in a sheet, which can also hold the links that sit in the status bar on wider screens. Like every menu
+ * and dialog, the sheet closes with its close button, a tap outside it, or a swipe down from its top (swipeClose.ts).
  */
 export function SettingsSheet(props: {
   open: boolean
@@ -168,6 +169,7 @@ export function SettingsSheet(props: {
       >
         <Stack
           direction="row"
+          className="sheet-top"
           sx={{
             alignItems: 'center',
             justifyContent: 'space-between',

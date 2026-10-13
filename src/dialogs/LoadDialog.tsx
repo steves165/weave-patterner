@@ -11,7 +11,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   List,
   ListItem,
@@ -22,6 +21,7 @@ import {
   Typography,
 } from '@mui/material'
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
 import { bringOver, onNewAddress } from '../move'
@@ -115,7 +115,7 @@ export function LoadDialog<T = Draft>({
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>
+      <DialogTitle onClose={onClose}>
         Load pattern
         <Typography variant="body2" color="text.secondary">
           {patterns ? `${patterns.length} of ${MAX_PATTERNS} saved` : 'Loading…'}

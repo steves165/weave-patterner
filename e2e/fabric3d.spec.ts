@@ -89,7 +89,7 @@ test('sizes threads from the yarn library and spaces them by the sett', { tag: '
   await openTool(page, /Warp calculator/)
   const calc = page.getByRole('dialog', { name: 'Warp calculator' })
   await calc.getByLabel(/^Sett/).fill('6')
-  await calc.getByRole('button', { name: 'Close' }).click()
+  await calc.getByRole('button', { name: 'Close', exact: true }).click()
 
   await toolbarButton(page, '3D').click()
   await expect(page.getByTestId('look-info')).toHaveText(

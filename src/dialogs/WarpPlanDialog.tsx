@@ -5,13 +5,13 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { colorTotals, windingPlan } from '../warping'
 import type { Draft } from '../weave'
@@ -60,7 +60,7 @@ export function WarpPlanDialog({ open, draft, yarns, onClose }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Warp winding plan</DialogTitle>
+      <DialogTitle onClose={onClose}>Warp winding plan</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

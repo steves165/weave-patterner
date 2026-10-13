@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   IconButton,
   ListSubheader,
@@ -20,6 +19,7 @@ import {
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { darkAndLight, PRESETS } from '../colors'
+import { DialogTitle } from '../components/DialogTitle'
 import {
   addBlock,
   blockContents,
@@ -178,7 +178,7 @@ export function BlocksDialog({ open, draft, focus, store, onStore, onChange, onM
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} maxWidth="md" fullWidth>
-      <DialogTitle>Blocks</DialogTitle>
+      <DialogTitle onClose={onClose}>Blocks</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Split the threading into blocks of ends, lettered A, B, C … from end 1, and name each one: the names show

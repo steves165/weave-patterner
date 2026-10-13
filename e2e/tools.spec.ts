@@ -97,7 +97,7 @@ test('explains mistakes instead of changing the draft', async ({ page }) => {
   await dialog(page).getByLabel('To').fill('99')
   await dialog(page).getByRole('button', { name: 'Reverse' }).click()
   await expect(dialog(page).getByRole('alert')).toHaveText('Choose a range between 1 and 32')
-  await dialog(page).getByRole('button', { name: 'Close' }).click()
+  await dialog(page).getByRole('button', { name: 'Close', exact: true }).click()
   expect(await threading(page)).toBe(start)
 })
 

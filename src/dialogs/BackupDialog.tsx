@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControlLabel,
   Stack,
@@ -23,6 +22,7 @@ import {
   parseBackup,
   restoreBackup,
 } from '../backup'
+import { DialogTitle } from '../components/DialogTitle'
 import { download } from '../exportDraft'
 import { reloadWith } from '../move'
 
@@ -67,7 +67,9 @@ export function BackupDialog({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth aria-labelledby="backup-title">
-      <DialogTitle id="backup-title">Back up or restore</DialogTitle>
+      <DialogTitle onClose={onClose} id="backup-title">
+        Back up or restore
+      </DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2 }}>
           <Typography variant="subtitle1" component="h3">

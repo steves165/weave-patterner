@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControlLabel,
   MenuItem,
@@ -16,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { network, parallel, patternLine } from '../network'
 import {
@@ -130,7 +130,7 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Sequence tools</DialogTitle>
+      <DialogTitle onClose={onClose}>Sequence tools</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <ToggleButtonGroup

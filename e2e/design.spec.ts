@@ -171,7 +171,7 @@ test.describe('yarn library', () => {
     await expect(calc.getByRole('columnheader', { name: 'Weight' })).toBeVisible()
     // The white weft has no yarn and there's no default grist, so its weight (and the total) can't be worked out.
     await expect(page.getByTestId('calc-total')).toContainText('—')
-    await calc.getByRole('button', { name: 'Close' }).click()
+    await calc.getByRole('button', { name: 'Close', exact: true }).click()
 
     // Remembered across visits; deleting removes it.
     await page.reload()

@@ -5,12 +5,12 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   Stack,
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { qrPath } from '../qr'
 
 /** What goes on the printed sheet besides the draft. */
@@ -64,7 +64,9 @@ export function PrintDialog({ open, link, onClose, onPrint }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth aria-labelledby="print-title">
-      <DialogTitle id="print-title">Print</DialogTitle>
+      <DialogTitle onClose={onClose} id="print-title">
+        Print
+      </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           The pattern’s name, a picture of the cloth, its colours and the full draft, on one page.

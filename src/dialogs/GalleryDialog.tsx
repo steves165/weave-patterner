@@ -6,11 +6,11 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Stack,
   Typography,
 } from '@mui/material'
 import type { ReactNode } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
 import type { Draft } from '../weave'
@@ -45,7 +45,7 @@ export function GalleryDialog({ open, title, intro, sections, onClose, onUse, ch
   const phone = usePhone()
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="md">
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle onClose={onClose}>{title}</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2 }}>
           <Typography variant="body2" color="text.secondary">

@@ -1,5 +1,18 @@
-import { Box, Button, ButtonBase, IconButton, ListSubheader, Tooltip } from '@mui/material'
-import { type MouseEvent, type ReactNode, useLayoutEffect, useRef } from 'react'
+import CloseIcon from '@mui/icons-material/Close'
+import {
+  Box,
+  Button,
+  ButtonBase,
+  IconButton,
+  ListSubheader,
+  Menu,
+  MenuList,
+  type MenuListProps,
+  type MenuProps,
+  Tooltip,
+  Typography,
+} from '@mui/material'
+import { createContext, type MouseEvent, type ReactNode, useContext, useLayoutEffect, useMemo, useRef } from 'react'
 
 /** A toolbar button: icon + label on wide screens, icon-only with a tooltip on narrow ones. */
 export function Action(props: {
@@ -130,6 +143,50 @@ export function MenuHeading({ children, sticky = true }: { children: ReactNode; 
     <ListSubheader role="presentation" disableSticky={!sticky}>
       {children}
     </ListSubheader>
+  )
+}
+
+/**
+ * The top of a menu or popover: its name, and a button that closes it, as tapping outside it, Escape or (on touch
+ * screens) a swipe down do.
+ */
+export function MenuTop({ title, onClose }: { title: string; onClose: () => void }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pl: 2, pr: 0.5, pt: 0.5 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+        {title}
+      </Typography>
+      <IconButton size="small" aria-label={`Close ${title}`} onClick={onClose}>
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  )
+}
+
+const MenuTopContext = createContext<{ title: string; onClose: () => void } | null>(null)
+
+/** A TitledMenu's list: its MenuTop beside the menu items rather than among them, as a menu may only hold items. */
+function ListWithTop({ ref, ...props }: MenuListProps & { ref?: React.Ref<HTMLUListElement> }) {
+  const top = useContext(MenuTopContext)
+  return (
+    <>
+      {top && <MenuTop {...top} />}
+      <MenuList ref={ref} {...props} sx={{ outline: 0, pt: 0 }} />
+    </>
+  )
+}
+
+/** A menu with its name and a close button at the top (MenuTop). */
+export function TitledMenu({
+  title,
+  onClose,
+  ...props
+}: Omit<MenuProps, 'onClose'> & { title: string; onClose: () => void }) {
+  const top = useMemo(() => ({ title, onClose }), [title, onClose])
+  return (
+    <MenuTopContext.Provider value={top}>
+      <Menu {...props} onClose={onClose} slots={{ list: ListWithTop }} />
+    </MenuTopContext.Provider>
   )
 }
 

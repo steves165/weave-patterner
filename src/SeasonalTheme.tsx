@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Radio,
   RadioGroup,
   Stack,
@@ -12,6 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import { createContext, type ReactNode, useContext, useLayoutEffect, useMemo, useState } from 'react'
+import { DialogTitle } from './components/DialogTitle'
 import {
   activeSeason,
   loadSeasonChoice,
@@ -133,7 +133,9 @@ export function ThemeDialog({ open, onClose }: { open: boolean; onClose: () => v
   )
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" aria-labelledby="theme-title">
-      <DialogTitle id="theme-title">Colour theme</DialogTitle>
+      <DialogTitle onClose={onClose} id="theme-title">
+        Colour theme
+      </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Seasonal and other colour themes for {app}. New patterns start in the theme's colours; patterns you already

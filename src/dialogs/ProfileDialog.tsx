@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   MenuItem,
   Stack,
   TextField,
@@ -14,6 +13,7 @@ import { useMemo, useState } from 'react'
 import { MAX_BLOCKS, turnedTwill, UNIT } from '../blocks'
 import { BLOCK_WEAVES, type BlockWeave, blockWeave } from '../blockWeaves'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import {
   defaultProfileInput,
   ProfileEditor,
@@ -120,7 +120,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Block profile</DialogTitle>
+      <DialogTitle onClose={onClose}>Block profile</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

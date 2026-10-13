@@ -1,5 +1,6 @@
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material'
 import { useMemo } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { findRepeat } from '../repeat'
 import { RH_SHED_TEXT, type RhShed, rigidHeddlePlan } from '../rigidHeddle'
@@ -35,7 +36,7 @@ export function RigidHeddleDialog({ open, draft, onClose }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Rigid heddle</DialogTitle>
+      <DialogTitle onClose={onClose}>Rigid heddle</DialogTitle>
       <DialogContent>
         {result && 'reason' in result && (
           <Stack sx={{ gap: 2 }}>

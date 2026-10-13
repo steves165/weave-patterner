@@ -12,12 +12,17 @@ async function swipeDown(cdp: CDPSession, x: number, y: number, dy: number, ms =
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
 }
 
-/** Swipes a menu down from its handle, at the top of the menu. */
-async function swipeMenu(page: Page, menu: Locator, dy: number, ms?: number) {
-  const box = await menu.locator('xpath=ancestor-or-self::*[contains(@class, "MuiPopover-paper")]').boundingBox()
+/** Swipes a menu, dialog or sheet down from `from` px below its top (its handle). */
+async function swipeMenu(page: Page, menu: Locator, dy: number, ms?: number, from = 10) {
+  const paper = menu.locator(
+    'xpath=ancestor-or-self::*[contains(@class, "MuiPopover-paper") or contains(@class, "MuiDialog-paper") or contains(@class, "MuiDrawer-paper")]',
+  )
+  // Once it has finished growing or sliding in.
+  await expect.poll(() => paper.evaluate((p) => getComputedStyle(p).transform)).toBe('none')
+  const box = await paper.boundingBox()
   if (!box) throw new Error('menu not visible')
   const cdp = await page.context().newCDPSession(page)
-  await swipeDown(cdp, box.x + box.width / 2, box.y + 10, dy, ms)
+  await swipeDown(cdp, box.x + box.width / 2, box.y + from, dy, ms)
 }
 
 const phone = (page: Page) => (page.viewportSize()?.width ?? 0) < 600
@@ -70,4 +75,32 @@ test('a swipe down in a menu scrolled down scrolls it back up instead of closing
   await swipeDown(cdp, box.x + box.width / 2, box.y + box.height / 2, 150)
   await expect.poll(() => paper.evaluate((p) => p.scrollTop)).toBeLessThan(200)
   await expect(menu).toBeVisible()
+})
+
+test('a dialog swipes down from its title bar to close, but not from what it holds', async ({ page }) => {
+  await openApp(page)
+  const file = page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'File' })
+  if (await file.isVisible()) {
+    await file.tap()
+    await page.getByRole('menuitem', { name: 'Save', exact: true }).tap()
+  } else await page.getByRole('button', { name: 'Save', exact: true }).first().tap()
+  const save = page.getByRole('dialog', { name: 'Save pattern' })
+  await expect(save).toBeVisible()
+
+  await swipeMenu(page, save, 200, 300, 120)
+  await page.waitForTimeout(300)
+  await expect(save).toBeVisible()
+  await swipeMenu(page, save, 200)
+  await expect(save).toHaveCount(0)
+})
+
+test('the pattern settings sheet swipes down to close', async ({ page }) => {
+  await openApp(page)
+  const bar = page.locator('[data-tour="settings"]').last()
+  test.skip(!(await bar.getAttribute('aria-haspopup')), 'wide enough for the settings sidebar instead')
+  await bar.tap()
+  const sheet = page.getByRole('dialog', { name: 'Pattern settings' })
+  await expect(sheet).toBeVisible()
+  await swipeMenu(page, sheet, 220)
+  await expect(sheet).toHaveCount(0)
 })

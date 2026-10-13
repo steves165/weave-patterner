@@ -35,7 +35,6 @@ import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   Paper,
   Slider,
@@ -51,7 +50,16 @@ import {
 } from '@mui/material'
 import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
-import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
+import {
+  Action,
+  MenuHeading,
+  NavTab,
+  PHONE_NAV_HEIGHT,
+  PhoneNav,
+  Rule,
+  SkipLink,
+  TitledMenu,
+} from '../components/AppBarParts'
 import { ConsentBanner } from '../components/ConsentBanner'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
@@ -988,9 +996,9 @@ export default function KnitApp() {
             <NavTab icon={<ViewInArIcon />} label="3D" onClick={() => setDialog('3d')} />
             <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
           </PhoneNav>
-          <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={() => setFileAnchor(null)}>
+          <TitledMenu title="File" anchorEl={fileAnchor} open={fileAnchor !== null} onClose={() => setFileAnchor(null)}>
             {fileMenuItems}
-          </Menu>
+          </TitledMenu>
         </Box>
       )}
       <SaveDialog
@@ -1019,7 +1027,12 @@ export default function KnitApp() {
           <Knit3DDialog open name={name.trim() || 'Knitting'} chart={chart} onClose={() => setDialog(null)} />
         </Suspense>
       )}
-      <Menu anchorEl={importAnchor} open={importAnchor !== null} onClose={() => setImportAnchor(null)}>
+      <TitledMenu
+        title="Import"
+        anchorEl={importAnchor}
+        open={importAnchor !== null}
+        onClose={() => setImportAnchor(null)}
+      >
         <MenuItem
           onClick={() => {
             setImportAnchor(null)
@@ -1042,7 +1055,7 @@ export default function KnitApp() {
           </ListItemIcon>
           <ListItemText primary="Written pattern…" secondary="Paste the rows and get the chart" />
         </MenuItem>
-      </Menu>
+      </TitledMenu>
       <ImportWrittenDialog
         open={dialog === 'written'}
         onClose={() => setDialog(null)}
@@ -1095,7 +1108,12 @@ export default function KnitApp() {
           if (to && name === from) setName(to)
         }}
       />
-      <Menu anchorEl={samplesAnchor} open={samplesAnchor !== null} onClose={() => setSamplesAnchor(null)}>
+      <TitledMenu
+        title="Samples"
+        anchorEl={samplesAnchor}
+        open={samplesAnchor !== null}
+        onClose={() => setSamplesAnchor(null)}
+      >
         {SAMPLES.map((s) => (
           <MenuItem
             key={s.name}
@@ -1107,8 +1125,13 @@ export default function KnitApp() {
             <ListItemText primary={s.name} secondary={s.about} />
           </MenuItem>
         ))}
-      </Menu>
-      <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
+      </TitledMenu>
+      <TitledMenu
+        title="Export"
+        anchorEl={exportAnchor}
+        open={exportAnchor !== null}
+        onClose={() => setExportAnchor(null)}
+      >
         <MenuItem onClick={() => exportAs('png')}>
           <ListItemIcon>
             <ImageIcon fontSize="small" />
@@ -1145,7 +1168,7 @@ export default function KnitApp() {
           </ListItemIcon>
           Chart file (to open again)
         </MenuItem>
-      </Menu>
+      </TitledMenu>
       <input
         ref={fileInput}
         type="file"

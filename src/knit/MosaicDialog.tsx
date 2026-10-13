@@ -4,12 +4,12 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { colorLetter, type KnitChart, rowsOf } from './chart'
 import { mosaic } from './mosaic'
@@ -28,7 +28,7 @@ export function MosaicDialog({ open, chart, onClose, onApply }: Props) {
   const result = useMemo(() => (open ? mosaic(chart, garter) : null), [open, chart, garter])
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} maxWidth="sm" fullWidth>
-      <DialogTitle>Make a mosaic</DialogTitle>
+      <DialogTitle onClose={onClose}>Make a mosaic</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Mosaic knitting makes two-colour patterns with one colour at a time. Each row of your design becomes two rows,

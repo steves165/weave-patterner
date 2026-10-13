@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Stack,
   Tab,
   Tabs,
@@ -19,6 +18,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { applyStripes, type ColorRun, darkAndLight, expandRuns, PRESETS, toRuns, withStripe } from '../colors'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { PatternThumb } from '../components/PatternThumb'
 import { StripeEditor } from '../components/StripeEditor'
 import { useSavedPresets } from '../hooks/useSavedPresets'
@@ -108,7 +108,7 @@ export function ColorsDialog({ open, draft, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Colours</DialogTitle>
+      <DialogTitle onClose={onClose}>Colours</DialogTitle>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3 }}>
         <Tab label="Stripes" />
         <Tab label="Colour-and-weave presets" />

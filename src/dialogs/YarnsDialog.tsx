@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Stack,
@@ -14,6 +13,7 @@ import {
   Typography,
 } from '@mui/material'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { TEXTURES, type Texture } from '../textures'
 import type { Draft } from '../weave'
@@ -40,7 +40,7 @@ export function YarnsDialog({ open, draft, yarns, onChange, onClose }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="md">
-      <DialogTitle>Yarn library</DialogTitle>
+      <DialogTitle onClose={onClose}>Yarn library</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

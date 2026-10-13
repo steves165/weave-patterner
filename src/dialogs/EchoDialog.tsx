@@ -1,16 +1,7 @@
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Alert, Button, Dialog, DialogActions, DialogContent, Stack, TextField, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { echoDraft, parseTwill } from '../echo'
 import { usePhone } from '../layout'
 import { parseSequence } from '../tools'
@@ -55,7 +46,7 @@ export function EchoDialog({ open, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Echo weave</DialogTitle>
+      <DialogTitle onClose={onClose}>Echo weave</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

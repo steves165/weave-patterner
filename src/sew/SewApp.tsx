@@ -30,13 +30,11 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControlLabel,
   IconButton,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   Paper,
   Snackbar,
@@ -51,9 +49,19 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
-import { Action, MenuHeading, NavTab, PHONE_NAV_HEIGHT, PhoneNav, Rule, SkipLink } from '../components/AppBarParts'
+import {
+  Action,
+  MenuHeading,
+  NavTab,
+  PHONE_NAV_HEIGHT,
+  PhoneNav,
+  Rule,
+  SkipLink,
+  TitledMenu,
+} from '../components/AppBarParts'
 import { ColourInput } from '../components/ColourInput'
 import { ConsentBanner } from '../components/ConsentBanner'
+import { DialogTitle } from '../components/DialogTitle'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
 import { MoveNotice } from '../components/MoveNotice'
@@ -901,9 +909,9 @@ export default function SewApp() {
             <NavTab icon={<VideocamIcon />} label="Project" onClick={() => setDialog('projector')} />
             <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
           </PhoneNav>
-          <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={() => setFileAnchor(null)}>
+          <TitledMenu title="File" anchorEl={fileAnchor} open={fileAnchor !== null} onClose={() => setFileAnchor(null)}>
             {fileMenuItems}
-          </Menu>
+          </TitledMenu>
         </Box>
       )}
       <SaveDialog
@@ -948,7 +956,9 @@ export default function SewApp() {
         <ProjectorMode open onClose={() => setDialog(null)} items={laid.items} box={laid.box} />
       )}
       <Dialog open={dialog === 'profile'} onClose={() => setDialog(null)} aria-labelledby="profile-title">
-        <DialogTitle id="profile-title">Save these measurements</DialogTitle>
+        <DialogTitle onClose={() => setDialog(null)} id="profile-title">
+          Save these measurements
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
             Keep them under a name in this browser, to use with any design.
@@ -977,7 +987,12 @@ export default function SewApp() {
           </Button>
         </DialogActions>
       </Dialog>
-      <Menu anchorEl={profilesAnchor} open={profilesAnchor !== null} onClose={() => setProfilesAnchor(null)}>
+      <TitledMenu
+        title="Saved measurements"
+        anchorEl={profilesAnchor}
+        open={profilesAnchor !== null}
+        onClose={() => setProfilesAnchor(null)}
+      >
         {profiles.map((p) => (
           <MenuItem
             key={p.name}
@@ -1005,7 +1020,7 @@ export default function SewApp() {
             <ListItemText primary={`Forget ${p.name}`} />
           </MenuItem>
         ))}
-      </Menu>
+      </TitledMenu>
       <ExtraDialog
         extra={editing}
         units={u}
@@ -1021,9 +1036,14 @@ export default function SewApp() {
           setToast(exists ? `Changed ${x.name}` : `Added ${x.name} to the pattern`)
         }}
       />
-      <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={() => setExportAnchor(null)}>
+      <TitledMenu
+        title="Export"
+        anchorEl={exportAnchor}
+        open={exportAnchor !== null}
+        onClose={() => setExportAnchor(null)}
+      >
         {exportItems(exportAs)}
-      </Menu>
+      </TitledMenu>
       <input
         ref={fileInput}
         type="file"

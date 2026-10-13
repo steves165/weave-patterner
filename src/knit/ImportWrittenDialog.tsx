@@ -1,5 +1,6 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from '@mui/material'
+import { Alert, Button, Dialog, DialogActions, DialogContent, TextField, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import type { KnitChart } from './chart'
 import { parseWritten } from './parse'
@@ -26,7 +27,7 @@ export function ImportWrittenDialog({ open, onClose, onImport }: Props) {
   const result = useMemo(() => (text.trim() ? parseWritten(text) : null), [text])
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} maxWidth="sm" fullWidth>
-      <DialogTitle>Import a written pattern</DialogTitle>
+      <DialogTitle onClose={onClose}>Import a written pattern</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 1.5 }}>
           Paste the cast-on and the rows, one per line, such as "Row 1 (RS): *k2, p2; rep from * to end." Rounds ("Rnd

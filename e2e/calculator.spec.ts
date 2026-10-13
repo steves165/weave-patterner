@@ -51,7 +51,7 @@ test('warns about impossible values', async ({ page }) => {
 
 test('remembers settings between visits', async ({ page }) => {
   await dialog(page).getByLabel('Pieces').fill('3')
-  await dialog(page).getByRole('button', { name: 'Close' }).click()
+  await dialog(page).getByRole('button', { name: 'Close', exact: true }).click()
   await page.reload()
   await openTool(page, /Warp calculator/)
   await expect(dialog(page).getByLabel('Pieces')).toHaveValue('3')

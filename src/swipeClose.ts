@@ -1,9 +1,14 @@
 /**
- * On touch screens, every menu and popover closes when it's swiped down from its top (its handle, App.css), as a
- * bottom sheet does: on a phone a long menu fills the screen and leaves little to tap outside it. A swipe that starts
- * with the menu scrolled down scrolls it as usual.
+ * On touch screens, every menu, popover, dialog and sheet closes when it's swiped down from its top (its handle,
+ * App.css), as a bottom sheet does: on a phone a long menu or a dialog fills the screen and leaves little to tap outside
+ * it. A swipe that starts with a menu scrolled down scrolls it as usual.
  */
-const PAPER = '.MuiPopover-paper'
+const MENU = '.MuiPopover-paper'
+/** Dialogs and the settings sheet, swiped from their top only (TOP px: the handle and title bar), so swipes on what
+ * they hold (a grid, a chart, the 3D view) never close them. Their bar stays at the top as they scroll. */
+const SHEET = '.MuiDialog-paper, .MuiDrawer-paper'
+const PAPER = `${MENU}, ${SHEET}`
+const TOP = 64
 /** How far down (px) a swipe must go to close, or a quick flick (px per ms) of at least FLICK_MIN px. */
 const CLOSE_AT = 80
 const FLICK = 0.5
@@ -28,13 +33,13 @@ function scrolledDown(el: Element | null, paper: HTMLElement): boolean {
   return false
 }
 
-/** Lets menus and popovers be swiped down to close, on the whole page. Returns a function that stops it. */
+/** Lets menus, popovers, dialogs and sheets be swiped down to close, on the whole page. Returns a function that stops it. */
 export function swipeMenusToClose(doc: Document = document): () => void {
   let drag: Drag | null = null
 
   const settle = (paper: HTMLElement, close: boolean) => {
     if (close) {
-      // As if Escape was pressed: MUI's Modal closes the menu, and the menu fades out where it is.
+      // As if Escape was pressed: MUI's Modal closes it (its onClose, as Cancel), and it leaves from where it is.
       paper.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       return
     }
@@ -46,8 +51,10 @@ export function swipeMenusToClose(doc: Document = document): () => void {
     drag = null
     if (e.touches.length !== 1 || !(e.target instanceof Element)) return
     const paper = e.target.closest<HTMLElement>(PAPER)
-    if (!paper || scrolledDown(e.target, paper)) return
+    if (!paper) return
     const t = e.touches[0]
+    if (paper.matches(SHEET) ? t.clientY - paper.getBoundingClientRect().top > TOP : scrolledDown(e.target, paper))
+      return
     drag = { paper, x0: t.clientX, y0: t.clientY, t0: e.timeStamp, dy: 0, active: false }
   }
 

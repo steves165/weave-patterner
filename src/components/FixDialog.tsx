@@ -1,18 +1,8 @@
 import BuildIcon from '@mui/icons-material/BuildOutlined'
-import {
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, Paper, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import type { Fix } from '../fixes'
+import { DialogTitle } from './DialogTitle'
 
 /**
  * A problem from the status bar, opened: what it is, ways to fix it by hand, and fixes to apply in one step (each
@@ -38,7 +28,9 @@ export function FixDialog({
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="fix-title">
-      <DialogTitle id="fix-title">{title}</DialogTitle>
+      <DialogTitle onClose={onClose} id="fix-title">
+        {title}
+      </DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 2 }} component="div">
           {explain}

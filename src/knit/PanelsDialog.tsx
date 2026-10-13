@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   IconButton,
   MenuItem,
@@ -17,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { blankChart, type KnitChart, widthOf } from './chart'
 import { KnitThumb } from './KnitThumb'
@@ -77,7 +77,7 @@ export function PanelsDialog({ open, chart, focus, store, onStore, onChange, onM
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} maxWidth="sm" fullWidth>
-      <DialogTitle>Panels</DialogTitle>
+      <DialogTitle onClose={onClose}>Panels</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           A panel is a stretch of stitches worked as a chart of its own, such as a cable beside a lace edging. Select

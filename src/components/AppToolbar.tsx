@@ -3,6 +3,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic'
 import BrushIcon from '@mui/icons-material/Brush'
 import CalculateIcon from '@mui/icons-material/Calculate'
+import CloseIcon from '@mui/icons-material/Close'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner'
@@ -45,7 +46,6 @@ import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
   MenuList,
   Popover,
@@ -59,7 +59,7 @@ import type { ExportFormat, ImageFormat } from '../exportDraft'
 import { KnitMark } from '../knit/KnitLogo'
 import { useMidWidth, useNarrow } from '../layout'
 import { SewMark } from '../sew/SewLogo'
-import { Action, MenuHeading, NavTab, PhoneNav, Rule } from './AppBarParts'
+import { Action, MenuHeading, NavTab, PhoneNav, Rule, TitledMenu } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -185,6 +185,10 @@ export function AppToolbar(p: Props) {
     setExportAnchor(null)
     setToolsAnchor(null)
     setFileAnchor(null)
+  }
+  const closeTools = () => {
+    close()
+    setToolQuery('')
   }
   const then = (fn: () => void) => () => {
     close()
@@ -541,9 +545,9 @@ export function AppToolbar(p: Props) {
                 label="Export"
                 onClick={(e) => setExportAnchor(e.currentTarget)}
               />
-              <Menu anchorEl={exportAnchor} open={exportAnchor !== null} onClose={close}>
+              <TitledMenu title="Export" anchorEl={exportAnchor} open={exportAnchor !== null} onClose={close}>
                 {exportItems}
-              </Menu>
+              </TitledMenu>
               <Action compact={fileCompact} icon={<PrintIcon />} label="Print" onClick={p.onPrint} />
               <Action compact={fileCompact} icon={<IosShareIcon />} label="Share" onClick={p.onShare} />
             </Box>
@@ -611,10 +615,7 @@ export function AppToolbar(p: Props) {
           <Popover
             anchorEl={toolsAnchor}
             open={toolsAnchor !== null}
-            onClose={() => {
-              close()
-              setToolQuery('')
-            }}
+            onClose={closeTools}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             slotProps={{
               paper: {
@@ -629,7 +630,7 @@ export function AppToolbar(p: Props) {
               },
             }}
           >
-            <Box sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
+            <Box sx={{ px: 1.5, pt: 1.5, pb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <TextField
                 inputRef={toolSearch}
                 fullWidth
@@ -645,6 +646,9 @@ export function AppToolbar(p: Props) {
                 }}
                 slotProps={{ htmlInput: { 'aria-label': 'Find a tool', 'aria-controls': 'tool-list' } }}
               />
+              <IconButton aria-label="Close Tools" onClick={closeTools}>
+                <CloseIcon />
+              </IconButton>
             </Box>
             {toolItems.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ px: 2, pb: 1.5 }} role="status">
@@ -666,9 +670,9 @@ export function AppToolbar(p: Props) {
             <NavTab icon={<HandymanIcon />} label="Tools" onClick={openTools} />
             <NavTab icon={<SaveIcon />} label="File" onClick={(e) => setFileAnchor(e.currentTarget)} />
           </PhoneNav>
-          <Menu anchorEl={fileAnchor} open={fileAnchor !== null} onClose={close}>
+          <TitledMenu title="File" anchorEl={fileAnchor} open={fileAnchor !== null} onClose={close}>
             {fileItems}
-          </Menu>
+          </TitledMenu>
         </>
       )}
     </>

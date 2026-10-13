@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   Stack,
   Table,
@@ -20,6 +19,7 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { type CalcInput, calculate, defaultCalcInput, type Units, type YarnAmount } from '../calculator'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import type { Draft } from '../weave'
 import { type Yarn, yarnFor } from '../yarns'
@@ -170,7 +170,7 @@ export function CalculatorDialog({ open, draft, yarns, onClose }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="md">
-      <DialogTitle>Warp calculator</DialogTitle>
+      <DialogTitle onClose={onClose}>Warp calculator</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <ToggleButtonGroup

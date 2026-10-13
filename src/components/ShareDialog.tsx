@@ -12,7 +12,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   InputAdornment,
   Stack,
@@ -29,6 +28,7 @@ import { download } from '../exportDraft'
 import { useThemeBrand } from '../SeasonalTheme'
 import { APP_NAMES, APP_PATHS, APP_URL, shareLinks } from '../share'
 import { type DesignPainter, drawShareCard, type ShareSize } from '../shareImage'
+import { DialogTitle } from './DialogTitle'
 
 interface Props {
   open: boolean
@@ -144,7 +144,9 @@ export function ShareDialog({ open, onClose, app, title, link: makeLink, design,
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="share-title">
-      <DialogTitle id="share-title">Share “{title}”</DialogTitle>
+      <DialogTitle onClose={onClose} id="share-title">
+        Share “{title}”
+      </DialogTitle>
       <DialogContent>
         <Typography component="h3" variant="subtitle2" sx={{ mb: 1 }}>
           Link

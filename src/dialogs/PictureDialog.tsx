@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   MenuItem,
   Slider,
@@ -19,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MAX_BLOCKS, turnedTwill } from '../blocks'
 import { BLOCK_WEAVES, blockWeave } from '../blockWeaves'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { doubleCloth } from '../doublecloth'
 import { lightnessGrid, midLightness, type Pixels, pictureProfile, twoTone } from '../image'
 import { readImagePixels } from '../imageFile'
@@ -150,7 +150,7 @@ export function PictureDialog({ open, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Picture to draft</DialogTitle>
+      <DialogTitle onClose={onClose}>Picture to draft</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

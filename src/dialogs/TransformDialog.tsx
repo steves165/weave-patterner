@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   Stack,
   TextField,
@@ -17,6 +16,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useState } from 'react'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { usePhone } from '../layout'
 import { skeletonTieup } from '../skeleton'
 import { flipDraft, insertTabby, invertDraft, removeTabby, shiftDraft, tabbyBreaks, turnDraft } from '../transforms'
@@ -76,7 +76,7 @@ export function TransformDialog({ open, draft, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Transform draft</DialogTitle>
+      <DialogTitle onClose={onClose}>Transform draft</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Action

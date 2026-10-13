@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   MenuItem,
   Stack,
@@ -14,6 +13,7 @@ import {
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { ColourInput } from '../components/ColourInput'
+import { DialogTitle } from '../components/DialogTitle'
 import { defaultProfileInput, ProfileEditor, toProfile } from '../components/ProfileEditor'
 import { doubleCloth, type LayerWeave, type Structure, shaftsPerLayer } from '../doublecloth'
 import { usePhone } from '../layout'
@@ -74,7 +74,7 @@ export function DoubleClothDialog({ open, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle>Double cloth</DialogTitle>
+      <DialogTitle onClose={onClose}>Double cloth</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

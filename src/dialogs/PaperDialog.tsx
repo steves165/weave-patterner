@@ -10,7 +10,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   MenuItem,
   Stack,
   Tab,
@@ -20,6 +19,7 @@ import {
 } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { track } from '../analytics'
+import { DialogTitle } from '../components/DialogTitle'
 import { PatternThumb } from '../components/PatternThumb'
 import { FIELD_GRID } from '../components/SettingsPanel'
 import { download } from '../exportDraft'
@@ -161,7 +161,9 @@ export function PaperDialog({ open, draft, name, onClose, onOpen }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="md" aria-labelledby="paper-title">
-      <DialogTitle id="paper-title">Draw on paper</DialogTitle>
+      <DialogTitle onClose={onClose} id="paper-title">
+        Draw on paper
+      </DialogTitle>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3 }}>
         <Tab label="1. Print a sheet" />
         <Tab label="2. Read it back" />

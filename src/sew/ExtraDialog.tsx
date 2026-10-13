@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -18,6 +17,7 @@ import {
   Typography,
 } from '@mui/material'
 import { type PointerEvent, useEffect, useRef, useState } from 'react'
+import { DialogTitle } from '../components/DialogTitle'
 import { FIELD_GRID } from '../components/SettingsPanel'
 import { drawPiece } from './drawing'
 import { type Extra, extraPiece } from './extras'
@@ -57,7 +57,9 @@ export function ExtraDialog({
   const u = units === 'cm' ? 'cm' : 'in'
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md" aria-labelledby="extra-title">
-      <DialogTitle id="extra-title">{e.shape === 'drawn' ? 'Draw a piece' : 'Your piece'}</DialogTitle>
+      <DialogTitle onClose={onClose} id="extra-title">
+        {e.shape === 'drawn' ? 'Draw a piece' : 'Your piece'}
+      </DialogTitle>
       <DialogContent>
         <Stack direction={{ xs: 'column', md: 'row' }} sx={{ gap: 3, pt: 1 }}>
           <Stack sx={{ gap: 2, flex: '0 0 280px' }}>

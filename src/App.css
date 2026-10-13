@@ -757,6 +757,21 @@
   .MuiPopover-paper .MuiListSubheader-sticky {
     top: 20px;
   }
+  /* Dialogs and the settings sheet: the same handle, drawn over the top of their title bar. */
+  .MuiDialog-paper::before,
+  .sheet-top::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    translate: -50% 0;
+    z-index: 3;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--mui-palette-text-disabled);
+    pointer-events: none;
+  }
 }
 
 /*
