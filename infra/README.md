@@ -27,8 +27,13 @@ A warm function keeps the old token for a while; `terraform apply` (or running t
 ## If the kill switch goes off
 
 More requests than real people send turns the function off (reserved concurrency 0) and emails the alert address.
-Feedback then fails with an error in the apps. When it's safe, run the Infrastructure workflow by hand (or
-`terraform apply` in `feedback/`), which sets it back to 1.
+Feedback then fails with an error in the apps. When it's safe, run the Infrastructure workflow by hand with **apply**
+(or `terraform apply` in `feedback/`), which sets it back to 1.
+
+## Plan and apply from GitHub
+
+**Actions › Infrastructure › Run workflow**, then choose **plan** (shows what would change on the run's summary page,
+and changes nothing) or **apply**. A push to main that changes `infra/feedback/` plans and applies on its own.
 
 ## Working on it locally
 

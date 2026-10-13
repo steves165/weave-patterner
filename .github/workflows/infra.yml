@@ -1,7 +1,8 @@
 name: Infrastructure
 
-# Deploys the feedback form's endpoint (infra/feedback, Terraform) when it changes on main, or when run by hand.
-# Pull requests only check it (formatting and validation, no AWS). It signs in to AWS with GitHub's OIDC token as the
+# Deploys the feedback form's endpoint (infra/feedback, Terraform) when it changes on main. Run it by hand to plan
+# (show what would change, and change nothing) or apply. Pull requests only check it (formatting and validation, no
+# AWS). The plan is shown on the run's summary page. It signs in to AWS with GitHub's OIDC token as the
 # role infra/bootstrap made, which only main can take and which can only manage the feedback resources.
 #
 # Running it also turns the endpoint back on after its kill switch (reserved concurrency back to 1).
@@ -12,6 +13,12 @@ on:
   pull_request:
     paths: ['infra/feedback/**', '.github/workflows/infra.yml']
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'plan shows what would change; apply changes it'
+        type: choice
+        options: [plan, apply]
+        default: plan
 
 permissions:
   contents: read
@@ -59,5 +66,16 @@ jobs:
           role-to-assume: arn:aws:iam::557467970586:role/weave-patterner-terraform-ci
           aws-region: eu-west-2
       - run: terraform -chdir=infra/feedback init
-      - run: terraform -chdir=infra/feedback plan -out=feedback.tfplan
-      - run: terraform -chdir=infra/feedback apply feedback.tfplan
+      - name: Plan
+        run: |
+          terraform -chdir=infra/feedback plan -no-color -out=feedback.tfplan | tee plan.txt
+          {
+            echo '### Terraform plan: infra/feedback'
+            echo '```'
+            grep -E '^  # |^Plan:|^No changes' plan.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      # Pushes to main apply; a run by hand applies only when asked to.
+      - name: Apply
+        if: github.event_name == 'push' || inputs.action == 'apply'
+        run: terraform -chdir=infra/feedback apply -no-color feedback.tfplan
