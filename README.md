@@ -39,12 +39,21 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 Only installers built by this repository's GitHub Actions, from a version tag, are signed.
 
 **Privacy:** the desktop app doesn't transfer any information to other networked systems unless you ask it to (for
-example, by opening a help page or a share link in your browser). It has no analytics.
+example, by opening a help page or a share link in your browser). It has no analytics. The first time it opens, it asks
+whether to check for updates; only if you agree does it ask GitHub for the latest release each time it opens (and you
+can change that under **Help › Check for updates automatically**). **Help › Check for updates…** checks once.
+
+**Updates:** on Windows and as the Linux AppImage, an update downloads in the background and is installed when you
+close the app. On macOS (not yet signed with an Apple Developer ID) the app says a new version is out and opens its
+download page; install it over the old one, and your patterns stay as they are.
 
 To build it: `npm run build`, then `npx tsx scripts/desktop.ts && npx electron-builder` (installers in
 `desktop/release/`). `npx electron desktop/main.cjs` runs it straight from `dist/`, and
-`npx playwright test -c playwright.desktop.config.ts` tests it. Pushing a version tag (`v1.2.3`, matching
-`package.json`) builds all three and puts them on that version's release.
+`npx playwright test -c playwright.desktop.config.ts` tests it.
+
+To release a new version: `npm version minor` (or `patch` for fixes only), which sets the version in `package.json`,
+commits it and tags it (`v1.2.0`), then `git push --follow-tags`. The tag builds all three installers and puts them on
+that version's release, with the update files the installed apps check for (`latest.yml`, `latest-linux.yml`).
 
 ## Privacy
 

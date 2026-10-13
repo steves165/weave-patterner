@@ -2,10 +2,12 @@
  * Weave Patterner for the desktop: Electron showing the same app as weave-patterner.com (Weave, Knit and Sew
  * Patterner), built by Vite into dist/ and served from inside the app at app://patterner/. Saved patterns live in the
  * app's own storage, as they do in a browser. Links out (help pages, donating, sharing) open in the usual browser.
+ * It can update itself from the GitHub releases, if the person using it agrees (updates.cjs).
  */
 const { app, BrowserWindow, Menu, net, protocol, session, shell } = require('electron')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
+const { autoCheck, checkForUpdates, checkOnLaunch, setAutoCheck } = require('./updates.cjs')
 
 const SCHEME = 'app'
 const HOST = 'patterner'
@@ -71,6 +73,19 @@ function menu() {
       submenu: [
         { label: 'Guides', click: site('guide/') },
         { label: 'Weave Patterner on the web', click: site() },
+        { type: 'separator' },
+        {
+          label: 'Check for updates…',
+          click: (_item, win) => checkForUpdates(win ?? BrowserWindow.getAllWindows()[0], { byHand: true }),
+        },
+        {
+          id: 'auto-update',
+          label: 'Check for updates automatically',
+          type: 'checkbox',
+          checked: autoCheck() === true,
+          click: (item) => setAutoCheck(item.checked),
+        },
+        { type: 'separator' },
         {
           label: 'Report a problem',
           click: () => shell.openExternal('https://github.com/steves165/weave-patterner/issues'),
@@ -101,7 +116,13 @@ else {
       done(permission === 'media' && isOwn(wc.getURL())),
     )
     Menu.setApplicationMenu(menu())
-    createWindow()
+    const win = createWindow()
+    win.webContents.once('did-finish-load', () =>
+      checkOnLaunch(win, (auto) => {
+        const item = Menu.getApplicationMenu()?.getMenuItemById('auto-update')
+        if (item) item.checked = auto
+      }),
+    )
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })

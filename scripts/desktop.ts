@@ -1,13 +1,15 @@
 /**
  * Gets the desktop app ready to package (electron-builder.yml): desktop/app/ with the built site (dist/), the
- * Electron main program and a package.json with no dependencies (the site's are all bundled by Vite), plus the app
- * icon, drawn from the Weave Patterner mark. Run after `npm run build`:
+ * Electron main program bundled into one file with what it uses (electron-updater), and a package.json with no
+ * dependencies (the site's are all bundled by Vite), plus the app icon, drawn from the Weave Patterner mark. Run after
+ * `npm run build`:
  *
  *   npx tsx scripts/desktop.ts && npx electron-builder
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { createCanvas } from '@napi-rs/canvas'
+import { build } from 'esbuild'
 import { TWILL_STEPS } from '../src/marks'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
@@ -17,7 +19,16 @@ if (!existsSync(`${root}dist/index.html`)) throw new Error('Build the site first
 rmSync(app, { recursive: true, force: true })
 mkdirSync(app, { recursive: true })
 cpSync(`${root}dist`, `${app}dist`, { recursive: true })
-cpSync(`${root}desktop/main.cjs`, `${app}main.cjs`)
+await build({
+  entryPoints: [`${root}desktop/main.cjs`],
+  outfile: `${app}main.cjs`,
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  target: 'node22',
+  external: ['electron'],
+  logLevel: 'warning',
+})
 const pkg = JSON.parse(readFileSync(`${root}package.json`, 'utf8'))
 writeFileSync(
   `${app}package.json`,

@@ -69,3 +69,17 @@ test('nothing outside the built site can be read through the app’s address', a
   expect(status).toBe(404)
   await app.close()
 })
+
+test('the Help menu checks for updates, and has the choice to check automatically', async () => {
+  const app = await launch()
+  const items = await app.evaluate(({ Menu }) =>
+    (Menu.getApplicationMenu()?.items.find((i) => i.role === 'help')?.submenu?.items ?? []).map((i) => ({
+      label: i.label,
+      checked: i.checked,
+    })),
+  )
+  expect(items).toContainEqual(expect.objectContaining({ label: 'Check for updates…' }))
+  // Off until the person using the app agrees: nothing is sent unless they ask.
+  expect(items).toContainEqual({ label: 'Check for updates automatically', checked: false })
+  await app.close()
+})
