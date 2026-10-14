@@ -18,7 +18,7 @@ terraform {
   }
 }
 
-# Credentials from the environment: AWS_PROFILE=weave-patterner here.
+# Credentials from the environment: AWS_PROFILE=steves165 here.
 provider "aws" {
   region = var.region
 

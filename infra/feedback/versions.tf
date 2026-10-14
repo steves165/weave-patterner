@@ -23,7 +23,7 @@ terraform {
   }
 }
 
-# Credentials from the environment: AWS_PROFILE=weave-patterner here, the CI role in .github/workflows/infra.yml.
+# Credentials from the environment: AWS_PROFILE=steves165 here, the CI role in .github/workflows/infra.yml.
 provider "aws" {
   region = var.region
 

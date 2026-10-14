@@ -10,7 +10,7 @@ messages from the apps into GitHub issues. It's built so it can never cost money
 - [`feedback/`](feedback/): the feedback function (a Lambda function URL), its kill switch, alarm and alert email.
   Deployed by the Infrastructure workflow when it changes on main.
 
-Everything runs with `AWS_PROFILE=weave-patterner` (account 557467970586, eu-west-2).
+Everything runs with `AWS_PROFILE=steves165` (account 557467970586, eu-west-2).
 
 ## The GitHub token
 
@@ -18,7 +18,7 @@ The function opens issues with a fine-grained GitHub token (this repository only
 kept in SSM Parameter Store and never in Terraform. To set or replace it, paste the token at the prompt:
 
 ```
-read -rs T && aws ssm put-parameter --profile weave-patterner --region eu-west-2 --overwrite \
+read -rs T && aws ssm put-parameter --profile steves165 --region eu-west-2 --overwrite \
   --name /weave-patterner/feedback/github-token --type SecureString --value "$T" && unset T
 ```
 
@@ -39,7 +39,7 @@ and changes nothing) or **apply**. A push to main that changes `infra/feedback/`
 
 ```
 cd infra/feedback
-export AWS_PROFILE=weave-patterner TF_VAR_alert_email=you@example.com   # or a git-ignored terraform.tfvars
+export AWS_PROFILE=steves165 TF_VAR_alert_email=you@example.com   # or a git-ignored terraform.tfvars
 terraform init
 terraform plan
 ```
