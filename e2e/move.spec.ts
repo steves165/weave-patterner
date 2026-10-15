@@ -77,6 +77,7 @@ test('a first visit at the new address gets no notice about the move', async ({ 
 })
 
 test('the offer is only made at the new address', async ({ page }) => {
+  test.skip(Boolean(process.env.E2E_BASE_URL), 'the live site is the new address')
   await openApp(page)
   await toolbarButton(page, 'Load').click()
   await expect(page.getByRole('dialog')).toBeVisible()
