@@ -10,6 +10,7 @@ import {
   parseSequence,
   pasteClip,
   point,
+  rosepath,
   straight,
   trompAsWrit,
 } from './tools'
@@ -17,6 +18,12 @@ import { defaultDraft, resizeDraft } from './weave'
 
 const shafts = (d: { threading: number[] }) => d.threading.map((s) => s + 1).join('')
 const treadles = (d: { treadling: boolean[][] }) => d.treadling.map((r) => r.indexOf(true) + 1).join('')
+
+describe('rosepath', () => {
+  it('goes up, then back down from the top', () => {
+    expect(rosepath(4)).toEqual([1, 2, 3, 4, 1, 4, 3, 2])
+  })
+})
 
 describe('parseSequence', () => {
   it('reads numbers, commas and up/down ranges', () => {

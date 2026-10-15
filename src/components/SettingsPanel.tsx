@@ -15,7 +15,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useId, useState } from 'react'
 import type { ColorRun } from '../colors'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { patternColours } from '../seasons'
@@ -127,13 +127,13 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
 ]
 
 /** A choice between two ways the loom works, with a line saying what the chosen one means. */
-function LoomChoice<T extends string>(props: {
+export function LoomChoice<T extends string>(props: {
   label: string
   value: T
   options: [T, string, string][]
   onChange: (value: T) => void
 }) {
-  const id = `loom-choice-${props.label.toLowerCase().replace(/\W+/g, '-')}`
+  const id = useId()
   return (
     <Stack sx={{ gap: 0.75 }}>
       <Typography id={id} variant="body2" sx={{ fontWeight: 500 }}>

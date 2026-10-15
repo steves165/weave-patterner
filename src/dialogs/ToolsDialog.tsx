@@ -27,6 +27,7 @@ import {
   pasteClip,
   point,
   type RangeOp,
+  rosepath,
   straight,
   type Target,
 } from '../tools'
@@ -45,7 +46,7 @@ interface Props {
   selected?: { target: Target; from: number; to: number } | null
 }
 
-type Generator = 'straight' | 'point' | 'advancing' | 'network' | 'parallel' | 'custom'
+type Generator = 'straight' | 'point' | 'rosepath' | 'advancing' | 'network' | 'parallel' | 'custom'
 
 const NUMBER_FIELD = { size: 'small' as const, type: 'number', sx: { width: 96 } }
 
@@ -93,6 +94,8 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy, selec
         return straight(n)
       case 'point':
         return point(n)
+      case 'rosepath':
+        return rosepath(n)
       case 'advancing':
         return advancing(n, Number(run), Number(advance))
       case 'network':
@@ -172,6 +175,7 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy, selec
             >
               <MenuItem value="straight">Straight draw</MenuItem>
               <MenuItem value="point">Point draw</MenuItem>
+              <MenuItem value="rosepath">Rosepath</MenuItem>
               <MenuItem value="advancing">Advancing twill</MenuItem>
               <MenuItem value="network">Network (pattern line)</MenuItem>
               <MenuItem value="parallel">Parallel threading</MenuItem>

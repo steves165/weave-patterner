@@ -17,6 +17,7 @@ import { StatusBar } from './components/StatusBar'
 import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
+import { NewDialog } from './dialogs/NewDialog'
 import { PrintDialog, type PrintOptions, printOptions } from './dialogs/PrintDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { drawSquare, pruneAdded } from './drawCloth'
@@ -111,6 +112,7 @@ type DialogName =
   | 'blocks'
   | 'share'
   | 'print'
+  | 'new'
 
 /**
  * A key for the draft's grids that changes when the draft grows a lot at once (a tartan preset, a big pattern opened):
@@ -468,7 +470,7 @@ export default function App() {
       }
       canReset={draft !== baseline}
       onReset={() => update(() => baseline)}
-      onNew={() => open(emptyDraft(patternColours() ?? undefined), null, 'New pattern: empty grids, ready to design')}
+      onNew={() => setDialog('new')}
     />
   )
 
@@ -514,6 +516,7 @@ export default function App() {
           canRedo={canRedo}
           onUndo={undo}
           onRedo={redo}
+          onNew={() => setDialog('new')}
           onSave={() => setDialog('save')}
           onLoad={() => setDialog('load')}
           onExport={(format) => {
@@ -761,6 +764,37 @@ export default function App() {
             setName(n)
             setDialog(null)
             setToast(`Saved "${n}"`)
+          }}
+        />
+        <NewDialog
+          open={dialog === 'new'}
+          liftplan={view.noTieup}
+          shafts={draft.shafts}
+          treadles={draft.treadles}
+          onClose={() => setDialog(null)}
+          onCreate={({ liftplan, twill, ...size }) => {
+            const colours = patternColours() ?? undefined
+            const sized = resizeDraft(twill ? starterDraft(colours) : emptyDraft(colours), size)
+            // Resizing makes twill grids for the new shafts; an empty start clears them.
+            const d = twill
+              ? sized
+              : {
+                  ...sized,
+                  threading: sized.threading.map(() => -1),
+                  tieup: sized.tieup.map((r) => r.map(() => false)),
+                  treadling: sized.treadling.map((r) => r.map(() => false)),
+                }
+            // Not open(), which keeps to the loom type chosen before: this pattern brings its own.
+            const next = liftplan ? toLiftplan(d) : d
+            drawing(next, () => {
+              setView({ noTieup: liftplan })
+              reset(next)
+              setName(null)
+              setDialog(null)
+              setToast(
+                `New pattern: ${size.shafts} shafts, ${liftplan ? 'lift plan' : `${size.treadles} treadles`}, ${size.ends} × ${size.picks}`,
+              )
+            })
           }}
         />
         <LoadDialog

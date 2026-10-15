@@ -97,3 +97,26 @@ test('a custom sequence can turn and repeat', async ({ page }) => {
   await dialog.getByLabel(/Shafts \(0 = empty\)/).fill('2(1-3-2) 4')
   await expect(page.getByTestId('sequence-preview')).toHaveText('1 2 3 2 1 2 3 2 4')
 })
+
+test('New asks which loom: a lift plan on 8 shafts, starting from a twill', async ({ page }) => {
+  await page.getByRole('banner').getByRole('button', { name: 'New' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New pattern' })
+  await dialog.getByRole('group', { name: 'Loom type' }).getByRole('button', { name: 'Lift plan' }).click()
+  await expect(dialog.getByLabel('Treadles', { exact: true })).toHaveCount(0)
+  await dialog.getByLabel('Shafts', { exact: true }).fill('8')
+  await dialog.getByRole('group', { name: 'Start with' }).getByRole('button', { name: 'A twill' }).click()
+  await dialog.getByRole('button', { name: 'Create' }).click()
+  await expect(page.getByText('8 shafts · lift plan · 32 × 32')).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Lift plan' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  expect(await threading(page)).toBe('12345678'.repeat(4))
+})
+
+test('Variations offers plain weave and satin tie-ups', async ({ page }) => {
+  await page.getByRole('complementary', { name: 'Pattern settings' }).getByLabel('Shafts', { exact: true }).fill('5')
+  await page.keyboard.press('Enter')
+  await openTool(page, /Variations/)
+  const tieups = page.getByRole('region', { name: 'Other tie-ups' })
+  await expect(tieups).toContainText('Plain weave tie-up')
+  await expect(tieups).toContainText('5-end satin tie-up (move 2)')
+})

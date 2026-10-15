@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { cell, ends, openApp, setField, threading, toolbarButton } from './helpers'
+import { cell, ends, newPattern, openApp, setField, threading, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -53,7 +53,7 @@ test('restores the name of a saved pattern, and New starts afresh', async ({ pag
   await expect(page.locator('.MuiAppBar-root')).toContainText('Pattern 1')
   expect((await threading(page)).slice(0, 2)).toBe('14')
 
-  await page.getByRole('button', { name: 'New' }).click()
+  await newPattern(page)
   await reload(page)
   await expect(page.locator('.MuiAppBar-root')).not.toContainText('Pattern 1')
   expect((await threading(page)).slice(0, 4)).toBe('0000')

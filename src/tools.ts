@@ -61,6 +61,9 @@ export const straight = (n: number) => Array.from({ length: n }, (_, i) => i + 1
 /** 1 2 … n … 2 (one repeat of a point draw; the next repeat starts on 1 again). */
 export const point = (n: number) => [...straight(n), ...straight(n).reverse().slice(1, -1)]
 
+/** Rosepath: up a straight draw, then back down from the top, 1 2 3 4 1 4 3 2 on four shafts. */
+export const rosepath = (n: number) => [...straight(n), 1, ...straight(n).reverse().slice(0, -1)]
+
 /** Runs of `run` consecutive numbers, each starting `step` further on, until the start comes back to 1. */
 export function advancing(n: number, run: number, step: number): number[] {
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))

@@ -23,6 +23,7 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import LayersIcon from '@mui/icons-material/Layers'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
@@ -81,6 +82,7 @@ interface Props {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  onNew: () => void
   onSave: () => void
   onLoad: () => void
   onExport: (format: ExportFormat) => void
@@ -393,6 +395,12 @@ export function AppToolbar(p: Props) {
       </ListItemIcon>
       <ListItemText primary="Share…" secondary="A link, or a picture for Instagram and Pinterest" />
     </MenuItem>,
+    <MenuItem key="new" onClick={then(p.onNew)}>
+      <ListItemIcon>
+        <NoteAddIcon fontSize="small" />
+      </ListItemIcon>
+      New
+    </MenuItem>,
     <MenuItem key="save" onClick={then(p.onSave)}>
       <ListItemIcon>
         <SaveIcon fontSize="small" />
@@ -507,6 +515,7 @@ export function AppToolbar(p: Props) {
               data-help="files"
               sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px', flex: 'none' }}
             >
+              <Action compact={fileCompact} icon={<NoteAddIcon />} label="New" onClick={p.onNew} />
               <Action compact={fileCompact} icon={<SaveIcon />} label="Save" onClick={p.onSave} />
               <Action compact={fileCompact} icon={<FolderOpenIcon />} label="Load" onClick={p.onLoad} />
               <Action compact={fileCompact} icon={<FileUploadIcon />} label="Import" onClick={p.onImport} />

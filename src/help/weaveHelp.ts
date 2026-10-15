@@ -263,7 +263,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Fill with repeat**: draw one repeat of the threading and treadling, then fill the empty ends and picks after it with copies.',
           '**Clear grids**: empty the threading, tie-up and treadling.',
           '**Reset**: undo everything since the pattern was opened or saved.',
-          '**New**: start again with empty grids.',
+          '**New** (also in the file bar): a new pattern, choosing the loom type, shafts, treadles and size, and whether to start with empty grids or a twill.',
         ],
       },
     ],
