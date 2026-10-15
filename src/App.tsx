@@ -25,7 +25,7 @@ import { markTourSeen, Tour, TourOffer, tourSeen } from './help/Tour'
 import { WEAVE_TOUR } from './help/tours'
 import { useHelpKeys } from './help/useHelpKeys'
 import { WEAVE_HELP } from './help/weaveHelp'
-import { findRepeat } from './repeat'
+import { fillWithRepeat, findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
@@ -226,6 +226,7 @@ export default function App() {
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
   const repeat = useMemo(() => findRepeat(draft, drawdown), [draft, drawdown])
+  const filledRepeat = useMemo(() => fillWithRepeat(draft), [draft])
   const selvedge = useMemo(
     () => selvedgeMisses(draft, view.shuttleStart, drawdown),
     [draft, view.shuttleStart, drawdown],
@@ -331,6 +332,16 @@ export default function App() {
       }}
       repeat={repeat}
       onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
+      onFillWithRepeat={
+        filledRepeat &&
+        (() => {
+          const { draft: next, ends, picks } = filledRepeat
+          update(() => keepLiftplan(next))
+          setToast(
+            `Filled ${[ends && `${ends} ends`, picks && `${picks} picks`].filter(Boolean).join(' and ')} with the repeat. Undo with Ctrl+Z.`,
+          )
+        })
+      }
       highlightFloats={highlightFloats}
       onHighlightFloats={(on) => setView({ highlightFloats: on })}
       longestFloat={Math.max(floats.warp, floats.weft)}

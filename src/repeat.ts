@@ -25,3 +25,32 @@ export function findRepeat(d: Draft, dd = computeDrawdown(d)): { ends: number; p
   )
   return { ends, picks }
 }
+
+/**
+ * Fills the empty ends and picks after the threading and treadling drawn so far with copies of it, as WeavePoint's
+ * Repeat › Fill Pattern does: draw one repeat, then fill the draft with it. Only the empty ends (picks) after the last
+ * threaded end (treadled pick) are filled; colours stay as they are. Null when there's nothing to fill.
+ */
+export function fillWithRepeat(d: Draft): { draft: Draft; ends: number; picks: number } | null {
+  const filled = <T>(items: T[], used: (x: T) => boolean) => {
+    let n = items.length
+    while (n > 0 && !used(items[n - 1])) n--
+    return n
+  }
+  const lastEnd = filled(d.threading, (s) => s >= 0)
+  const lastPick = filled(d.treadling, (row) => row.some(Boolean))
+  const ends = lastEnd > 0 && lastEnd < d.ends ? d.ends - lastEnd : 0
+  const picks = lastPick > 0 && lastPick < d.picks ? d.picks - lastPick : 0
+  if (!ends && !picks) return null
+  return {
+    draft: {
+      ...d,
+      threading: ends ? d.threading.map((s, e) => (e < lastEnd ? s : d.threading[e % lastEnd])) : d.threading,
+      treadling: picks
+        ? d.treadling.map((row, p) => (p < lastPick ? row : [...d.treadling[p % lastPick]]))
+        : d.treadling,
+    },
+    ends,
+    picks,
+  }
+}

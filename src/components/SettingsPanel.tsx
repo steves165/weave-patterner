@@ -84,6 +84,8 @@ interface Props {
   /** The smallest repeat of the cloth. */
   repeat: { ends: number; picks: number }
   onTrimToRepeat: () => void
+  /** Fills the empty ends and picks with the threading and treadling drawn so far; null when there are none. */
+  onFillWithRepeat: (() => void) | null
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   /** The longest float in the draft, warp or weft, in threads. */
@@ -375,6 +377,22 @@ export function SettingsPanel(p: Props) {
                 onClick={p.onTrimToRepeat}
               >
                 Trim to one repeat
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip
+            title="Draw one repeat of the threading and treadling, then fill the empty ends and picks with it"
+            describeChild
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                disabled={!p.onFillWithRepeat}
+                onClick={p.onFillWithRepeat ?? undefined}
+              >
+                Fill with repeat
               </Button>
             </span>
           </Tooltip>
