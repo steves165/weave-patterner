@@ -23,6 +23,7 @@ import Inventory2Icon from '@mui/icons-material/Inventory2'
 import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import LayersIcon from '@mui/icons-material/Layers'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import PrintIcon from '@mui/icons-material/Print'
@@ -54,9 +55,7 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
-import { KnitMark } from '../knit/KnitLogo'
 import { useMidWidth, useNarrow } from '../layout'
-import { SewMark } from '../sew/SewLogo'
 import { Action, MenuHeading, NavTab, PhoneNav, Rule, TitledMenu } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -81,6 +80,7 @@ interface Props {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  onNew: () => void
   onSave: () => void
   onLoad: () => void
   onExport: (format: ExportFormat) => void
@@ -209,7 +209,6 @@ export function AppToolbar(p: Props) {
     secondary: string
     onClick: () => void
     icon: ReactNode
-    href?: string
   }[] = [
     {
       group: 'Edit',
@@ -224,6 +223,13 @@ export function AppToolbar(p: Props) {
       secondary: 'Treadle as drawn in: copy the threading to the treadling',
       onClick: p.onTrompAsWrit,
       icon: <ContentCopyIcon fontSize="small" />,
+    },
+    {
+      group: 'Edit',
+      primary: 'Transform draft…',
+      secondary: 'Turn 90°, swap face and back, flip, move the repeat',
+      onClick: p.onTransform,
+      icon: <Rotate90DegreesCwIcon fontSize="small" />,
     },
     {
       group: 'Design',
@@ -282,14 +288,7 @@ export function AppToolbar(p: Props) {
       icon: <InvertColorsIcon fontSize="small" />,
     },
     {
-      group: 'Change the whole draft',
-      primary: 'Transform draft…',
-      secondary: 'Turn 90°, swap face and back, flip, move the repeat',
-      onClick: p.onTransform,
-      icon: <Rotate90DegreesCwIcon fontSize="small" />,
-    },
-    {
-      group: 'Change the whole draft',
+      group: 'Check the cloth',
       primary: 'Cloth report…',
       secondary: 'Warp and weft faces, interlacing, floats, firmness',
       onClick: p.onReport,
@@ -337,22 +336,6 @@ export function AppToolbar(p: Props) {
       onClick: p.onTablet,
       icon: <StyleIcon fontSize="small" />,
     },
-    {
-      group: 'Other crafts',
-      primary: 'Knit Patterner',
-      secondary: 'Knitting charts, written patterns and colourwork',
-      onClick: close,
-      href: './knit/',
-      icon: <KnitMark size={20} />,
-    },
-    {
-      group: 'Other crafts',
-      primary: 'Sew Patterner',
-      secondary: 'Made-to-measure sewing patterns, printed at home',
-      onClick: close,
-      href: './sew/',
-      icon: <SewMark size={20} />,
-    },
   ]
   const words = toolQuery.toLowerCase().split(/\s+/).filter(Boolean)
   const found = tools.filter((t) =>
@@ -366,24 +349,17 @@ export function AppToolbar(p: Props) {
           </MenuHeading>,
         ]
       : []),
-    t.href ? (
-      <MenuItem key={t.primary} component="a" href={t.href} onClick={t.onClick}>
-        <ListItemIcon>{t.icon}</ListItemIcon>
-        <ListItemText primary={t.primary} secondary={t.secondary} />
-      </MenuItem>
-    ) : (
-      <MenuItem
-        key={t.primary}
-        onClick={() => {
-          close()
-          setToolQuery('')
-          t.onClick()
-        }}
-      >
-        <ListItemIcon>{t.icon}</ListItemIcon>
-        <ListItemText primary={t.primary} secondary={t.secondary} />
-      </MenuItem>
-    ),
+    <MenuItem
+      key={t.primary}
+      onClick={() => {
+        close()
+        setToolQuery('')
+        t.onClick()
+      }}
+    >
+      <ListItemIcon>{t.icon}</ListItemIcon>
+      <ListItemText primary={t.primary} secondary={t.secondary} />
+    </MenuItem>,
   ])
 
   const fileItems = [
@@ -392,6 +368,12 @@ export function AppToolbar(p: Props) {
         <IosShareIcon fontSize="small" />
       </ListItemIcon>
       <ListItemText primary="Share…" secondary="A link, or a picture for Instagram and Pinterest" />
+    </MenuItem>,
+    <MenuItem key="new" onClick={then(p.onNew)}>
+      <ListItemIcon>
+        <NoteAddIcon fontSize="small" />
+      </ListItemIcon>
+      New
     </MenuItem>,
     <MenuItem key="save" onClick={then(p.onSave)}>
       <ListItemIcon>
@@ -507,6 +489,7 @@ export function AppToolbar(p: Props) {
               data-help="files"
               sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px', flex: 'none' }}
             >
+              <Action compact={fileCompact} icon={<NoteAddIcon />} label="New" onClick={p.onNew} />
               <Action compact={fileCompact} icon={<SaveIcon />} label="Save" onClick={p.onSave} />
               <Action compact={fileCompact} icon={<FolderOpenIcon />} label="Load" onClick={p.onLoad} />
               <Action compact={fileCompact} icon={<FileUploadIcon />} label="Import" onClick={p.onImport} />

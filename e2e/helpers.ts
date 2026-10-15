@@ -112,6 +112,13 @@ export async function openTool(page: Page, item: RegExp) {
 
 export const toast = (page: Page) => page.locator('.MuiSnackbarContent-message')
 
+/** File › New, keeping the dialog's choices: the same loom, 32 × 32, empty grids. */
+export async function newPattern(page: Page) {
+  await toolbarButton(page, 'New').click()
+  await page.getByRole('dialog', { name: 'New pattern' }).getByRole('button', { name: 'Create' }).click()
+  await expect(page.getByRole('dialog', { name: 'New pattern' })).toBeHidden()
+}
+
 /** One of the Loom settings' choices: "Treadles" or "Lift plan" (Loom type), "Rising" or "Sinking" (Shed). */
 export const loomChoice = (page: Page, setting: 'Loom type' | 'Shed', name: string) =>
   page

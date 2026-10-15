@@ -58,6 +58,9 @@ export const WEAVE_HELP: Topic[] = [
         p: 'More threading tools (repeat, mirror, reverse, insert or delete ends, and named sequences such as advancing twills) are in **Tools › Sequence tools**.',
       },
       {
+        tip: 'In Sequence tools, a custom sequence can turn and repeat: **1-4-2** is 1 2 3 4 3 2, and **3(1-4)** is 1 2 3 4 three times.',
+      },
+      {
         tip: 'Turn on **End 1 on the right** in the view settings if your loom is threaded from the right. It changes only how the draft is drawn.',
       },
     ],
@@ -122,8 +125,8 @@ export const WEAVE_HELP: Topic[] = [
   {
     id: 'drawing',
     title: 'Drawing tools',
-    summary: 'Click, Straight draw, Point draw and Draw cloth',
-    keywords: ['straight', 'point', 'draw', 'drag', 'paint'],
+    summary: 'Click, Straight draw, Point draw, Draw cloth and Select',
+    keywords: ['straight', 'point', 'draw', 'drag', 'paint', 'select', 'copy', 'paste', 'selection'],
     body: [
       { p: 'The drawing tools above the draft change how clicking and dragging works:' },
       {
@@ -132,6 +135,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Straight draw**: press a box and drag along to fill 1 2 3 4 1 2 3 4… Drag up the shafts to climb, down to descend.',
           '**Point draw**: as straight draw, but turning back at the top and bottom: 1 2 3 4 3 2 1…',
           '**Draw cloth**: click or drag on the drawdown to swap squares between warp and weft (see [[drawdown|The drawdown]]).',
+          '**Select**: drag along the threading (or treadling) to select ends (or picks); Shift+click extends the selection. A bar above the draft then repeats, mirrors, reverses, copies, pastes, inserts or deletes them, and **More…** opens Sequence tools on them.',
         ],
       },
       {
@@ -256,9 +260,10 @@ export const WEAVE_HELP: Topic[] = [
       {
         list: [
           '**Trim to one repeat**: cut the draft down to the smallest repeat.',
+          '**Fill with repeat**: draw one repeat of the threading and treadling, then fill the empty ends and picks after it with copies.',
           '**Clear grids**: empty the threading, tie-up and treadling.',
           '**Reset**: undo everything since the pattern was opened or saved.',
-          '**New**: start again with empty grids.',
+          '**New** (also in the file bar): a new pattern, choosing the loom type, shafts, treadles and size, and whether to start with empty grids or a twill.',
         ],
       },
     ],
@@ -335,11 +340,14 @@ export const WEAVE_HELP: Topic[] = [
     summary: 'Every tool in the Tools menu, and what it does',
     keywords: ['tools', 'menu', 'profile', 'double cloth', 'picture', 'echo', 'variations', 'transform', 'calculator'],
     body: [
-      { p: 'Open **Tools** in the toolbar. Type in the box at the top of the menu to find a tool by name.' },
+      {
+        p: 'Open **Tools** in the toolbar. Type in the box at the top of the menu to find a tool by name. Everyday edits are on the draft itself: the drawing tools and **Select** above it (see [[drawing|Drawing tools]]), and the loom type in the Loom settings.',
+      },
       {
         terms: [
           ['Sequence tools', 'Fill, repeat, mirror, reverse, insert or delete ends and picks; copy and paste them.'],
           ['Tromp as writ', 'Treadle as threaded.'],
+          ['Transform draft', 'Turn 90°, swap face and back, flip, or move the repeat.'],
           ['Colours and presets', 'Stripe sequences and classic colour patterns.'],
           [
             'Draw on paper',
@@ -349,10 +357,8 @@ export const WEAVE_HELP: Topic[] = [
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],
           ['Echo weave', 'A design line threaded with its echo, in two colours.'],
-          ['Variations', 'The same threading with other tie-ups and treadlings.'],
+          ['Variations', 'The same threading with other tie-ups (plain weave, twills, satins) and treadlings.'],
           ['Colourways', 'The same cloth in other colours.'],
-          ['Transform draft', 'Turn 90°, swap face and back, flip, or move the repeat.'],
-          ['Convert', 'Between a lift plan and a tie-up with treadling.'],
           ['Cloth report', 'Warp and weft faces, interlacing, floats and firmness.'],
           ['Warp winding plan', 'Colour order for the warping board, in bouts.'],
           ['Warp calculator', 'Warp length, width in the reed and yarn per colour.'],
@@ -466,7 +472,13 @@ export const WEAVE_HELP: Topic[] = [
           ['Tab', 'Move between the threading, tie-up, treadling and controls.'],
           ['← → ↑ ↓', 'Move around a grid.'],
           ['Space or Enter', 'Set or clear the box you are on.'],
-          ['Escape', 'Stop tracing a drawdown square; close a dialog.'],
+          ['Escape', 'Stop tracing a drawdown square; clear the selection; close a dialog.'],
+          [
+            'Ctrl + C, Ctrl + X, Ctrl + V',
+            'Copy, cut or paste the selected ends or picks (paste goes at the selection, or the end or pick under the mouse).',
+          ],
+          ['Insert', 'Insert empty ends or picks before the selection, or one before the end or pick under the mouse.'],
+          ['Delete', 'Delete the selected ends or picks, or the end or pick under the mouse.'],
         ],
       },
       { p: 'In weaving mode, Space and the arrow keys move between picks.' },

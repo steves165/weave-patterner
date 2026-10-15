@@ -18,12 +18,14 @@ import type { ViewOptions } from '../hooks/useViewOptions'
 import { clothView, layerMap } from '../layers'
 import { useCompact, usePhone, useTouch } from '../layout'
 import { isDirectTieup } from '../liftplan'
+import { type SelectionAction, selectionRange, type Target, type ThreadSelection } from '../tools'
 import { layerNote, traceCell } from '../trace'
 import type { Draft } from '../weave'
 import { BlockStrip } from './BlockStrip'
 import { Crosshair } from './Crosshair'
 import { ColorStrip, Grid } from './Grid'
 import { Ruler } from './Ruler'
+import { SelectionBar } from './SelectionBar'
 
 interface Props {
   draft: Draft
@@ -48,6 +50,16 @@ interface Props {
   onBlocks: (i?: number) => void
   /** Show the strip for marking blocks of ends even before there are any (once the Blocks dialog has been opened). */
   blockStrip: boolean
+  /** The Select tool: dragging on the threading or treadling selects ends or picks instead of drawing. */
+  selectMode: boolean
+  onSelectMode: (on: boolean) => void
+  selection: ThreadSelection | null
+  onSelection: (selection: ThreadSelection | null) => void
+  onSelectionAction: (action: SelectionAction) => void
+  /** Something has been copied to paste. */
+  canPaste: boolean
+  /** The end (threading) or pick (treadling) under the mouse, or null when it leaves that grid. */
+  onHoverThread: (target: Target, index: number | null) => void
 }
 
 /**
@@ -72,6 +84,12 @@ export function DraftView(p: Props) {
   const liftplan = isDirectTieup(draft)
   // A loom without a tie-up lifts shafts directly: the lift plan needs no tie-up beside it.
   const hideTieup = view.noTieup && liftplan
+  const range = p.selection ? selectionRange(p.selection) : null
+  const inSelection = (target: Target, i: number) =>
+    range !== null && range.target === target && i + 1 >= range.from && i + 1 <= range.to
+  /** Pressing (or, extending, dragging over) end or pick i with the Select tool. */
+  const select = (target: Target, i: number, extend: boolean) =>
+    p.onSelection(extend && p.selection?.target === target ? { ...p.selection, at: i } : { target, anchor: i, at: i })
   const ruler = view.ruler > 0
   // Phones, tablets and touch screens pan the pattern in its own box; desktops and laptops grow it to full size and
   // scroll the page instead.
@@ -235,6 +253,9 @@ export function DraftView(p: Props) {
         cellColor={view.colorBoxes ? (_, c) => draft.warpColors[endAt(c)] : undefined}
         traced={(r, c) => tracedThreading(shaftAt(r), endAt(c))}
         touchPaint={p.touchPaint}
+        selected={range?.target === 'threading' ? (_, c) => inSelection('threading', endAt(c)) : undefined}
+        onSelect={p.selectMode ? (_, c, extend) => select('threading', endAt(c), extend) : undefined}
+        onHover={(cell) => p.onHoverThread('threading', cell ? endAt(cell[1]) : null)}
       />
       {hideTieup ? (
         <div />
@@ -344,6 +365,9 @@ export function DraftView(p: Props) {
         cellColor={view.colorBoxes ? (pick) => draft.weftColors[pick] : undefined}
         traced={tracedTreadling}
         touchPaint={p.touchPaint}
+        selected={range?.target === 'treadling' ? (pick) => inSelection('treadling', pick) : undefined}
+        onSelect={p.selectMode ? (pick, _, extend) => select('treadling', pick, extend) : undefined}
+        onHover={(cell) => p.onHoverThread('treadling', cell ? cell[0] : null)}
       />
       <ColorStrip
         vertical
@@ -430,10 +454,14 @@ export function DraftView(p: Props) {
         <ToggleButtonGroup
           exclusive
           size="small"
-          value={drawing ? 'cloth' : view.drawTool}
-          onChange={(_, tool) =>
-            tool && p.onView(tool === 'cloth' ? { drawCloth: true } : { drawTool: tool, drawCloth: false })
-          }
+          value={drawing ? 'cloth' : p.selectMode ? 'select' : view.drawTool}
+          onChange={(_, tool) => {
+            if (!tool) return
+            p.onSelectMode(tool === 'select')
+            if (tool === 'cloth') p.onView({ drawCloth: true })
+            else if (tool === 'select') p.onView({ drawCloth: false })
+            else p.onView({ drawTool: tool, drawCloth: false })
+          }}
           aria-label="Drawing tool"
           data-help="drawing"
         >
@@ -448,6 +476,12 @@ export function DraftView(p: Props) {
           </Tooltip>
           <Tooltip title="Click or drag on the drawdown to swap squares between warp and weft" describeChild>
             <ToggleButton value="cloth">Draw cloth</ToggleButton>
+          </Tooltip>
+          <Tooltip
+            title="Drag along the threading or treadling to select ends or picks, then repeat, copy, paste or delete them"
+            describeChild
+          >
+            <ToggleButton value="select">Select</ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
         <Button
@@ -464,7 +498,18 @@ export function DraftView(p: Props) {
             Turned over: left and right are swapped, so end 1 is on the {mirrored ? 'right' : 'left'}.
           </Typography>
         )}
-        {drawing ? (
+        {p.selection ? (
+          <SelectionBar
+            selection={p.selection}
+            canPaste={p.canPaste}
+            onAction={p.onSelectionAction}
+            onClose={() => p.onSelection(null)}
+          />
+        ) : p.selectMode ? (
+          <Typography variant="body2" color="text.secondary" data-testid="select-hint">
+            Drag along the threading or treadling to select ends or picks · Shift+click extends
+          </Typography>
+        ) : drawing ? (
           <>
             <Box sx={{ flex: '1 1 0px' }} />
             <Stack

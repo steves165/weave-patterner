@@ -17,6 +17,7 @@ import { StatusBar } from './components/StatusBar'
 import { loadCurrent } from './current'
 import { ImportDialog } from './dialogs/ImportDialog'
 import { LoadDialog } from './dialogs/LoadDialog'
+import { NewDialog } from './dialogs/NewDialog'
 import { PrintDialog, type PrintOptions, printOptions } from './dialogs/PrintDialog'
 import { SaveDialog } from './dialogs/SaveDialog'
 import { drawSquare, pruneAdded } from './drawCloth'
@@ -25,7 +26,7 @@ import { markTourSeen, Tour, TourOffer, tourSeen } from './help/Tour'
 import { WEAVE_TOUR } from './help/tours'
 import { useHelpKeys } from './help/useHelpKeys'
 import { WEAVE_HELP } from './help/weaveHelp'
-import { findRepeat } from './repeat'
+import { fillWithRepeat, findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
 const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
@@ -71,7 +72,18 @@ import { patternColours } from './seasons'
 import { selvedgeMisses } from './selvedge'
 import { patternUrl } from './share'
 import { clothPainter } from './shareImage'
-import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
+import {
+  applyRangeOp,
+  type Clip,
+  copyRange,
+  drawAlong,
+  pasteClip,
+  type SelectionAction,
+  selectionRange,
+  type Target,
+  type ThreadSelection,
+  trompAsWrit,
+} from './tools'
 import { computeDrawdown, type Draft, emptyDraft, resizeDraft, starterDraft } from './weave'
 
 type DialogName =
@@ -100,6 +112,7 @@ type DialogName =
   | 'blocks'
   | 'share'
   | 'print'
+  | 'new'
 
 /**
  * A key for the draft's grids that changes when the draft grows a lot at once (a tartan preset, a big pattern opened):
@@ -156,8 +169,14 @@ export default function App() {
   const [view, setView] = useViewOptions()
   const { cellSize, highlightFloats, floatLimit } = view
   const [yarns, setYarns] = useYarns()
-  // Ends or picks copied in the sequence tools, kept until replaced.
+  // Ends or picks copied in the sequence tools or from a selection, kept until replaced.
   const [clip, setClip] = useState<Clip | null>(null)
+  // The Select tool, and the ends or picks selected with it; Sequence tools can open on the selection.
+  const [selectMode, setSelectMode] = useState(false)
+  const [selection, setSelection] = useState<ThreadSelection | null>(null)
+  const [toolsRange, setToolsRange] = useState<ReturnType<typeof selectionRange> | null>(null)
+  // The end or pick under the mouse, for the Insert and Delete keys.
+  const hovered = useRef<{ target: Target; index: number } | null>(null)
   // Blocks saved to use again, kept on this device; and the block the Blocks dialog opens at.
   const [blockStore, setBlockStoreState] = useState<SavedBlock[]>(loadSavedBlocks)
   const setBlockStore = (next: SavedBlock[]) => {
@@ -226,6 +245,7 @@ export default function App() {
   const floats = useMemo(() => longestFloats(draft, drawdown), [draft, drawdown])
   const unwoven = useMemo(() => unwovenThreads(draft, drawdown), [draft, drawdown])
   const repeat = useMemo(() => findRepeat(draft, drawdown), [draft, drawdown])
+  const filledRepeat = useMemo(() => fillWithRepeat(draft), [draft])
   const selvedge = useMemo(
     () => selvedgeMisses(draft, view.shuttleStart, drawdown),
     [draft, view.shuttleStart, drawdown],
@@ -288,6 +308,98 @@ export default function App() {
       setToast(`${message}. Undo with Ctrl+Z or the undo button.`)
     })
 
+  // A selection past the end of the draft (after it shrank) is dropped.
+  const selectionLength = selection ? (selection.target === 'threading' ? draft.ends : draft.picks) : 0
+  if (selection && Math.max(selection.anchor, selection.at) >= selectionLength) setSelection(null)
+
+  /** Does something with the selected ends or picks, as one undo step. */
+  const selectionAction = (action: SelectionAction, sel: ThreadSelection | null = selection) => {
+    if (!sel) return
+    const { target, from, to } = selectionRange(sel)
+    const unit = target === 'threading' ? 'end' : 'pick'
+    const label = from === to ? `${unit} ${from}` : `${unit}s ${from}–${to}`
+    const change = (next: Draft, message: string, after: ThreadSelection | null = sel) => {
+      update(() => keepLiftplan(next))
+      setSelection(after)
+      setToast(`${message}. Undo with Ctrl+Z.`)
+    }
+    try {
+      switch (action) {
+        case 'repeat':
+          return change(applyRangeOp(draft, target, from, to, { kind: 'repeat', times: 1 }), `Repeated ${label}`)
+        case 'mirror':
+          return change(applyRangeOp(draft, target, from, to, { kind: 'mirror' }), `Mirrored ${label}`)
+        case 'reverse':
+          return change(applyRangeOp(draft, target, from, to, { kind: 'reverse' }), `Reversed ${label}`)
+        case 'copy':
+          setClip(copyRange(draft, target, from, to))
+          return setToast(`Copied ${label}`)
+        case 'cut':
+          setClip(copyRange(draft, target, from, to))
+          return change(applyRangeOp(draft, target, from, to, { kind: 'delete' }), `Cut ${label}`, null)
+        case 'paste': {
+          if (!clip) return setToast('Copy some ends or picks first')
+          const next = pasteClip(draft, target, from, clip, 'overwrite')
+          const end = from - 1 + clip.items.length - 1
+          return change(next, `Pasted ${clip.items.length} at ${unit} ${from}`, { target, anchor: from - 1, at: end })
+        }
+        case 'insert':
+          return change(
+            applyRangeOp(draft, target, from, from, { kind: 'insert', count: to - from + 1 }),
+            `Inserted ${to - from + 1} empty ${unit}${to === from ? '' : 's'} before ${unit} ${from}`,
+          )
+        case 'delete':
+          return change(applyRangeOp(draft, target, from, to, { kind: 'delete' }), `Deleted ${label}`, null)
+        case 'more':
+          setToolsRange({ target, from, to })
+          return setDialog('tools')
+      }
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  // Keys for the selection, or the end or pick under the mouse: copy, cut, paste, insert, delete; Esc deselects.
+  const keyAction = useRef<(e: KeyboardEvent) => void>(() => {})
+  keyAction.current = (e: KeyboardEvent) => {
+    const el = e.target as HTMLElement | null
+    if (dialog || help.open || touring) return
+    if (el?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return
+    const mod = e.ctrlKey || e.metaKey
+    const one = hovered.current && {
+      target: hovered.current.target,
+      anchor: hovered.current.index,
+      at: hovered.current.index,
+    }
+    const key = e.key.toLowerCase()
+    let action: SelectionAction | null = null
+    let sel = selection
+    if (e.key === 'Escape' && selection) {
+      setSelection(null)
+      return
+    }
+    if (mod && key === 'c' && selection) action = 'copy'
+    else if (mod && key === 'x' && selection) action = 'cut'
+    else if (mod && key === 'v' && clip && (selection || one)) {
+      action = 'paste'
+      sel = selection ?? one
+    } else if (!mod && (e.key === 'Delete' || (e.key === 'Backspace' && selection))) {
+      action = 'delete'
+      sel = selection ?? one
+    } else if (!mod && e.key === 'Insert') {
+      action = 'insert'
+      sel = selection ?? one
+    }
+    if (!action || !sel) return
+    e.preventDefault()
+    selectionAction(action, sel)
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => keyAction.current(e)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   /** Opens a different pattern as a new document. */
   const open = (d: Draft, n: string | null, message?: string) =>
     drawing(d, () => {
@@ -331,6 +443,16 @@ export default function App() {
       }}
       repeat={repeat}
       onTrimToRepeat={() => update((d) => resizeDraft(d, { ends: repeat.ends, picks: repeat.picks }))}
+      onFillWithRepeat={
+        filledRepeat &&
+        (() => {
+          const { draft: next, ends, picks } = filledRepeat
+          update(() => keepLiftplan(next))
+          setToast(
+            `Filled ${[ends && `${ends} ends`, picks && `${picks} picks`].filter(Boolean).join(' and ')} with the repeat. Undo with Ctrl+Z.`,
+          )
+        })
+      }
       highlightFloats={highlightFloats}
       onHighlightFloats={(on) => setView({ highlightFloats: on })}
       longestFloat={Math.max(floats.warp, floats.weft)}
@@ -348,7 +470,7 @@ export default function App() {
       }
       canReset={draft !== baseline}
       onReset={() => update(() => baseline)}
-      onNew={() => open(emptyDraft(patternColours() ?? undefined), null, 'New pattern: empty grids, ready to design')}
+      onNew={() => setDialog('new')}
     />
   )
 
@@ -394,6 +516,7 @@ export default function App() {
           canRedo={canRedo}
           onUndo={undo}
           onRedo={redo}
+          onNew={() => setDialog('new')}
           onSave={() => setDialog('save')}
           onLoad={() => setDialog('load')}
           onExport={(format) => {
@@ -436,7 +559,10 @@ export default function App() {
           onPrint={() => setDialog('print')}
           onWeave={() => setDialog('weave')}
           on3d={() => setDialog('3d')}
-          onSequenceTools={() => setDialog('tools')}
+          onSequenceTools={() => {
+            setToolsRange(null)
+            setDialog('tools')
+          }}
           onTrompAsWrit={() => {
             const { draft: next, skipped } = trompAsWrit(draft)
             update(() => next)
@@ -548,6 +674,19 @@ export default function App() {
                 setDialog('blocks')
               }}
               blockStrip={seen.has('blocks')}
+              selectMode={selectMode}
+              onSelectMode={(on) => {
+                setSelectMode(on)
+                if (!on) setSelection(null)
+              }}
+              selection={selection}
+              onSelection={setSelection}
+              onSelectionAction={selectionAction}
+              canPaste={clip !== null}
+              onHoverThread={(target, index) => {
+                if (index !== null) hovered.current = { target, index }
+                else if (hovered.current?.target === target) hovered.current = null
+              }}
               onWarpColor={(i, c) =>
                 update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), {
                   key: `warp:${i}`,
@@ -627,6 +766,37 @@ export default function App() {
             setToast(`Saved "${n}"`)
           }}
         />
+        <NewDialog
+          open={dialog === 'new'}
+          liftplan={view.noTieup}
+          shafts={draft.shafts}
+          treadles={draft.treadles}
+          onClose={() => setDialog(null)}
+          onCreate={({ liftplan, twill, ...size }) => {
+            const colours = patternColours() ?? undefined
+            const sized = resizeDraft(twill ? starterDraft(colours) : emptyDraft(colours), size)
+            // Resizing makes twill grids for the new shafts; an empty start clears them.
+            const d = twill
+              ? sized
+              : {
+                  ...sized,
+                  threading: sized.threading.map(() => -1),
+                  tieup: sized.tieup.map((r) => r.map(() => false)),
+                  treadling: sized.treadling.map((r) => r.map(() => false)),
+                }
+            // Not open(), which keeps to the loom type chosen before: this pattern brings its own.
+            const next = liftplan ? toLiftplan(d) : d
+            drawing(next, () => {
+              setView({ noTieup: liftplan })
+              reset(next)
+              setName(null)
+              setDialog(null)
+              setToast(
+                `New pattern: ${size.shafts} shafts, ${liftplan ? 'lift plan' : `${size.treadles} treadles`}, ${size.ends} × ${size.picks}`,
+              )
+            })
+          }}
+        />
         <LoadDialog
           open={dialog === 'load'}
           presets
@@ -648,6 +818,7 @@ export default function App() {
               onApply={applyFromDialog}
               clip={clip}
               onCopy={setClip}
+              selected={toolsRange}
             />
           </Suspense>
         )}

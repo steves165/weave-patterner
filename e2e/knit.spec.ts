@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
-import { knitSquare, openApp, openKnit, toolbarButton, writtenRow } from './helpers'
+import { knitSquare, openApp, openKnit, writtenRow } from './helpers'
 
 test.beforeEach(async ({ page }) => openKnit(page))
 
@@ -17,10 +17,9 @@ test('has its own name, logo, page title and a link back to Weave Patterner', as
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
 })
 
-test('Weave Patterner links to Knit Patterner from the Tools menu', async ({ page }) => {
+test('Weave Patterner links to Knit Patterner from the footer', async ({ page }) => {
   await openApp(page)
-  await toolbarButton(page, 'Tools').click()
-  await page.getByRole('menuitem', { name: /Knit Patterner/ }).click()
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Knit Patterner' }).click()
   await expect(page.getByRole('grid', { name: 'Knitting chart' })).toBeVisible()
 })
 

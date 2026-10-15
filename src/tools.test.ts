@@ -10,6 +10,7 @@ import {
   parseSequence,
   pasteClip,
   point,
+  rosepath,
   straight,
   trompAsWrit,
 } from './tools'
@@ -18,11 +19,38 @@ import { defaultDraft, resizeDraft } from './weave'
 const shafts = (d: { threading: number[] }) => d.threading.map((s) => s + 1).join('')
 const treadles = (d: { treadling: boolean[][] }) => d.treadling.map((r) => r.indexOf(true) + 1).join('')
 
+describe('rosepath', () => {
+  it('goes up, then back down from the top', () => {
+    expect(rosepath(4)).toEqual([1, 2, 3, 4, 1, 4, 3, 2])
+  })
+})
+
 describe('parseSequence', () => {
   it('reads numbers, commas and up/down ranges', () => {
     expect(parseSequence('1 2, 3-5 4-2  0')).toEqual([1, 2, 3, 4, 5, 4, 3, 2, 0])
   })
-  it.each(['', 'a', '1 2 x'])('rejects %j', (text) => {
+  it('reads ranges that turn, and repeats in brackets, as WeavePoint does', () => {
+    expect(parseSequence('1-4-2')).toEqual([1, 2, 3, 4, 3, 2])
+    expect(parseSequence('2(1-3) 4')).toEqual([1, 2, 3, 1, 2, 3, 4])
+    expect(parseSequence('2(1 2(3)) 1-8-2 4 3 6-1')).toEqual([
+      1,
+      3,
+      3,
+      1,
+      3,
+      3,
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2],
+      4,
+      3,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1,
+    ])
+  })
+  it.each(['', 'a', '1 2 x', '2(1 2', '1 2)', '1-', '()'])('rejects %j', (text) => {
     expect(() => parseSequence(text)).toThrow()
   })
 })

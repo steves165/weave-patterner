@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { a11yProblems, openApp, openKnit } from './helpers'
+import { a11yProblems, newPattern, openApp, openKnit } from './helpers'
 
 const accent = (page: Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--wp-accent').trim().toLowerCase())
@@ -105,13 +105,12 @@ test('the old "Halloween and Christmas" choice becomes Seasonal', async ({ page 
 })
 
 test("new patterns start in the theme's colours; patterns you have keep theirs", async ({ page }) => {
-  await openApp(page)
+  await openApp(page, { pattern: 'starter' })
   expect(await patternColours(page)).toEqual(['#d6246e', '#ffd3e4'])
   await chooseTheme(page, 'christmas')
   // The pattern on screen is left alone.
   expect(await patternColours(page)).toEqual(['#d6246e', '#ffd3e4'])
-  const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
-  await sidebar.getByRole('button', { name: 'New' }).click()
+  await newPattern(page)
   expect(await patternColours(page)).toEqual(['#b71c1c', '#1b5e20'])
 
   // A first visit's starting pattern too.

@@ -2,7 +2,18 @@ import { readFileSync } from 'node:fs'
 import { expect, type Page, test } from '@playwright/test'
 import { decodePattern, encodePattern } from '../src/share'
 import { importFile as parsePattern } from '../src/weave'
-import { cell, ends, importFile, openApp, sampleText, setField, threading, toast, toolbarButton } from './helpers'
+import {
+  cell,
+  ends,
+  importFile,
+  newPattern,
+  openApp,
+  sampleText,
+  setField,
+  threading,
+  toast,
+  toolbarButton,
+} from './helpers'
 
 const title = (page: Page) => page.locator('.MuiAppBar-root')
 
@@ -50,7 +61,7 @@ test('exports a pattern file and a WIF that both import back', async ({ page }) 
     const path = test.info().outputPath(download.suggestedFilename())
     await download.saveAs(path)
     expect(download.suggestedFilename()).toMatch(/^Green blocks/)
-    await page.getByRole('button', { name: 'New' }).click()
+    await newPattern(page)
     await importFile(page, path)
     await expect(title(page)).toContainText('Green blocks')
     expect(await ends(page)).toBe('96')
@@ -143,8 +154,8 @@ test('the app replaces the search summary, and the page has its title and icons'
 })
 
 test('New starts with completely empty grids', async ({ page }) => {
-  await page.getByRole('button', { name: 'New' }).click()
-  await expect(toast(page)).toContainText('New pattern: empty grids')
+  await newPattern(page)
+  await expect(toast(page)).toContainText('New pattern: 4 shafts, 4 treadles, 32 × 32')
   expect(await threading(page)).toBe('0'.repeat(32))
   await expect(page.locator('.draft [role=checkbox][aria-checked="true"]')).toHaveCount(0)
   // With nothing lifted, the whole cloth shows weft.

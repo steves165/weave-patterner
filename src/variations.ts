@@ -23,8 +23,24 @@ const twill = (shafts: number, treadles: number, lift: number) =>
     Array.from({ length: treadles }, (_, t) => (s - (t % shafts) + shafts) % shafts < lift),
   )
 
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+
 /**
- * The same threading and treadling with other tie-ups: the standard twills, broken twill, and the current tie-up
+ * The move numbers that make an even satin on n shafts: each treadle lifts one shaft, `move` along from the last,
+ * where move and n share no factor and move isn't 1 or n−1 (those make a twill). Mirror-image pairs give one each.
+ */
+export function satinMoves(n: number): number[] {
+  const moves: number[] = []
+  for (let m = 2; m < n - 1; m++) if (gcd(m, n) === 1 && !moves.includes(n - m)) moves.push(m)
+  return moves
+}
+
+/** A satin tie-up: treadle t lifts the one shaft t × move along (wrapping), so the stitches are spread out. */
+const satin = (shafts: number, treadles: number, move: number) =>
+  Array.from({ length: shafts }, (_, s) => Array.from({ length: treadles }, (_, t) => (t * move) % shafts === s))
+
+/**
+ * The same threading and treadling with other tie-ups: plain weave, satins, the standard twills, broken twill, and the current tie-up
  * inverted, mirrored and turned one treadle along. Not offered for a lift plan, which has no tie-up to change.
  */
 export function tieupVariations(d: Draft): Variation[] {
@@ -37,6 +53,12 @@ export function tieupVariations(d: Draft): Variation[] {
     { name: 'Tie-up mirrored', draft: { ...d, tieup: columns([...all].reverse()) } },
     { name: 'Tie-up turned along one', draft: { ...d, tieup: columns(all.map((t) => (t + 1) % treadles)) } },
   ]
+  v.push({
+    name: 'Plain weave tie-up',
+    draft: { ...d, tieup: Array.from({ length: shafts }, (_, s) => all.map((t) => s % 2 === t % 2)) },
+  })
+  for (const move of satinMoves(shafts))
+    v.push({ name: `${shafts}-end satin tie-up (move ${move})`, draft: { ...d, tieup: satin(shafts, treadles, move) } })
   for (let lift = 1; lift < shafts; lift++)
     v.push({ name: `${lift}/${shafts - lift} twill tie-up`, draft: { ...d, tieup: twill(shafts, treadles, lift) } })
   if (shafts >= 4) {
