@@ -55,9 +55,7 @@ import {
 } from '@mui/material'
 import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import type { ExportFormat, ImageFormat } from '../exportDraft'
-import { KnitMark } from '../knit/KnitLogo'
 import { useMidWidth, useNarrow } from '../layout'
-import { SewMark } from '../sew/SewLogo'
 import { Action, MenuHeading, NavTab, PhoneNav, Rule, TitledMenu } from './AppBarParts'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -211,7 +209,6 @@ export function AppToolbar(p: Props) {
     secondary: string
     onClick: () => void
     icon: ReactNode
-    href?: string
   }[] = [
     {
       group: 'Edit',
@@ -226,6 +223,13 @@ export function AppToolbar(p: Props) {
       secondary: 'Treadle as drawn in: copy the threading to the treadling',
       onClick: p.onTrompAsWrit,
       icon: <ContentCopyIcon fontSize="small" />,
+    },
+    {
+      group: 'Edit',
+      primary: 'Transform draft…',
+      secondary: 'Turn 90°, swap face and back, flip, move the repeat',
+      onClick: p.onTransform,
+      icon: <Rotate90DegreesCwIcon fontSize="small" />,
     },
     {
       group: 'Design',
@@ -284,14 +288,7 @@ export function AppToolbar(p: Props) {
       icon: <InvertColorsIcon fontSize="small" />,
     },
     {
-      group: 'Change the whole draft',
-      primary: 'Transform draft…',
-      secondary: 'Turn 90°, swap face and back, flip, move the repeat',
-      onClick: p.onTransform,
-      icon: <Rotate90DegreesCwIcon fontSize="small" />,
-    },
-    {
-      group: 'Change the whole draft',
+      group: 'Check the cloth',
       primary: 'Cloth report…',
       secondary: 'Warp and weft faces, interlacing, floats, firmness',
       onClick: p.onReport,
@@ -339,22 +336,6 @@ export function AppToolbar(p: Props) {
       onClick: p.onTablet,
       icon: <StyleIcon fontSize="small" />,
     },
-    {
-      group: 'Other crafts',
-      primary: 'Knit Patterner',
-      secondary: 'Knitting charts, written patterns and colourwork',
-      onClick: close,
-      href: './knit/',
-      icon: <KnitMark size={20} />,
-    },
-    {
-      group: 'Other crafts',
-      primary: 'Sew Patterner',
-      secondary: 'Made-to-measure sewing patterns, printed at home',
-      onClick: close,
-      href: './sew/',
-      icon: <SewMark size={20} />,
-    },
   ]
   const words = toolQuery.toLowerCase().split(/\s+/).filter(Boolean)
   const found = tools.filter((t) =>
@@ -368,24 +349,17 @@ export function AppToolbar(p: Props) {
           </MenuHeading>,
         ]
       : []),
-    t.href ? (
-      <MenuItem key={t.primary} component="a" href={t.href} onClick={t.onClick}>
-        <ListItemIcon>{t.icon}</ListItemIcon>
-        <ListItemText primary={t.primary} secondary={t.secondary} />
-      </MenuItem>
-    ) : (
-      <MenuItem
-        key={t.primary}
-        onClick={() => {
-          close()
-          setToolQuery('')
-          t.onClick()
-        }}
-      >
-        <ListItemIcon>{t.icon}</ListItemIcon>
-        <ListItemText primary={t.primary} secondary={t.secondary} />
-      </MenuItem>
-    ),
+    <MenuItem
+      key={t.primary}
+      onClick={() => {
+        close()
+        setToolQuery('')
+        t.onClick()
+      }}
+    >
+      <ListItemIcon>{t.icon}</ListItemIcon>
+      <ListItemText primary={t.primary} secondary={t.secondary} />
+    </MenuItem>,
   ])
 
   const fileItems = [

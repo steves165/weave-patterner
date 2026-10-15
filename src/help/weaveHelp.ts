@@ -340,11 +340,14 @@ export const WEAVE_HELP: Topic[] = [
     summary: 'Every tool in the Tools menu, and what it does',
     keywords: ['tools', 'menu', 'profile', 'double cloth', 'picture', 'echo', 'variations', 'transform', 'calculator'],
     body: [
-      { p: 'Open **Tools** in the toolbar. Type in the box at the top of the menu to find a tool by name.' },
+      {
+        p: 'Open **Tools** in the toolbar. Type in the box at the top of the menu to find a tool by name. Everyday edits are on the draft itself: the drawing tools and **Select** above it (see [[drawing|Drawing tools]]), and the loom type in the Loom settings.',
+      },
       {
         terms: [
           ['Sequence tools', 'Fill, repeat, mirror, reverse, insert or delete ends and picks; copy and paste them.'],
           ['Tromp as writ', 'Treadle as threaded.'],
+          ['Transform draft', 'Turn 90°, swap face and back, flip, or move the repeat.'],
           ['Colours and presets', 'Stripe sequences and classic colour patterns.'],
           [
             'Draw on paper',
@@ -354,10 +357,8 @@ export const WEAVE_HELP: Topic[] = [
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],
           ['Echo weave', 'A design line threaded with its echo, in two colours.'],
-          ['Variations', 'The same threading with other tie-ups and treadlings.'],
+          ['Variations', 'The same threading with other tie-ups (plain weave, twills, satins) and treadlings.'],
           ['Colourways', 'The same cloth in other colours.'],
-          ['Transform draft', 'Turn 90°, swap face and back, flip, or move the repeat.'],
-          ['Convert', 'Between a lift plan and a tie-up with treadling.'],
           ['Cloth report', 'Warp and weft faces, interlacing, floats and firmness.'],
           ['Warp winding plan', 'Colour order for the warping board, in bouts.'],
           ['Warp calculator', 'Warp length, width in the reed and yarn per colour.'],
