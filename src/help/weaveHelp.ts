@@ -58,6 +58,9 @@ export const WEAVE_HELP: Topic[] = [
         p: 'More threading tools (repeat, mirror, reverse, insert or delete ends, and named sequences such as advancing twills) are in **Tools › Sequence tools**.',
       },
       {
+        tip: 'In Sequence tools, a custom sequence can turn and repeat: **1-4-2** is 1 2 3 4 3 2, and **3(1-4)** is 1 2 3 4 three times.',
+      },
+      {
         tip: 'Turn on **End 1 on the right** in the view settings if your loom is threaded from the right. It changes only how the draft is drawn.',
       },
     ],
@@ -122,8 +125,8 @@ export const WEAVE_HELP: Topic[] = [
   {
     id: 'drawing',
     title: 'Drawing tools',
-    summary: 'Click, Straight draw, Point draw and Draw cloth',
-    keywords: ['straight', 'point', 'draw', 'drag', 'paint'],
+    summary: 'Click, Straight draw, Point draw, Draw cloth and Select',
+    keywords: ['straight', 'point', 'draw', 'drag', 'paint', 'select', 'copy', 'paste', 'selection'],
     body: [
       { p: 'The drawing tools above the draft change how clicking and dragging works:' },
       {
@@ -132,6 +135,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Straight draw**: press a box and drag along to fill 1 2 3 4 1 2 3 4… Drag up the shafts to climb, down to descend.',
           '**Point draw**: as straight draw, but turning back at the top and bottom: 1 2 3 4 3 2 1…',
           '**Draw cloth**: click or drag on the drawdown to swap squares between warp and weft (see [[drawdown|The drawdown]]).',
+          '**Select**: drag along the threading (or treadling) to select ends (or picks); Shift+click extends the selection. A bar above the draft then repeats, mirrors, reverses, copies, pastes, inserts or deletes them, and **More…** opens Sequence tools on them.',
         ],
       },
       {
@@ -467,7 +471,13 @@ export const WEAVE_HELP: Topic[] = [
           ['Tab', 'Move between the threading, tie-up, treadling and controls.'],
           ['← → ↑ ↓', 'Move around a grid.'],
           ['Space or Enter', 'Set or clear the box you are on.'],
-          ['Escape', 'Stop tracing a drawdown square; close a dialog.'],
+          ['Escape', 'Stop tracing a drawdown square; clear the selection; close a dialog.'],
+          [
+            'Ctrl + C, Ctrl + X, Ctrl + V',
+            'Copy, cut or paste the selected ends or picks (paste goes at the selection, or the end or pick under the mouse).',
+          ],
+          ['Insert', 'Insert empty ends or picks before the selection, or one before the end or pick under the mouse.'],
+          ['Delete', 'Delete the selected ends or picks, or the end or pick under the mouse.'],
         ],
       },
       { p: 'In weaving mode, Space and the arrow keys move between picks.' },

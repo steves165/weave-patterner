@@ -27,6 +27,12 @@ interface GridProps {
   fromRight?: boolean
   /** The help topic F1 opens here. */
   help?: string
+  /** The cell under the mouse, or null when it leaves the grid (for keys that act on the thread under the mouse). */
+  onHover?: (cell: [number, number] | null) => void
+  /** Cells inside the selection, shaded. */
+  selected?: (r: number, c: number) => boolean
+  /** Select mode: pressing a cell starts a selection there and dragging extends it (`extend`), instead of painting. */
+  onSelect?: (r: number, c: number, extend: boolean) => void
 }
 
 const ARROWS: Record<string, [number, number]> = {
@@ -54,8 +60,12 @@ export function Grid({
   traced,
   fromRight = false,
   help,
+  onHover,
+  selected,
+  onSelect,
 }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
+  const selecting = useRef(false)
   const lastPointer = useRef('mouse')
   const container = useRef<HTMLDivElement>(null)
   // Roving tab stop: only the focused cell is tabbable.
@@ -65,6 +75,7 @@ export function Grid({
   useEffect(() => {
     const stop = () => {
       paintValue.current = null
+      selecting.current = false
     }
     window.addEventListener('pointerup', stop)
     return () => window.removeEventListener('pointerup', stop)
@@ -101,12 +112,19 @@ export function Grid({
           aria-checked={on}
           aria-label={cellLabel(r, c)}
           tabIndex={r === fr && c === fc ? 0 : -1}
-          className={`cell${on ? ' on' : ''}${color ? ' colored' : ''}${traced?.(r, c) ? ' traced' : ''}`}
+          className={`cell${on ? ' on' : ''}${color ? ' colored' : ''}${traced?.(r, c) ? ' traced' : ''}${selected?.(r, c) ? ' selected' : ''}`}
           style={color ? { backgroundColor: color, color: textOn(color) } : undefined}
           onFocus={() => setFocus([r, c])}
           onKeyDown={(e) => onKeyDown(e, r, c, on)}
           onPointerDown={(e) => {
             lastPointer.current = e.pointerType
+            if (onSelect) {
+              if (e.button !== 0) return
+              ;(e.target as Element).releasePointerCapture(e.pointerId)
+              selecting.current = true
+              onSelect(r, c, e.shiftKey)
+              return
+            }
             // Without drag-painting, a finger waits for a tap so that a swipe can scroll instead.
             if (e.pointerType === 'touch' && !touchPaint)
               return // Release the implicit capture so pointerenter fires on the other cells being dragged over.
@@ -115,9 +133,12 @@ export function Grid({
             onPaint(r, c, !on, false)
           }}
           onPointerEnter={() => {
-            if (paintValue.current !== null) onPaint(r, c, paintValue.current, true)
+            onHover?.([r, c])
+            if (selecting.current && onSelect) onSelect(r, c, true)
+            else if (paintValue.current !== null) onPaint(r, c, paintValue.current, true)
           }}
           onClick={() => {
+            if (onSelect) return
             // Browsers only send a click for a tap that didn't turn into a scroll.
             if (lastPointer.current === 'touch' && !touchPaint) onPaint(r, c, !on, false)
           }}
@@ -137,6 +158,7 @@ export function Grid({
       data-help={help}
       className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}`}
       style={{ gridTemplateColumns: `repeat(${cols}, var(--cell))` }}
+      onPointerLeave={() => onHover?.(null)}
     >
       {cells}
     </div>

@@ -507,6 +507,17 @@
   cursor: pointer;
 }
 
+/* Ends or picks selected with the Select tool: tinted, filled boxes too. */
+.grid .cell.selected {
+  background-image: linear-gradient(var(--trace-selected), var(--trace-selected));
+}
+.grid .cell.selected.on {
+  box-shadow: inset 0 0 0 2px var(--trace);
+}
+:root {
+  --trace-selected: rgba(0, 176, 255, 0.28);
+}
+
 /* Hover crosshair over the draft. */
 .draft {
   position: relative;

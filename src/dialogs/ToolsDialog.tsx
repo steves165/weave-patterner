@@ -41,6 +41,8 @@ interface Props {
   /** Copied ends or picks, kept by the app so they can be pasted again later. */
   clip: Clip | null
   onCopy: (clip: Clip) => void
+  /** Ends or picks selected on the grid (1-based), to start from instead of the whole threading. */
+  selected?: { target: Target; from: number; to: number } | null
 }
 
 type Generator = 'straight' | 'point' | 'advancing' | 'network' | 'parallel' | 'custom'
@@ -48,7 +50,7 @@ type Generator = 'straight' | 'point' | 'advancing' | 'network' | 'parallel' | '
 const NUMBER_FIELD = { size: 'small' as const, type: 'number', sx: { width: 96 } }
 
 /** Fill, repeat, mirror, reverse, insert and delete runs of ends (threading) or picks (treadling). */
-export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Props) {
+export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy, selected }: Props) {
   const phone = usePhone()
   const [target, setTarget] = useState<Target>('threading')
   const length = target === 'threading' ? draft.ends : draft.picks
@@ -70,13 +72,19 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
   const [pasteColors, setPasteColors] = useState(true)
   const [copied, setCopied] = useState<string | null>(null)
 
+  // Opening with a selection: work on what's selected.
+  useEffect(() => {
+    if (open && selected) setTarget(selected.target)
+  }, [open, selected])
   useEffect(() => {
     if (!open) return
     setError(null)
     setCopied(null)
-    setFrom('1')
-    setTo(String(target === 'threading' ? draft.ends : draft.picks))
-  }, [open, target, draft.ends, draft.picks])
+    const picked = selected?.target === target ? selected : null
+    setFrom(String(picked?.from ?? 1))
+    setTo(String(picked?.to ?? (target === 'threading' ? draft.ends : draft.picks)))
+    setPasteAt(String(picked?.from ?? 1))
+  }, [open, target, draft.ends, draft.picks, selected])
 
   const unit = target === 'threading' ? 'end' : 'pick'
   const sequence = (): number[] => {
@@ -217,7 +225,7 @@ export function ToolsDialog({ open, draft, onClose, onApply, clip, onCopy }: Pro
                 label={target === 'threading' ? 'Shafts (0 = empty)' : 'Treadles (0 = none)'}
                 value={custom}
                 onChange={(e) => setCustom(e.target.value)}
-                helperText="e.g. 1 2 3 4 3 2 or 1-4 3-2"
+                helperText="e.g. 1 2 3 4 3 2, 1-4-2, or 3(1-4) for three repeats"
                 sx={{ flex: 1, minWidth: 200 }}
               />
             )}

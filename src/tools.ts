@@ -6,20 +6,51 @@ export const MAX_THREADS = 400
 export type Target = 'threading' | 'treadling'
 
 /**
- * Parses a sequence like "1 2 3 4 3 2", "1-4, 3-2" or "1,0,3" into numbers. Ranges count up or down.
- * Throws a readable error for anything else.
+ * Parses a sequence like "1 2 3 4 3 2", "1-4, 3-2" or "1,0,3" into numbers. Ranges count up or down, and can turn:
+ * "1-8-2" is 1 up to 8 and back down to 2. A number written right before brackets repeats them, as in WeavePoint:
+ * "4(1-8-1) 2(1 2)". Throws a readable error for anything else.
  */
 export function parseSequence(text: string): number[] {
-  const out: number[] = []
-  for (const token of text.split(/[\s,]+/).filter(Boolean)) {
-    const range = /^(\d+)-(\d+)$/.exec(token)
-    if (range) {
-      const [a, b] = [Number(range[1]), Number(range[2])]
-      const step = a <= b ? 1 : -1
-      for (let n = a; n !== b + step; n += step) out.push(n)
-    } else if (/^\d+$/.test(token)) out.push(Number(token))
-    else throw new Error(`"${token}" isn't a number or range like 1-4`)
+  // Numbers, dashes and brackets; a number touching "(" is a repeat count.
+  const tokens = text.match(/\d+\(|\d+|-|\(|\)|[^\s,]/g) ?? []
+  let at = 0
+  const fail = (token: string | undefined): never => {
+    throw new Error(token === undefined ? 'The sequence ends too soon' : `"${token}" isn't a number or range like 1-4`)
   }
+  const list = (inside: boolean): number[] => {
+    const out: number[] = []
+    while (at < tokens.length) {
+      const t = tokens[at]
+      if (t === ')') {
+        if (!inside) fail(t)
+        return out
+      }
+      at++
+      const repeat = /^(\d+)\($/.exec(t)
+      if (t === '(' || repeat) {
+        const inner = list(true)
+        if (tokens[at] !== ')') fail(tokens[at])
+        at++
+        for (let i = 0; i < (repeat ? Number(repeat[1]) : 1); i++) out.push(...inner)
+      } else if (/^\d+$/.test(t)) {
+        // A run: n, or n-m-…, each leg counting up or down from the last.
+        let last = Number(t)
+        out.push(last)
+        while (tokens[at] === '-') {
+          const next = tokens[at + 1]
+          if (next === undefined || !/^\d+$/.test(next)) fail(next)
+          at += 2
+          const to = Number(next)
+          const step = last <= to ? 1 : -1
+          for (let n = last + step; n !== to + step; n += step) out.push(n)
+          last = to
+        }
+      } else fail(t)
+    }
+    if (inside) fail(undefined)
+    return out
+  }
+  const out = list(false)
   if (out.length === 0) throw new Error('Enter at least one number')
   return out
 }
@@ -278,3 +309,20 @@ export function drawAlong(
   })
   return { ...d, treadling }
 }
+
+/** Ends (threading) or picks (treadling) selected on the grid: from where the drag began to where it is (0-based). */
+export interface ThreadSelection {
+  target: Target
+  anchor: number
+  at: number
+}
+
+/** A selection as a 1-based inclusive range, as the range operations take. */
+export const selectionRange = (s: ThreadSelection) => ({
+  target: s.target,
+  from: Math.min(s.anchor, s.at) + 1,
+  to: Math.max(s.anchor, s.at) + 1,
+})
+
+/** What the selection bar (and the keyboard) can do with a selection. */
+export type SelectionAction = 'repeat' | 'mirror' | 'reverse' | 'copy' | 'cut' | 'paste' | 'insert' | 'delete' | 'more'
