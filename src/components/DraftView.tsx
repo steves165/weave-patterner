@@ -37,7 +37,7 @@ interface Props {
   onThreading: (shaft: number, end: number, value: boolean, continuing: boolean) => void
   onTieup: (shaft: number, treadle: number, value: boolean, continuing: boolean) => void
   onTreadling: (pick: number, treadle: number, value: boolean, continuing: boolean) => void
-  /** Drawing on the drawdown (with Draw on the drawdown on): a square set to warp or weft; `continuing` in a drag. */
+  /** Drawing on the drawdown (with the Draw cloth tool): a square set to warp or weft; `continuing` in a drag. */
   onDrawCloth: (pick: number, end: number, warp: boolean, continuing: boolean) => void
   onWarpColor: (end: number, color: string) => void
   onWeftColor: (pick: number, color: string) => void
@@ -46,6 +46,8 @@ interface Props {
   onAddBlock: (from: number, to: number) => void
   /** Opens the blocks and block store, at block i if given. */
   onBlocks: (i?: number) => void
+  /** Show the strip for marking blocks of ends even before there are any (once the Blocks dialog has been opened). */
+  blockStrip: boolean
 }
 
 /**
@@ -193,7 +195,8 @@ export function DraftView(p: Props) {
       {pad(cols - 1)}
     </>
   )
-  const blockRow = (
+  // The strip for marking blocks of ends shows once there are blocks, or the Blocks dialog has been opened.
+  const blockRow = ((draft.blocks?.length ?? 0) > 0 || p.blockStrip) && (
     <>
       <BlockStrip
         ends={ends}
@@ -414,11 +417,23 @@ export function DraftView(p: Props) {
             Back
           </ToggleButton>
         </ToggleButtonGroup>
+        <Tooltip title="Shade the drawdown like woven threads" describeChild>
+          <ToggleButton
+            size="small"
+            value="fabric"
+            selected={view.fabric}
+            onChange={() => p.onView({ fabric: !view.fabric })}
+          >
+            Fabric
+          </ToggleButton>
+        </Tooltip>
         <ToggleButtonGroup
           exclusive
           size="small"
-          value={view.drawTool}
-          onChange={(_, tool) => tool && p.onView({ drawTool: tool })}
+          value={drawing ? 'cloth' : view.drawTool}
+          onChange={(_, tool) =>
+            tool && p.onView(tool === 'cloth' ? { drawCloth: true } : { drawTool: tool, drawCloth: false })
+          }
           aria-label="Drawing tool"
           data-help="drawing"
         >
@@ -430,6 +445,9 @@ export function DraftView(p: Props) {
           </Tooltip>
           <Tooltip title="Drag along the threading or treadling to draw 1 2 3 4 3 2 1 …" describeChild>
             <ToggleButton value="point">Point draw</ToggleButton>
+          </Tooltip>
+          <Tooltip title="Click or drag on the drawdown to swap squares between warp and weft" describeChild>
+            <ToggleButton value="cloth">Draw cloth</ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
         <Button

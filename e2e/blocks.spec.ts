@@ -5,8 +5,21 @@ test.beforeEach(async ({ page }) => {
   await openApp(page)
 })
 
+/** Opens the Blocks dialog and closes it again, which shows the strip for marking blocks above the threading. */
+async function showStrip(page: Page) {
+  await page.getByRole('button', { name: 'Blocks', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Blocks' }).getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByTestId('block-strip')).toBeVisible()
+}
+
+test('the strip for marking blocks shows once the Blocks dialog has been opened', async ({ page }) => {
+  await expect(page.getByTestId('block-strip')).toHaveCount(0)
+  await showStrip(page)
+})
+
 /** Drags along the block strip, from above one end to above another. */
 async function markBlock(page: Page, from: number, to: number) {
+  if (!(await page.getByTestId('block-strip').isVisible())) await showStrip(page)
   const strip = await page.getByTestId('block-strip').boundingBox()
   const a = await cell(page, `End ${from}, shaft 1`).boundingBox()
   const b = await cell(page, `End ${to}, shaft 1`).boundingBox()

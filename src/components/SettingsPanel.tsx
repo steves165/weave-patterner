@@ -10,6 +10,8 @@ import {
   Stack,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material'
@@ -113,26 +115,49 @@ export const SWITCH_ROW = {
   '& .MuiSwitch-root': { mr: '-8px' },
 } as const
 
-/** On/off display options, in the order shown. */
-type ViewSwitch =
-  | 'drawCloth'
-  | 'noTieup'
-  | 'colorBoxes'
-  | 'endOneRight'
-  | 'numbers'
-  | 'fabric'
-  | 'sinkingShed'
-  | 'threadingBelow'
+/** On/off display options, in the order shown. How the loom works is in the Loom section, not here. */
+type ViewSwitch = 'colorBoxes' | 'endOneRight' | 'numbers' | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
-  ['drawCloth', 'Draw on the drawdown'],
-  ['noTieup', 'No tie-up (lift plan)'],
   ['colorBoxes', 'Thread colours in boxes'],
   ['endOneRight', 'End 1 on the right'],
   ['numbers', 'Numbers in boxes'],
-  ['fabric', 'Fabric view'],
-  ['sinkingShed', 'Sinking shed'],
   ['threadingBelow', 'Threading below'],
 ]
+
+/** A choice between two ways the loom works, with a line saying what the chosen one means. */
+function LoomChoice<T extends string>(props: {
+  label: string
+  value: T
+  options: [T, string, string][]
+  onChange: (value: T) => void
+}) {
+  const id = `loom-choice-${props.label.toLowerCase().replace(/\W+/g, '-')}`
+  return (
+    <Stack sx={{ gap: 0.75 }}>
+      <Typography id={id} variant="body2" sx={{ fontWeight: 500 }}>
+        {props.label}
+      </Typography>
+      <ToggleButtonGroup
+        exclusive
+        size="small"
+        value={props.value}
+        onChange={(_, v: T | null) => v && v !== props.value && props.onChange(v)}
+        aria-labelledby={id}
+        // Side by side, sharing the width (the theme lets toggle groups wrap).
+        sx={{ flexWrap: 'nowrap' }}
+      >
+        {props.options.map(([value, text]) => (
+          <ToggleButton key={value} value={value} sx={{ flex: 1 }}>
+            {text}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+      <Typography variant="caption" color="text.secondary">
+        {props.options.find(([value]) => value === props.value)?.[2]}
+      </Typography>
+    </Stack>
+  )
+}
 
 /** A heading and its settings. */
 function Section({ title, help, children }: { title: string; help: string; children: ReactNode }) {
@@ -207,6 +232,31 @@ export function SettingsPanel(p: Props) {
               />
             ))}
         </Box>
+        <LoomChoice
+          label="Loom type"
+          value={p.view.noTieup ? 'liftplan' : 'treadles'}
+          options={[
+            ['treadles', 'Treadles', 'Floor looms: shafts tied to treadles, one or more treadles a pick.'],
+            ['liftplan', 'Lift plan', 'Table and dobby looms: the shafts lifted on each pick, with no tie-up.'],
+          ]}
+          onChange={(v) => p.onView({ noTieup: v === 'liftplan' })}
+        />
+        {/* The shed only changes how the tie-up is shown; a lift plan has none. */}
+        {!p.view.noTieup && (
+          <LoomChoice
+            label="Shed"
+            value={p.view.sinkingShed ? 'sinking' : 'rising'}
+            options={[
+              ['rising', 'Rising', 'The tie-up marks the shafts that go up, as on jack looms.'],
+              [
+                'sinking',
+                'Sinking',
+                'The tie-up marks the shafts that go down: countermarch and counterbalance looms.',
+              ],
+            ]}
+            onChange={(v) => p.onView({ sinkingShed: v === 'sinking' })}
+          />
+        )}
       </Section>
 
       <Section title="Colours" help="colours">

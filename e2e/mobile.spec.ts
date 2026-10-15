@@ -30,6 +30,8 @@ test('swiping on the pattern scrolls it in both directions', async ({ page }) =>
   await picks.press('Enter')
   if (await page.getByRole('button', { name: 'Close pattern settings' }).isVisible())
     await page.getByRole('button', { name: 'Close pattern settings' }).click()
+  // Swipe only once the settings sheet has finished closing, or the swipe lands on it.
+  await expect(page.getByRole('dialog', { name: 'Pattern settings' })).toBeHidden()
 
   const cdp = await page.context().newCDPSession(page)
   const box = await page.locator('.draft-scroll').boundingBox()

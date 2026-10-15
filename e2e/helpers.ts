@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page } from '@playwright/test'
+import { CURRENT_KEY } from '../src/current'
+import { defaultDraft } from '../src/weave'
 
 export const SAMPLE = fileURLToPath(new URL('../samples/Green blocks.weave.json', import.meta.url))
 export const sampleText = () => readFileSync(SAMPLE, 'utf8')
@@ -12,31 +14,38 @@ export const ANALYTICS_HOSTS = /googletagmanager\.com|google-analytics\.com|anal
  * it itself (page routes come before these). */
 export const FEEDBACK_HOSTS = /\.lambda-url\.[a-z0-9-]+\.on\.aws/
 
-/**
- * A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way; nor does the
- * offer to bring patterns from the old address (on the live site), unless a test asks for it.
- */
+/** A returning visitor: the tour has been offered already, so its welcome card doesn't get in the way. */
 async function tourSeen(page: Page) {
   await page.addInitScript(() => {
     if (!localStorage.getItem('wp-tour-seen'))
       localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true,"sew":true}')
-    if (!localStorage.getItem('wp-move-offer') && !localStorage.getItem('wp-moved'))
-      localStorage.setItem('wp-moved', 'dismissed')
   })
 }
 
 /**
  * Opens the app. Requests to Google Analytics are always blocked. Unless `analytics` says otherwise, the visitor
  * has already said "No thanks", so the consent banner doesn't get in the way; and has seen the tour offer, unless
- * `tour` is "new".
+ * `tour` is "new". The pattern on screen is the default 2/2 twill (`defaultDraft`) that the tests are written
+ * against, unless `pattern` is "starter": what a first visit opens with.
  */
 export async function openApp(
   page: Page,
-  { analytics = 'denied', tour = 'seen' }: { analytics?: 'denied' | 'unset'; tour?: 'seen' | 'new' } = {},
+  {
+    analytics = 'denied',
+    tour = 'seen',
+    pattern = 'default',
+  }: { analytics?: 'denied' | 'unset'; tour?: 'seen' | 'new'; pattern?: 'default' | 'starter' } = {},
 ) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
   await page.context().route(FEEDBACK_HOSTS, (route) => route.abort())
   if (tour === 'seen') await tourSeen(page)
+  if (pattern === 'default')
+    await page.addInitScript(
+      ({ key, current }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, current)
+      },
+      { key: CURRENT_KEY, current: JSON.stringify({ name: null, draft: defaultDraft() }) },
+    )
   if (analytics === 'denied')
     await page.addInitScript(() => {
       if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')
@@ -102,6 +111,13 @@ export async function openTool(page: Page, item: RegExp) {
 }
 
 export const toast = (page: Page) => page.locator('.MuiSnackbarContent-message')
+
+/** One of the Loom settings' choices: "Treadles" or "Lift plan" (Loom type), "Rising" or "Sinking" (Shed). */
+export const loomChoice = (page: Page, setting: 'Loom type' | 'Shed', name: string) =>
+  page
+    .getByRole('complementary', { name: 'Pattern settings' })
+    .getByRole('group', { name: setting, exact: true })
+    .getByRole('button', { name, exact: true })
 
 /** Opens Knit Patterner, with analytics blocked and already declined as for openApp. */
 export async function openKnit(page: Page, { tour = 'seen' }: { tour?: 'seen' | 'new' } = {}) {

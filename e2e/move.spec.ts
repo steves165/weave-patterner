@@ -40,21 +40,20 @@ async function oldAddress(page: Page) {
   )
 }
 
-test('patterns saved at the old address can be brought over', async ({ page }) => {
+test('patterns saved at the old address can be brought over from the Load dialog', async ({ page }) => {
   await oldAddress(page)
   // At the new address, where the offer is made (shown here by a test switch).
   await page.addInitScript(() => localStorage.setItem('wp-move-offer', '1'))
   await openApp(page)
-  const notice = page.getByRole('region', { name: 'Moved to a new address' })
-  await expect(notice).toContainText('Weave Patterner has a new home')
+  await toolbarButton(page, 'Load').click()
+  await expect(page.getByRole('dialog')).toContainText('Saved patterns at the old address')
 
   const popup = page.waitForEvent('popup')
-  await notice.getByRole('button', { name: 'Bring them over' }).click()
+  await page.getByRole('button', { name: 'From the old address…' }).click()
   await expect((await popup).getByText(/Sent 1 saved pattern/)).toBeVisible()
 
   // The page reloads with them in.
   await expect(page.getByText('Brought over 1 pattern and your settings.')).toBeVisible()
-  await expect(notice).toHaveCount(0)
   const local = await page.evaluate(() => ({
     colours: localStorage.getItem('wp-colours'),
     consent: localStorage.getItem('weave-analytics-consent'),
@@ -67,22 +66,19 @@ test('patterns saved at the old address can be brought over', async ({ page }) =
   expect(local.moved).toBe('done')
   await toolbarButton(page, 'Load').click()
   await expect(page.getByRole('dialog')).toContainText('Old towel')
+  await expect(page.getByRole('dialog')).not.toContainText('Saved patterns at the old address')
 })
 
-test('the offer can be turned down, and is still in the Load dialog', async ({ page }) => {
+test('a first visit at the new address gets no notice about the move', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('wp-move-offer', '1'))
   await openApp(page)
-  const notice = page.getByRole('region', { name: 'Moved to a new address' })
-  await notice.getByRole('button', { name: 'No thanks' }).click()
-  await expect(notice).toHaveCount(0)
-  await page.reload()
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
-  await expect(notice).toHaveCount(0)
-  await toolbarButton(page, 'Load').click()
-  await expect(page.getByRole('button', { name: 'From the old address…' })).toBeVisible()
+  await expect(page.getByText(/has a new home/)).toHaveCount(0)
 })
 
 test('the offer is only made at the new address', async ({ page }) => {
   await openApp(page)
-  await expect(page.getByRole('region', { name: 'Moved to a new address' })).toHaveCount(0)
+  await toolbarButton(page, 'Load').click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'From the old address…' })).toHaveCount(0)
 })

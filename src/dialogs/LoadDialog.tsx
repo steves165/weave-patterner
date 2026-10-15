@@ -24,7 +24,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { DialogTitle } from '../components/DialogTitle'
 import { PatternThumb } from '../components/PatternThumb'
 import { usePhone } from '../layout'
-import { bringOver, onNewAddress } from '../move'
+import { bringOver, moved, onNewAddress } from '../move'
 import { MAX_PATTERNS, type PatternStore, type Saved, weaveStore } from '../storage'
 import type { Draft } from '../weave'
 import { BackupDialog } from './BackupDialog'
@@ -130,6 +130,12 @@ export function LoadDialog<T = Draft>({
         {patterns?.length === 0 && (
           <Typography color="text.secondary" sx={{ p: 3, textAlign: 'center' }}>
             No saved patterns yet. Use Save to store the current pattern.
+            {onNewAddress() && !moved() && (
+              <>
+                <br />
+                Saved patterns at the old address, steves165.github.io? Bring them here with From the old address.
+              </>
+            )}
           </Typography>
         )}
         <List disablePadding>

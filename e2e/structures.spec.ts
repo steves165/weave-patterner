@@ -15,14 +15,14 @@ const cross = png(48, 48, (x, y) => ((x >= 16 && x < 32) || (y >= 16 && y < 32) 
 test.beforeEach(async ({ page }) => openApp(page))
 
 test.describe('more block structures', () => {
-  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile' })
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Profile draft' })
   async function choose(page: Page, structure: string) {
     await dialog(page).getByRole('combobox', { name: 'Structure' }).click()
     await page.getByRole('option', { name: structure, exact: true }).click()
   }
 
   test('shadow weave, taqueté and rep weave', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     const result = dialog(page).getByTestId('profile-result')
     await choose(page, 'Shadow weave')
     await expect(result).toHaveText('Makes 4 shafts, 4 treadles, 28 ends × 28 picks')

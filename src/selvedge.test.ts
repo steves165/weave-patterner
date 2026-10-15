@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { selvedgeMisses } from './selvedge'
-import { computeDrawdown, defaultDraft } from './weave'
+import { computeDrawdown, defaultDraft, starterDraft } from './weave'
 
 describe('selvedge check', () => {
+  it('finds no misses in the pattern a first visit opens with, a 2/2 twill like the default', () => {
+    const d = starterDraft()
+    expect(selvedgeMisses(d)).toEqual([])
+    const twill = (x: typeof d) => computeDrawdown(x).map((row) => row.filter(Boolean).length)
+    expect(twill(d)).toEqual(twill(defaultDraft()))
+  })
+
   it('finds no misses in plain weave', () => {
     const d = defaultDraft()
     d.tieup = d.tieup.map((row, s) => row.map((_, t) => s % 2 === t % 2))

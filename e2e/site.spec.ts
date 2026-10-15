@@ -6,7 +6,6 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('wp-tour-seen', '{"weave":true,"knit":true}')
     localStorage.setItem('weave-analytics-consent', 'denied')
-    localStorage.setItem('wp-moved', 'dismissed')
   })
 })
 

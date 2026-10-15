@@ -72,7 +72,7 @@ import { selvedgeMisses } from './selvedge'
 import { patternUrl } from './share'
 import { clothPainter } from './shareImage'
 import { type Clip, drawAlong, type Target, trompAsWrit } from './tools'
-import { computeDrawdown, type Draft, defaultDraft, emptyDraft, resizeDraft } from './weave'
+import { computeDrawdown, type Draft, emptyDraft, resizeDraft, starterDraft } from './weave'
 
 type DialogName =
   | 'save'
@@ -123,7 +123,7 @@ export default function App() {
   // The pattern from last time on this device, saved or not.
   const [restored] = useState(loadCurrent)
   const { draft, baseline, update, reset, undo, redo, canUndo, canRedo, markBaseline } = useDraftHistory(
-    () => restored?.draft ?? defaultDraft(patternColours() ?? undefined),
+    () => restored?.draft ?? starterDraft(patternColours() ?? undefined),
     restored?.baseline,
   )
   const [name, setName] = useState<string | null>(restored?.name ?? null)
@@ -238,10 +238,21 @@ export default function App() {
   /** Without a tie-up, every draft is kept as a lift plan (shafts lifted on each pick). */
   const keepLiftplan = (d: Draft) => (view.noTieup && !isDirectTieup(d) ? toLiftplan(d) : d)
   const changeView = (patch: Partial<typeof view>) => {
+    if (patch.noTieup === false && view.noTieup && isDirectTieup(draft)) {
+      // Back to a floor loom: one treadle for each different shed in the lift plan.
+      try {
+        const next = toTreadling(draft)
+        update(() => next)
+        setToast(`Tie-up and treadles: ${next.treadles} treadles, one for each different shed. The cloth is the same.`)
+      } catch (e) {
+        setToast(e instanceof Error ? e.message : String(e))
+        return
+      }
+    }
     setView(patch)
     if (patch.noTieup && !isDirectTieup(draft)) {
       update(toLiftplan)
-      setToast('No tie-up: the right-hand grid is now a lift plan, marking the shafts to lift on each pick')
+      setToast('Lift plan: the right-hand grid now marks the shafts to lift on each pick. The cloth is the same.')
     }
   }
 
@@ -438,10 +449,6 @@ export default function App() {
           }}
           onCalculator={() => setDialog('calculator')}
           onColors={() => setDialog('colors')}
-          onCloth={() => {
-            changeView({ drawCloth: true })
-            setToast('Drawing on the drawdown: click or drag to swap warp and weft. Turn it off under View.')
-          }}
           onProfile={() => setDialog('profile')}
           onDoubleCloth={() => setDialog('doublecloth')}
           onTransform={() => setDialog('transform')}
@@ -456,22 +463,6 @@ export default function App() {
           onPaper={() => setDialog('paper')}
           onDrawloom={() => setDialog('drawloom')}
           onYarns={() => setDialog('yarns')}
-          isLiftplan={isDirectTieup(draft)}
-          onToLiftplan={() => {
-            update(toLiftplan)
-            setToast('Converted to a lift plan: the right-hand grid now shows the shafts lifted on each pick')
-          }}
-          onToTreadling={() => {
-            try {
-              const next = toTreadling(draft)
-              update(() => next)
-              // A tie-up and treadling needs the tie-up shown.
-              setView({ noTieup: false })
-              setToast(`Converted to tie-up and treadling with ${next.treadles} treadles`)
-            } catch (e) {
-              setToast(e instanceof Error ? e.message : String(e))
-            }
-          }}
         />
 
         <Box
@@ -556,6 +547,7 @@ export default function App() {
                 setBlockFocus(i ?? null)
                 setDialog('blocks')
               }}
+              blockStrip={seen.has('blocks')}
               onWarpColor={(i, c) =>
                 update((d) => ({ ...d, warpColors: d.warpColors.map((v, j) => (j === i ? c : v)) }), {
                   key: `warp:${i}`,
@@ -875,12 +867,13 @@ export default function App() {
             }}
           />
         )}
-        <MoveNotice app="Weave Patterner" />
+        <MoveNotice />
         {GA_ID && consent === null && (
           <ConsentBanner
             onChoose={(allow) => {
               setConsent(allow ? 'granted' : 'denied')
-              setToast(allow ? 'Thanks: analytics is on' : 'Analytics is off. Change it any time from the footer.')
+              // No message after "No thanks": the banner going away says enough to a visitor who's just arrived.
+              if (allow) setToast('Thanks: analytics is on')
             }}
           />
         )}
