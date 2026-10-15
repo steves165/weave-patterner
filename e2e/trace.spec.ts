@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { cell, openApp, toolbarButton } from './helpers'
+import { cell, loomChoice, openApp, toolbarButton } from './helpers'
 
 const square = (page: Page, end: number, pick: number) =>
   page.locator(`.drawdown [data-end="${end - 1}"][data-pick="${pick - 1}"]`)
@@ -55,17 +55,12 @@ test('tracing works with end 1 on the right, threading below and a lift plan', a
   expect(await tracedCells(page)).toEqual(['Pick 3, treadle 3', 'End 2, shaft 2', 'Treadle 3, shaft 2'])
   await expect(page.getByLabel('Warp 2', { exact: true })).toHaveClass(/traced/)
 
-  await toolbarButton(page, 'Tools').click()
-  await page.getByRole('menuitem', { name: /Convert to lift plan/ }).click()
+  await loomChoice(page, 'Loom type', 'Lift plan').click()
   await square(page, 3, 3).click()
   await expect(info(page)).toContainText(
     'End 3, pick 3: warp shows because end 3 is on shaft 3, which is lifted on this pick',
   )
-  expect(await tracedCells(page)).toEqual([
-    'Pick 3, shaft 3',
-    'Pick 3, shaft 4',
-    'End 3, shaft 3',
-    'Treadle 3, shaft 3',
-    'Treadle 4, shaft 3',
-  ])
+  expect(await tracedCells(page)).toEqual(['Pick 3, shaft 3', 'Pick 3, shaft 4', 'End 3, shaft 3'])
+  // A lift plan loom has no tie-up to trace.
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
 })

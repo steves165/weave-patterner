@@ -106,6 +106,16 @@ export function defaultDraft(colors = { warp: DEFAULT_WARP, weft: DEFAULT_WEFT }
   }
 }
 
+/**
+ * The pattern a first visit opens with: the default 2/2 twill, with each treadle tying up the shafts of the next one
+ * along. The weft then catches both edge ends at every turn (the shuttle starting at the left), so the first thing a
+ * visitor sees has no edge warning about a pattern they haven't touched.
+ */
+export function starterDraft(colors?: { warp: string; weft: string }): Draft {
+  const d = defaultDraft(colors)
+  return { ...d, tieup: d.tieup.map((row) => row.map((_, t) => row[(t + 1) % d.treadles])) }
+}
+
 export function resizeDraft(d: Draft, dims: Partial<Pick<Draft, 'shafts' | 'treadles' | 'ends' | 'picks'>>): Draft {
   const shafts = dims.shafts ?? d.shafts
   const treadles = dims.treadles ?? d.treadles

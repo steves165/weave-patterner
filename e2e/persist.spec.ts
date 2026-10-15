@@ -17,17 +17,17 @@ test('remembers display settings between visits', async ({ page }) => {
   await expect(slider).toHaveValue('6')
   await page.getByLabel('Highlight floats longer than').check()
   await setField(page.getByLabel('Threads', { exact: true }), '3')
-  await page.getByLabel('Fabric view').check()
+  await page.getByLabel('Numbers in boxes').check()
   await page.getByText('Pattern settings').click() // fold the panel away
-  await expect(page.getByLabel('Fabric view')).toBeHidden()
+  await expect(page.getByLabel('Numbers in boxes')).toBeHidden()
 
   await reload(page)
-  await expect(page.getByLabel('Fabric view')).toBeHidden()
+  await expect(page.getByLabel('Numbers in boxes')).toBeHidden()
   await page.getByText('Pattern settings').click()
   await expect(page.getByRole('slider', { name: 'Cell size' })).toHaveValue('6')
   await expect(page.getByLabel('Highlight floats longer than')).toBeChecked()
   await expect(page.getByLabel('Threads', { exact: true })).toHaveValue('3')
-  await expect(page.getByLabel('Fabric view')).toBeChecked()
+  await expect(page.getByLabel('Numbers in boxes')).toBeChecked()
 })
 
 test('restores the unsaved pattern being worked on', async ({ page }) => {

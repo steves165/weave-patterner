@@ -57,6 +57,8 @@ test('the stripe applied is remembered in the sidebar, to change, reorder or for
 test('stripes can be dragged into a new order', async ({ page }) => {
   await applyStripe(page)
   const stripes = sidebar(page).getByTestId('warp-stripes')
+  // The Loom settings above push the stripes down the sidebar: bring them into view to drag.
+  await stripes.scrollIntoViewIfNeeded()
   const handle = await stripes.getByRole('button', { name: 'Move warp stripe 2', exact: true }).boundingBox()
   const first = await stripes.locator('[data-stripe="1"]').boundingBox()
   if (!handle || !first) throw new Error('no stripes')

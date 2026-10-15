@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { cell, openApp, setField, threading } from './helpers'
+import { cell, loomChoice, openApp, setField, threading } from './helpers'
 
 const rulerLabels = (page: Page, name: string) => page.getByLabel(name).locator('.ruler-label').allInnerTexts()
 
@@ -63,7 +63,7 @@ test('the crosshair follows the mouse and names the end and pick', async ({ page
 test('fabric view shades the drawdown like threads', async ({ page }) => {
   const drawdown = page.locator('.drawdown')
   await expect(drawdown).not.toHaveClass(/fabric/)
-  await page.getByLabel('Fabric view').check()
+  await page.getByRole('button', { name: 'Fabric', exact: true }).click()
   await expect(drawdown).toHaveClass(/fabric/)
   await expect(drawdown.locator('.cell.warp').first()).toHaveCSS('background-image', /linear-gradient/)
 })
@@ -77,7 +77,7 @@ test('sinking shed shows the shafts that go down, and editing it still weaves th
       .evaluate((dd) => [...dd.children].map((c) => (c as HTMLElement).style.backgroundColor).join())
   const before = await cloth()
 
-  await page.getByRole('switch', { name: 'Sinking shed' }).check()
+  await loomChoice(page, 'Shed', 'Sinking').click()
   await expect(page.getByRole('group', { name: 'Tie-up (sinking shed)' })).toBeVisible()
   const sinks = page.getByRole('checkbox', { name: 'Treadle 1, shaft 1 sinks' })
   await expect(sinks).toHaveAttribute('aria-checked', 'false') // shaft 1 rises on treadle 1, so it doesn't sink
@@ -86,7 +86,7 @@ test('sinking shed shows the shafts that go down, and editing it still weaves th
 
   // Marking shaft 1 as sinking on treadle 1 means it no longer rises.
   await sinks.click()
-  await page.getByRole('switch', { name: 'Sinking shed' }).uncheck()
+  await loomChoice(page, 'Shed', 'Rising').click()
   await expect(tied).toHaveAttribute('aria-checked', 'false')
 })
 
@@ -147,14 +147,14 @@ test.describe('on a landscape tablet', () => {
   }) => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
-    await expect(sidebar.getByLabel('Fabric view')).toHaveCount(0)
+    await expect(sidebar.getByLabel('Threading below')).toHaveCount(0)
     await page.getByRole('button', { name: 'Pattern settings: show' }).click()
-    await expect(sidebar.getByLabel('Fabric view')).toBeVisible()
+    await expect(sidebar.getByLabel('Threading below')).toBeVisible()
     await sidebar.getByRole('button', { name: 'New' }).scrollIntoViewIfNeeded()
     const hide = page.getByRole('button', { name: 'Pattern settings: hide' })
     await expect(hide).toBeInViewport()
     await hide.click()
-    await expect(sidebar.getByLabel('Fabric view')).toHaveCount(0)
+    await expect(sidebar.getByLabel('Threading below')).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   })
 })

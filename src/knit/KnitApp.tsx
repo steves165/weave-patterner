@@ -1669,7 +1669,7 @@ export default function KnitApp() {
           }}
         />
       )}
-      <MoveNotice app="Knit Patterner" />
+      <MoveNotice />
       {GA_ID && consent === null && (
         <ConsentBanner app="Knit Patterner" onChoose={(allow) => setConsent(allow ? 'granted' : 'denied')} />
       )}

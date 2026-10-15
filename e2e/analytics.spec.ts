@@ -14,7 +14,7 @@ test('asks before using analytics, and loads nothing without consent', async ({ 
 
   await banner.getByRole('button', { name: 'No thanks' }).click()
   await expect(banner).toBeHidden()
-  await expect(toast(page)).toContainText('Analytics is off')
+  await expect(toast(page)).toBeHidden()
   await page.reload()
   await expect(page.getByRole('group', { name: 'Threading' })).toBeVisible()
   await expect(banner).toBeHidden()

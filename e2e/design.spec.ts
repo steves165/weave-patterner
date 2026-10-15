@@ -18,12 +18,9 @@ test.describe('draw on the drawdown', () => {
         [...el.querySelectorAll<HTMLElement>('.cell')].map((c) => (c.classList.contains('warp') ? 1 : 0)).join(''),
       )
 
-  test('a switch beside Sinking shed: turning it on changes nothing, then a click swaps just that square', async ({
-    page,
-  }) => {
+  test('the Draw cloth tool: choosing it changes nothing, then a click swaps just that square', async ({ page }) => {
     const before = await cloth(page)
-    const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
-    await sidebar.getByLabel('Draw on the drawdown').check()
+    await page.getByRole('button', { name: 'Draw cloth', exact: true }).click()
     await expect(page.getByTestId('draw-hint')).toContainText('Drawing on the drawdown')
     expect(await cloth(page)).toBe(before)
     await expect(field(page, 'Shafts')).toHaveValue('4')
@@ -42,7 +39,7 @@ test.describe('draw on the drawdown', () => {
   })
 
   test('dragging draws a line of squares as one undo step; Stop drawing turns it off', async ({ page }) => {
-    await page.getByRole('complementary', { name: 'Pattern settings' }).getByLabel('Draw on the drawdown').check()
+    await page.getByRole('button', { name: 'Draw cloth', exact: true }).click()
     const before = await cloth(page)
     const a = await square(page, 10, 1).boundingBox()
     const b = await square(page, 10, 12).boundingBox()
@@ -67,18 +64,23 @@ test.describe('draw on the drawdown', () => {
     await expect(page.getByTestId('trace-info')).toBeVisible()
   })
 
-  test('Tools turns drawing on', async ({ page }) => {
-    await openTool(page, /Draw on the drawdown/)
+  test('choosing another drawing tool stops drawing on the cloth', async ({ page }) => {
+    await page.getByRole('button', { name: 'Draw cloth', exact: true }).click()
     await expect(page.getByTestId('draw-hint')).toBeVisible()
-    await expect(toast(page)).toContainText('Drawing on the drawdown')
+    await page.getByRole('button', { name: 'Straight draw', exact: true }).click()
+    await expect(page.getByTestId('draw-hint')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Straight draw', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 })
 
-test.describe('block profile', () => {
-  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile' })
+test.describe('profile draft', () => {
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Profile draft' })
 
   test('substitutes turned twill into a two-block profile', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     await expect(dialog(page).getByTestId('profile-result')).toHaveText(
       'Makes 8 shafts, 8 treadles, 28 ends × 28 picks',
     )
@@ -92,7 +94,7 @@ test.describe('block profile', () => {
   })
 
   test('adds blocks and explains mistakes', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     await dialog(page).getByLabel('Blocks', { exact: true }).fill('3')
     await expect(dialog(page).getByRole('checkbox', { name: 'Block 3, block treadle 1' })).toBeVisible()
     await dialog(page)
@@ -104,14 +106,14 @@ test.describe('block profile', () => {
 })
 
 test.describe('block structures', () => {
-  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Block profile' })
+  const dialog = (page: Page) => page.getByRole('dialog', { name: 'Profile draft' })
   async function choose(page: Page, structure: string) {
     await dialog(page).getByRole('combobox', { name: 'Structure' }).click()
     await page.getByRole('option', { name: structure, exact: true }).click()
   }
 
   test('each structure turns the same profile into its own draft', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     const result = dialog(page).getByTestId('profile-result')
     for (const [structure, makes] of [
       ['Overshot', 'Makes 4 shafts, 4 treadles, 28 ends × 28 picks'],
@@ -127,7 +129,7 @@ test.describe('block structures', () => {
   })
 
   test('block weaves have no profile tie-up to edit and cap the number of blocks', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     await choose(page, 'Overshot')
     await expect(dialog(page).getByTestId('fixed-tieup')).toContainText('each block treadle weaves its own block')
     await expect(dialog(page).getByRole('group', { name: 'Profile tie-up' })).toHaveCount(0)
@@ -141,7 +143,7 @@ test.describe('block structures', () => {
   })
 
   test('creates an overshot draft in the chosen colours, with tabby between pattern picks', async ({ page }) => {
-    await openTool(page, /Block profile/)
+    await openTool(page, /Profile draft/)
     await choose(page, 'Overshot')
     await dialog(page).getByLabel('Pattern weft').fill('#aa0000')
     await dialog(page).getByRole('button', { name: 'Create draft' }).click()

@@ -6,15 +6,7 @@ test('on a phone or tablet, a tap on the drawdown swaps a square once drawing is
   const square = page.locator('.drawdown [data-pick="2"][data-end="4"]')
   const warp = async () => (await square.getAttribute('class'))?.includes(' warp')
   const was = await warp()
-  // The view settings are in the sheet on phones and tablets, or the sidebar on wider ones.
-  const sidebar = page.getByRole('complementary', { name: 'Pattern settings' })
-  if (await sidebar.isVisible()) await sidebar.getByLabel('Draw on the drawdown').check()
-  else {
-    await page.locator('[data-tour="settings"]').last().tap()
-    const sheet = page.getByRole('dialog', { name: 'Pattern settings' })
-    await sheet.getByLabel('Draw on the drawdown').check()
-    await sheet.getByRole('button', { name: 'Close pattern settings' }).tap()
-  }
+  await page.getByRole('button', { name: 'Draw cloth', exact: true }).tap()
   await expect(page.getByTestId('draw-hint')).toContainText('tap or drag')
   await square.scrollIntoViewIfNeeded()
   await square.tap()

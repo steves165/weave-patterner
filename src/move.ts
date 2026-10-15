@@ -65,10 +65,8 @@ export function onNewAddress(): boolean {
   return NEW_HOSTS.includes(location.hostname) || safe(() => localStorage.getItem(OFFER_KEY) === '1', false)
 }
 
-/** Whether to offer bringing data over: on the new address, until it's been done or turned down. */
-export const moveOffered = () => onNewAddress() && !safe(() => localStorage.getItem(MOVED_KEY), null)
-
-export const dismissMove = () => safe(() => localStorage.setItem(MOVED_KEY, 'dismissed'), undefined)
+/** Whether patterns have been brought over from the old address already. */
+export const moved = () => safe(() => localStorage.getItem(MOVED_KEY) === 'done', false)
 
 /** The mover's message, if it is one. */
 export function asMoveData(x: unknown): MoveData | null {

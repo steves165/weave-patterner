@@ -1471,7 +1471,7 @@ export default function SewApp() {
           }}
         />
       )}
-      <MoveNotice app="Sew Patterner" />
+      <MoveNotice />
       {GA_ID && consent === null && (
         <ConsentBanner app="Sew Patterner" onChoose={(allow) => setConsent(allow ? 'granted' : 'denied')} />
       )}

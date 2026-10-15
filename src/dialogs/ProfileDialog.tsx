@@ -120,7 +120,7 @@ export function ProfileDialog({ open, draft, onClose, onApply }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen={phone} fullWidth maxWidth="sm">
-      <DialogTitle onClose={onClose}>Block profile</DialogTitle>
+      <DialogTitle onClose={onClose}>Profile draft</DialogTitle>
       <DialogContent>
         <Stack sx={{ gap: 2, pt: 1 }}>
           <Typography variant="body2" color="text.secondary">

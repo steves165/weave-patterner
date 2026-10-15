@@ -7,7 +7,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner'
-import DrawIcon from '@mui/icons-material/Draw'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
@@ -32,7 +31,6 @@ import RepeatIcon from '@mui/icons-material/Repeat'
 import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw'
 import SaveIcon from '@mui/icons-material/Save'
 import StyleIcon from '@mui/icons-material/Style'
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import TableRowsIcon from '@mui/icons-material/TableRows'
 import UndoIcon from '@mui/icons-material/Undo'
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'
@@ -101,7 +99,6 @@ interface Props {
   onTrompAsWrit: () => void
   onCalculator: () => void
   onColors: () => void
-  onCloth: () => void
   onProfile: () => void
   onDoubleCloth: () => void
   onTransform: () => void
@@ -116,10 +113,6 @@ interface Props {
   onPaper: () => void
   onDrawloom: () => void
   onYarns: () => void
-  onToLiftplan: () => void
-  onToTreadling: () => void
-  /** The draft is a lift plan (straight tie-up), so offer converting back rather than to a lift plan. */
-  isLiftplan: boolean
 }
 
 const EXPORTS: { format: ExportFormat; primary: string; secondary: string; icon: ReactNode }[] = [
@@ -241,13 +234,6 @@ export function AppToolbar(p: Props) {
     },
     {
       group: 'Design',
-      primary: 'Draw on the drawdown',
-      secondary: 'Swap squares between warp and weft, right on the drawdown',
-      onClick: p.onCloth,
-      icon: <DrawIcon fontSize="small" />,
-    },
-    {
-      group: 'Design',
       primary: 'Draw on paper…',
       secondary: 'Print a grid to colour in, then scan or photograph it as a new pattern',
       onClick: p.onPaper,
@@ -255,8 +241,8 @@ export function AppToolbar(p: Props) {
     },
     {
       group: 'Design',
-      primary: 'Block profile…',
-      secondary: 'Design in blocks: overshot, summer and winter, lace, crackle, twill…',
+      primary: 'Profile draft…',
+      secondary: 'Design with blocks of a weave: overshot, summer and winter, lace, crackle, twill…',
       onClick: p.onProfile,
       icon: <ViewModuleIcon fontSize="small" />,
     },
@@ -302,21 +288,6 @@ export function AppToolbar(p: Props) {
       onClick: p.onTransform,
       icon: <Rotate90DegreesCwIcon fontSize="small" />,
     },
-    p.isLiftplan
-      ? {
-          group: 'Change the whole draft',
-          primary: 'Convert to tie-up and treadling',
-          secondary: 'One treadle for each different shed, for floor looms',
-          onClick: p.onToTreadling,
-          icon: <SwapHorizIcon fontSize="small" />,
-        }
-      : {
-          group: 'Change the whole draft',
-          primary: 'Convert to lift plan',
-          secondary: 'Shafts per pick, for dobby looms',
-          onClick: p.onToLiftplan,
-          icon: <SwapHorizIcon fontSize="small" />,
-        },
     {
       group: 'Change the whole draft',
       primary: 'Cloth report…',

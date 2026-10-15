@@ -73,8 +73,8 @@ export const WEAVE_HELP: Topic[] = [
       },
       {
         list: [
-          '**Sinking shed**: for counterbalance and countermarch looms where you tie the shafts that go down. The tie-up then shows the sinking shafts; the cloth is the same.',
-          '**No tie-up (lift plan)**: for table looms and dobby looms. The treadling becomes a lift plan, marking the shafts lifted on each pick. See [[treadling|Treadling and lift plans]].',
+          '**Shed › Sinking** (Loom settings): for counterbalance and countermarch looms where you tie the shafts that go down. The tie-up then shows the sinking shafts; the cloth is the same.',
+          '**Loom type › Lift plan** (Loom settings): for table looms and dobby looms. There is no tie-up, and the treadling becomes a lift plan, marking the shafts lifted on each pick. See [[treadling|Treadling and lift plans]].',
         ],
       },
     ],
@@ -90,8 +90,8 @@ export const WEAVE_HELP: Topic[] = [
       },
       {
         list: [
-          'With **No tie-up** turned on, the treadling is a **lift plan**: each row marks the shafts lifted for that pick, for table and dobby looms.',
-          '**Tools › Convert to lift plan** (or **to tie-up and treadling**) switches between the two, keeping the same cloth.',
+          'With **Loom type › Lift plan** chosen in the Loom settings, the treadling is a **lift plan**: each row marks the shafts lifted for that pick, for table and dobby looms.',
+          'Switching **Loom type** between **Treadles** and **Lift plan** converts the draft, keeping the same cloth: back to treadles, each different shed gets a treadle.',
           '**Tools › Tromp as writ** treadles the pattern as it is threaded.',
           'The colour strip to the right of the treadling is the weft colours: click a swatch to change that pick.',
         ],
@@ -111,9 +111,9 @@ export const WEAVE_HELP: Topic[] = [
         list: [
           '**Click a square** to trace it: the threading, tie-up and treadling boxes that decide it are outlined, with an explanation. Press Escape to stop.',
           '**Drawdown / Face / Back** (above the draft): the plain drawdown, or the face or back of the cloth as woven (they differ for double cloth and other layered weaves).',
-          '**Fabric view** (view settings) shades the squares like threads.',
+          '**Fabric** (beside Drawdown / Face / Back) shades the squares like threads.',
           'Hover over the draft to see which end and pick you are on.',
-          '**Draw on the drawdown** (a switch with the view settings, or in Tools) lets you click or drag across the drawdown to swap squares between warp and weft. Turning it on changes nothing; each square you draw changes only that square, using the shafts and treadles the draft already has: rethreading its end, moving its pick to another treadle, changing a box of the tie-up, or tying up a spare shaft or treadle. Only when every one of those would change other squares too does it add a shaft (and a treadle) for that square. A drag is one undo step, and shafts and treadles it tried and no longer needs are taken away again.',
+          'The **Draw cloth** tool (with Click, Straight draw and Point draw above the draft) lets you click or drag across the drawdown to swap squares between warp and weft. Turning it on changes nothing; each square you draw changes only that square, using the shafts and treadles the draft already has: rethreading its end, moving its pick to another treadle, changing a box of the tie-up, or tying up a spare shaft or treadle. Only when every one of those would change other squares too does it add a shaft (and a treadle) for that square. A drag is one undo step, and shafts and treadles it tried and no longer needs are taken away again.',
         ],
       },
       { p: 'When you change the draft, the squares that changed glow for a moment so you can see what your edit did.' },
@@ -122,15 +122,16 @@ export const WEAVE_HELP: Topic[] = [
   {
     id: 'drawing',
     title: 'Drawing tools',
-    summary: 'Click, Straight draw and Point draw',
+    summary: 'Click, Straight draw, Point draw and Draw cloth',
     keywords: ['straight', 'point', 'draw', 'drag', 'paint'],
     body: [
-      { p: 'The three drawing tools above the draft change how dragging along the threading or treadling works:' },
+      { p: 'The drawing tools above the draft change how clicking and dragging works:' },
       {
         list: [
           '**Click**: each box you click or drag over is set or cleared, one at a time.',
           '**Straight draw**: press a box and drag along to fill 1 2 3 4 1 2 3 4… Drag up the shafts to climb, down to descend.',
           '**Point draw**: as straight draw, but turning back at the top and bottom: 1 2 3 4 3 2 1…',
+          '**Draw cloth**: click or drag on the drawdown to swap squares between warp and weft (see [[drawdown|The drawdown]]).',
         ],
       },
       {
@@ -194,7 +195,7 @@ export const WEAVE_HELP: Topic[] = [
           'To make your own presets, save a pattern, then star it under **Load**.',
         ],
       },
-      { p: 'For block weaves such as overshot or summer and winter, see **Tools › Block profile**.' },
+      { p: 'For block weaves such as overshot or summer and winter, see **Tools › Profile draft**.' },
     ],
   },
   {
@@ -226,6 +227,18 @@ export const WEAVE_HELP: Topic[] = [
       { h: 'Loom' },
       { p: 'Shafts, treadles, ends (warp threads) and picks (weft threads). Up to 128 shafts and treadles.' },
       {
+        terms: [
+          [
+            'Loom type',
+            '**Treadles** for floor looms (a tie-up and treadling), or **Lift plan** for table and dobby looms (no tie-up).',
+          ],
+          [
+            'Shed',
+            '**Rising** if the tie-up marks the shafts that go up; **Sinking** for countermarch and counterbalance looms.',
+          ],
+        ],
+      },
+      {
         tip: '**Colour themes** are under **Theme** at the bottom of the page, beside Help (on phones, at the bottom of this sheet): **Seasonal**, which follows the time of year (with Easter, Halloween and Christmas when it’s time), or any one of Spring, Summer, Autumn, Winter, Easter, Halloween, Christmas or the green Rachel’s Theme <3, in place of the pink. New patterns start in the theme’s colours; patterns you have keep theirs. Knit Patterner uses the same choice.',
       },
       { h: 'View' },
@@ -233,12 +246,9 @@ export const WEAVE_HELP: Topic[] = [
         terms: [
           ['Cell size', 'How big the boxes are.'],
           ['Ruler every', 'Number every this many ends and picks (0 for none).'],
-          ['No tie-up', 'Show a lift plan instead of a tie-up and treadling.'],
           ['Thread colours in boxes', 'Fill threading and treadling boxes with their colour.'],
           ['End 1 on the right', 'Draw the draft mirrored, as for looms threaded from the right.'],
           ['Numbers in boxes', 'Show the shaft or treadle number in filled boxes.'],
-          ['Fabric view', 'Shade the drawdown like threads.'],
-          ['Sinking shed', 'Show the tie-up as the shafts that sink.'],
           ['Threading below', 'Put the threading and tie-up under the drawdown.'],
         ],
       },
@@ -331,12 +341,11 @@ export const WEAVE_HELP: Topic[] = [
           ['Sequence tools', 'Fill, repeat, mirror, reverse, insert or delete ends and picks; copy and paste them.'],
           ['Tromp as writ', 'Treadle as threaded.'],
           ['Colours and presets', 'Stripe sequences and classic colour patterns.'],
-          ['Draw on the drawdown', 'Turns on drawing on the drawdown (also a switch in the view settings).'],
           [
             'Draw on paper',
             'Print a grid to colour in by hand, then scan or photograph it and open it as a new pattern (see [[paper|Drawing on paper]]).',
           ],
-          ['Block profile', 'Design in blocks: overshot, summer and winter, lace, crackle, turned twill and more.'],
+          ['Profile draft', 'Design in blocks: overshot, summer and winter, lace, crackle, turned twill and more.'],
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],
           ['Echo weave', 'A design line threaded with its echo, in two colours.'],
