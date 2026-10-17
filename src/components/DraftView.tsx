@@ -81,9 +81,9 @@ export function DraftView(p: Props) {
   // Drawn column -> end index, and back (the mapping is its own inverse).
   const endAt = (column: number) => (mirrored ? ends - 1 - column : column)
   const columns = Array.from({ length: ends }, (_, c) => endAt(c))
-  const liftplan = isDirectTieup(draft)
-  // A loom without a tie-up lifts shafts directly: the lift plan needs no tie-up beside it.
-  const hideTieup = view.noTieup && liftplan
+  // A loom without a tie-up lifts shafts directly: the lift plan needs no tie-up beside it. (On treadles, a tie-up
+  // with treadle n lifting shaft n is still a tie-up and treadles.)
+  const liftplan = view.noTieup && isDirectTieup(draft)
   const range = p.selection ? selectionRange(p.selection) : null
   const inSelection = (target: Target, i: number) =>
     range !== null && range.target === target && i + 1 >= range.from && i + 1 <= range.to
@@ -257,7 +257,7 @@ export function DraftView(p: Props) {
         onSelect={p.selectMode ? (_, c, extend) => select('threading', endAt(c), extend) : undefined}
         onHover={(cell) => p.onHoverThread('threading', cell ? endAt(cell[1]) : null)}
       />
-      {hideTieup ? (
+      {liftplan ? (
         <div />
       ) : (
         <>

@@ -1,5 +1,15 @@
 import { expect, test } from '@playwright/test'
-import { drawdownPicture, loomChoice, openApp, openTool, setField, toast, toolbarButton } from './helpers'
+import {
+  cell,
+  drawdownPicture,
+  loomChoice,
+  newPattern,
+  openApp,
+  openTool,
+  setField,
+  toast,
+  toolbarButton,
+} from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -25,7 +35,7 @@ test('the Loom setting converts to a lift plan and back without changing the clo
   await page.getByRole('button', { name: 'Close weaving mode' }).click()
 
   await loomChoice(page, 'Loom type', 'Treadles').click()
-  await expect(toast(page)).toContainText('Tie-up and treadles: 4 treadles')
+  await expect(toast(page)).toContainText('Tie-up and treadles: your tie-up is back. The cloth is the same.')
   await expect(page.getByRole('group', { name: 'Treadling' })).toBeVisible()
   expect(await cloth()).toBe(before)
 })
@@ -123,4 +133,81 @@ test('with a drawing tool, clicks that slip into the next box still add lifts to
   await page.mouse.up()
   for (let p = 5; p <= 8; p++)
     await expect(grid.getByRole('checkbox', { name: new RegExp(`^Pick ${p}, shaft`), checked: true })).toHaveCount(1)
+})
+
+test('switching to a lift plan and back keeps your tie-up and everything drawn on either', async ({ page }) => {
+  // Your own tie-up: treadle 4 also lifts shaft 2.
+  await cell(page, 'Treadle 4, shaft 2').click()
+  await expect(cell(page, 'Treadle 4, shaft 2')).toHaveAttribute('aria-checked', 'true')
+  const tieup = await page
+    .getByRole('group', { name: 'Tie-up' })
+    .getByRole('checkbox')
+    .evaluateAll((cells) => cells.map((c) => c.getAttribute('aria-checked')).join())
+
+  // On the lift plan, pick 1 gets shaft 3 as well.
+  await loomChoice(page, 'Loom type', 'Lift plan').click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  await cell(page, 'Pick 1, shaft 3').click()
+  const cloth = await drawdownPicture(page)
+
+  // Back on treadles: the same tie-up, with one more treadle for pick 1's new shed, and the same cloth.
+  await loomChoice(page, 'Loom type', 'Treadles').click()
+  await expect(toast(page)).toContainText('your tie-up is back, with 1 more treadle for new sheds')
+  await expect(cell(page, 'Treadle 4, shaft 2')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Treadle 5, shaft 3')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Pick 1, treadle 5')).toHaveAttribute('aria-checked', 'true')
+  expect(await drawdownPicture(page)).toBe(cloth)
+  const first4 = await page
+    .getByRole('group', { name: 'Tie-up' })
+    .getByRole('checkbox')
+    .evaluateAll((cells) =>
+      cells
+        .filter((c) => /^Treadle [1-4],/.test(c.getAttribute('aria-label') ?? ''))
+        .map((c) => c.getAttribute('aria-checked'))
+        .join(),
+    )
+  expect(first4).toBe(tieup)
+
+  // Pick 2 on treadle 1 here, then over and back once more: nothing is lost.
+  await cell(page, 'Pick 2, treadle 1').click()
+  const after = await drawdownPicture(page)
+  await loomChoice(page, 'Loom type', 'Lift plan').click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  await expect(cell(page, 'Pick 1, shaft 3')).toHaveAttribute('aria-checked', 'true')
+  expect(await drawdownPicture(page)).toBe(after)
+  await loomChoice(page, 'Loom type', 'Treadles').click()
+  await expect(cell(page, 'Treadle 4, shaft 2')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Pick 2, treadle 1')).toHaveAttribute('aria-checked', 'true')
+  expect(await drawdownPicture(page)).toBe(after)
+})
+
+test('undo goes back across a switch of loom type, tie-up and all', async ({ page }) => {
+  await loomChoice(page, 'Loom type', 'Lift plan').click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  await cell(page, 'Pick 1, shaft 3').click()
+
+  await toolbarButton(page, 'Undo').click()
+  await expect(cell(page, 'Pick 1, shaft 3')).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  // Undoing the switch itself is back on treadles, with the tie-up.
+  await toolbarButton(page, 'Undo').click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Treadling' })).toBeVisible()
+  await expect(loomChoice(page, 'Loom type', 'Treadles')).toHaveAttribute('aria-pressed', 'true')
+
+  // And redo goes forward again, to the lift plan.
+  await toolbarButton(page, 'Redo').click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toHaveCount(0)
+  await expect(loomChoice(page, 'Loom type', 'Lift plan')).toHaveAttribute('aria-pressed', 'true')
+  await toolbarButton(page, 'Redo').click()
+  await expect(cell(page, 'Pick 1, shaft 3')).toHaveAttribute('aria-checked', 'true')
+})
+
+test('a straight tie-up on treadles stays a tie-up and treadles', async ({ page }) => {
+  await newPattern(page)
+  // 4 shafts and 4 treadles, tied up straight: treadle n lifts shaft n.
+  for (let n = 1; n <= 4; n++) await cell(page, `Treadle ${n}, shaft ${n}`).click()
+  await expect(page.getByRole('group', { name: 'Tie-up' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Treadling' })).toBeVisible()
+  await expect(cell(page, 'Pick 1, treadle 1')).toBeVisible()
 })
