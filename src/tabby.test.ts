@@ -45,12 +45,19 @@ describe('tabby', () => {
     expect(draft.treadling[3].map(Number).join('')).toBe('0101')
   })
 
-  it('weaves the tabby in the main warp colour, keeping the pattern picks colours', () => {
+  it('weaves each tabby pick in the colour of the pick before it', () => {
+    const d = defaultDraft()
+    d.weftColors = d.weftColors.map((_, p) => (p % 2 ? '#0000aa' : '#aa0000'))
+    const { draft } = addTabby(d)
+    expect(draft.weftColors.slice(0, 4)).toEqual(['#aa0000', '#aa0000', '#0000aa', '#0000aa'])
+  })
+
+  it('weaves the tabby in one chosen colour, keeping the pattern picks colours', () => {
     const d = defaultDraft()
     d.warpColors = d.warpColors.map((_, e) => (e < 4 ? '#aa0000' : '#00aa00'))
     d.weftColors = d.weftColors.map(() => '#0000aa')
     expect(tabbyColour(d)).toBe('#00aa00')
-    const { draft } = addTabby(d)
+    const { draft } = addTabby(d, tabbyColour(d))
     expect(draft.weftColors.slice(0, 4)).toEqual(['#0000aa', '#00aa00', '#0000aa', '#00aa00'])
   })
 

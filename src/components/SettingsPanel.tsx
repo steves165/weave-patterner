@@ -8,6 +8,9 @@ import {
   FormControlLabel,
   Menu,
   MenuItem,
+  Popover,
+  Radio,
+  RadioGroup,
   Slider,
   Stack,
   Switch,
@@ -21,6 +24,7 @@ import { type ReactNode, useEffect, useId, useState } from 'react'
 import type { ColorRun } from '../colors'
 import type { ViewOptions } from '../hooks/useViewOptions'
 import { patternColours } from '../seasons'
+import { tabbyColour } from '../tabby'
 import { MONO_FONT } from '../theme'
 import { MAX_THREADS } from '../tools'
 import { CELL_MAX, CELL_MIN } from '../viewOptions'
@@ -88,8 +92,8 @@ interface Props {
   onTrimToRepeat: () => void
   /** Fills the empty ends and picks with the threading and treadling drawn so far; null when there are none. */
   onFillWithRepeat: (() => void) | null
-  /** Adds a plain weave (tabby) pick after every pick. */
-  onAddTabby: () => void
+  /** Adds a plain weave (tabby) pick after every pick, in `colour` or the colour of the pick before each. */
+  onAddTabby: (colour?: string) => void
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   /** The longest float in the draft, warp or weft, in threads. */
@@ -135,6 +139,74 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
 export type ClearGrid = 'threading' | 'tieup' | 'treadling' | 'all'
 
 /** Clear: one grid at a time (threading, tie-up, treadling or lift plan), or all of them. */
+/** Add tabby, with a choice of tabby weft colour: the pick before each tabby pick's, or one colour for them all. */
+function TabbyMenu({ draft, onAdd }: { draft: Draft; onAdd: (colour?: string) => void }) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const [oneColour, setOneColour] = useState(false)
+  const [colour, setColour] = useState<string | null>(null)
+  const id = useId()
+  return (
+    <>
+      <Tooltip
+        title="Add a plain weave pick after every pick, each the opposite shed to the tabby pick before it"
+        describeChild
+      >
+        <Button
+          size="small"
+          variant="outlined"
+          color="inherit"
+          aria-haspopup="dialog"
+          aria-controls={anchor ? id : undefined}
+          aria-expanded={anchor ? 'true' : undefined}
+          onClick={(e) => setAnchor(e.currentTarget)}
+        >
+          Add tabby…
+        </Button>
+      </Tooltip>
+      <Popover
+        id={id}
+        open={anchor !== null}
+        anchorEl={anchor}
+        onClose={() => setAnchor(null)}
+        slotProps={{ paper: { role: 'dialog', 'aria-label': 'Add tabby', sx: { p: 2 } } }}
+      >
+        <Typography variant="subtitle2" component="h3" id={`${id}-colour`}>
+          Tabby weft colour
+        </Typography>
+        <RadioGroup
+          aria-labelledby={`${id}-colour`}
+          value={oneColour ? 'one' : 'before'}
+          onChange={(e) => setOneColour(e.target.value === 'one')}
+        >
+          <FormControlLabel value="before" control={<Radio size="small" />} label="Same as the pick before" />
+          <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+            <FormControlLabel value="one" control={<Radio size="small" />} label="One colour" sx={{ mr: 0 }} />
+            <ColourInput
+              label="Tabby colour"
+              value={colour ?? tabbyColour(draft)}
+              onChange={(v) => {
+                setColour(v)
+                setOneColour(true)
+              }}
+            />
+          </Stack>
+        </RadioGroup>
+        <Button
+          variant="contained"
+          size="small"
+          sx={{ mt: 1 }}
+          onClick={() => {
+            setAnchor(null)
+            onAdd(oneColour ? (colour ?? tabbyColour(draft)) : undefined)
+          }}
+        >
+          Add tabby
+        </Button>
+      </Popover>
+    </>
+  )
+}
+
 function ClearMenu({ liftplan, onClear }: { liftplan: boolean; onClear: (grid: ClearGrid) => void }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const id = useId()
@@ -447,14 +519,7 @@ export function SettingsPanel(p: Props) {
               </Button>
             </span>
           </Tooltip>
-          <Tooltip
-            title="Add a plain weave pick after every pick, each the opposite shed to the tabby pick before it"
-            describeChild
-          >
-            <Button size="small" variant="outlined" color="inherit" onClick={p.onAddTabby}>
-              Add tabby
-            </Button>
-          </Tooltip>
+          <TabbyMenu draft={p.draft} onAdd={p.onAddTabby} />
           <ClearMenu liftplan={p.view.noTieup} onClear={p.onClear} />
           <Tooltip
             title={

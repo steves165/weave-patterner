@@ -123,8 +123,12 @@ test('Variations offers plain weave and satin tie-ups', async ({ page }) => {
 })
 
 test('Add tabby puts a plain weave pick after every pick, alternating sheds', async ({ page }) => {
-  await page.getByRole('button', { name: 'Add tabby' }).click()
+  const weft1 = await page.getByLabel('Weft 1', { exact: true }).inputValue()
+  await page.getByRole('button', { name: 'Add tabby…' }).click()
+  await page.getByRole('dialog', { name: 'Add tabby' }).getByRole('button', { name: 'Add tabby' }).click()
   await expect(toast(page)).toContainText('Tabby added')
+  // Woven in the colour of the pick before.
+  await expect(page.getByLabel('Weft 2', { exact: true })).toHaveValue(weft1)
   await expect(page.getByLabel('Picks', { exact: true })).toHaveValue('64')
   // Tabby treadles 5 (shafts 1, 3) and 6 (shafts 2, 4), on picks 2, 4, 6…
   await expect(cell(page, 'Pick 2, treadle 5')).toHaveAttribute('aria-checked', 'true')
@@ -138,4 +142,15 @@ test('Add tabby puts a plain weave pick after every pick, alternating sheds', as
   // One undo takes it all back.
   await toolbarButton(page, 'Undo').click()
   await expect(page.getByLabel('Picks', { exact: true })).toHaveValue('32')
+})
+
+test('Add tabby can weave the tabby in one colour', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add tabby…' }).click()
+  const menu = page.getByRole('dialog', { name: 'Add tabby' })
+  await menu.getByLabel('Tabby colour').fill('#123456')
+  await expect(menu.getByRole('radio', { name: 'One colour' })).toBeChecked()
+  await menu.getByRole('button', { name: 'Add tabby' }).click()
+  await expect(toast(page)).toContainText('Tabby added')
+  await expect(page.getByLabel('Weft 2', { exact: true })).toHaveValue('#123456')
+  await expect(page.getByLabel('Weft 4', { exact: true })).toHaveValue('#123456')
 })

@@ -488,9 +488,9 @@ export default function App() {
           )
         })
       }
-      onAddTabby={() => {
+      onAddTabby={(colour) => {
         try {
-          const { draft: next, treadles } = addTabby(draft)
+          const { draft: next, treadles } = addTabby(draft, colour)
           update(() => keepLiftplan(next))
           setToast(
             `Tabby added: a plain weave pick after every pick, alternating shafts 1, 3… and 2, 4…${treadles ? ` (treadles ${treadles[0]} and ${treadles[1]})` : ''}. Undo with Ctrl+Z.`,

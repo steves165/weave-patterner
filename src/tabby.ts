@@ -22,9 +22,10 @@ export interface Tabbied {
 /**
  * Adds a tabby (plain weave) pick after every pick, alternately lifting shafts 1, 3, 5… and 2, 4, 6…, so each tabby
  * pick is the opposite shed to the one before it. On treadles it uses treadles that already tie up those sheds, or
- * adds two tabby treadles; on a lift plan the tabby picks lift the shafts directly.
+ * adds two tabby treadles; on a lift plan the tabby picks lift the shafts directly. Each tabby pick is woven in `colour`,
+ * or without one in the colour of the pick before it.
  */
-export function addTabby(d: Draft, colour = tabbyColour(d)): Tabbied {
+export function addTabby(d: Draft, colour?: string): Tabbied {
   if (d.shafts < 2) throw new Error('Tabby needs at least 2 shafts')
   const picks = d.picks * 2
   if (picks > MAX_THREADS) throw new Error(`That would make ${picks} picks; the limit is ${MAX_THREADS}`)
@@ -50,7 +51,7 @@ export function addTabby(d: Draft, colour = tabbyColour(d)): Tabbied {
   }
   const widen = (row: boolean[]) => [...row, ...Array<boolean>(treadles - row.length).fill(false)]
   const treadling = d.treadling.flatMap((row, p) => [widen(row), rowFor(sheds[p % 2])])
-  const weftColors = d.weftColors.flatMap((c) => [c, colour])
+  const weftColors = d.weftColors.flatMap((c) => [c, colour ?? c])
   // Weft stripes no longer line up with the picks.
   const stripes = d.stripes?.warp ? { warp: d.stripes.warp } : undefined
   return {
