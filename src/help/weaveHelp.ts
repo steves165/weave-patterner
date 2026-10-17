@@ -89,7 +89,7 @@ export const WEAVE_HELP: Topic[] = [
     keywords: ['picks', 'weft', 'lift plan', 'tromp as writ', 'dobby'],
     body: [
       {
-        p: 'Each row of the treadling is one **pick** (a pass of the weft), read from the top (or from the bottom, with **Pick 1 at the bottom** on in the view settings). Fill the box under the treadle to press for that pick. A pick can use several treadles at once.',
+        p: 'Each row of the treadling is one **pick** (a pass of the weft), read from the bottom up (or from the top, with **Pick 1 at the bottom** off in the view settings). Fill the box under the treadle to press for that pick. A pick can use several treadles at once.',
       },
       {
         list: [

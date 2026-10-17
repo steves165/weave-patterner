@@ -26,7 +26,8 @@ async function tourSeen(page: Page) {
  * Opens the app. Requests to Google Analytics are always blocked. Unless `analytics` says otherwise, the visitor
  * has already said "No thanks", so the consent banner doesn't get in the way; and has seen the tour offer, unless
  * `tour` is "new". The pattern on screen is the default 2/2 twill (`defaultDraft`) that the tests are written
- * against, unless `pattern` is "starter": what a first visit opens with.
+ * against, unless `pattern` is "starter": what a first visit opens with. Picks run as they do by default (pick 1 at
+ * the bottom) unless `pickOne` is "top", for tests that read or click the grids from the top down.
  */
 export async function openApp(
   page: Page,
@@ -34,7 +35,13 @@ export async function openApp(
     analytics = 'denied',
     tour = 'seen',
     pattern = 'default',
-  }: { analytics?: 'denied' | 'unset'; tour?: 'seen' | 'new'; pattern?: 'default' | 'starter' } = {},
+    pickOne = 'default',
+  }: {
+    analytics?: 'denied' | 'unset'
+    tour?: 'seen' | 'new'
+    pattern?: 'default' | 'starter'
+    pickOne?: 'default' | 'top'
+  } = {},
 ) {
   await page.context().route(ANALYTICS_HOSTS, (route) => route.abort())
   await page.context().route(FEEDBACK_HOSTS, (route) => route.abort())
@@ -46,6 +53,10 @@ export async function openApp(
       },
       { key: CURRENT_KEY, current: JSON.stringify({ name: null, draft: defaultDraft() }) },
     )
+  if (pickOne === 'top')
+    await page.addInitScript(() => {
+      if (!localStorage.getItem('weave-view')) localStorage.setItem('weave-view', '{"pickOneBottom":false}')
+    })
   if (analytics === 'denied')
     await page.addInitScript(() => {
       if (!localStorage.getItem('weave-analytics-consent')) localStorage.setItem('weave-analytics-consent', 'denied')

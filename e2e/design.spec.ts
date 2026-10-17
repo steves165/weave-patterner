@@ -3,7 +3,7 @@ import { openApp, openTool, threading, toast, toolbarButton } from './helpers'
 
 const field = (page: Page, name: string) => page.getByLabel(name, { exact: true })
 
-test.beforeEach(async ({ page }) => openApp(page))
+test.beforeEach(async ({ page }) => openApp(page, { pickOne: 'top' }))
 
 test.describe('draw on the drawdown', () => {
   const square = (page: Page, pick: number, end: number) =>

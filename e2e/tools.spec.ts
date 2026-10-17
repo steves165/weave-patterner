@@ -9,7 +9,7 @@ async function sequenceTools(page: Page, from?: number, to?: number) {
   if (to !== undefined) await dialog(page).getByLabel('To').fill(String(to))
 }
 
-test.beforeEach(async ({ page }) => openApp(page))
+test.beforeEach(async ({ page }) => openApp(page, { pickOne: 'top' }))
 
 test('fills the threading with a point draw', async ({ page }) => {
   await sequenceTools(page)

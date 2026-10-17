@@ -9,7 +9,7 @@ const squareColor = (page: Page, end: number, pick: number) =>
 const WARP = 'rgb(214, 36, 110)'
 const WEFT = 'rgb(255, 211, 228)'
 
-test.beforeEach(async ({ page }) => openApp(page))
+test.beforeEach(async ({ page }) => openApp(page, { pickOne: 'top' }))
 
 test('turns the draft through 90°, swapping warp and weft, and undoes', async ({ page }) => {
   await setField(page.getByLabel('Picks', { exact: true }), '16')

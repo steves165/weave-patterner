@@ -46,7 +46,7 @@ export const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
 export const DEFAULT_VIEW: ViewOptions = {
   drawTool: 'click',
   endOneRight: false,
-  pickOneBottom: false,
+  pickOneBottom: true,
   colorBoxes: true,
   numbers: false,
   ruler: 4,

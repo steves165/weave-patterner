@@ -11,7 +11,7 @@ import {
   toolbarButton,
 } from './helpers'
 
-test.beforeEach(async ({ page }) => openApp(page))
+test.beforeEach(async ({ page }) => openApp(page, { pickOne: 'top' }))
 
 test('the Loom setting converts to a lift plan and back without changing the cloth', async ({ page }) => {
   const cloth = () =>

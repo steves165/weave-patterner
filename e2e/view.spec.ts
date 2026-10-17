@@ -39,19 +39,17 @@ test('end 1 on the right mirrors the display but not the data', async ({ page })
   await expect(firstDrawn).toHaveAttribute('aria-label', 'End 32, shaft 1')
 })
 
-test('pick 1 at the bottom turns the picks upside down, but not the data', async ({ page }) => {
+test('pick 1 is at the bottom by default; turning it off turns the picks over, but not the data', async ({ page }) => {
   const treadling = page.getByRole('group', { name: 'Treadling' })
   const firstRow = treadling.getByRole('checkbox').first()
-  await expect(firstRow).toHaveAttribute('aria-label', 'Pick 1, treadle 1')
-  const cloth = await page.locator('.drawdown [data-pick="0"][data-end="0"]').evaluate((c) => c.className)
-
-  await page.getByLabel('Pick 1 at the bottom').check()
+  const toggle = page.getByLabel('Pick 1 at the bottom')
+  await expect(toggle).toBeChecked()
   await expect(firstRow).toHaveAttribute('aria-label', 'Pick 32, treadle 1')
   await expect(treadling.getByRole('checkbox').last()).toHaveAttribute('aria-label', 'Pick 1, treadle 4')
-  // The drawdown's top row is pick 32 now, and pick 1 is at the bottom, the same as before.
+  // The drawdown's top row is pick 32, and pick 1 is at the bottom.
   await expect(page.locator('.drawdown .cell').first()).toHaveAttribute('data-pick', '31')
   await expect(page.locator('.drawdown .cell').last()).toHaveAttribute('data-pick', '0')
-  expect(await page.locator('.drawdown [data-pick="0"][data-end="0"]').evaluate((c) => c.className)).toBe(cloth)
+  const cloth = await page.locator('.drawdown [data-pick="0"][data-end="0"]').evaluate((c) => c.className)
   // The pick numbers count up the page: 4 sits below 32.
   const markTop = (n: string) =>
     page
@@ -59,15 +57,8 @@ test('pick 1 at the bottom turns the picks upside down, but not the data', async
       .locator('.ruler-mark', { hasText: new RegExp(`^${n}$`) })
       .evaluate((m) => (m as HTMLElement).offsetTop)
   expect(await markTop('4')).toBeGreaterThan(await markTop('32'))
-  // Clicking a box still changes the pick it's labelled with.
-  await cell(page, 'Pick 1, treadle 3').click()
-  await expect(cell(page, 'Pick 1, treadle 3')).toHaveAttribute('aria-checked', 'true')
-  await page.getByLabel('Pick 1 at the bottom').uncheck()
-  await expect(firstRow).toHaveAttribute('aria-label', 'Pick 1, treadle 1')
-  await expect(cell(page, 'Pick 1, treadle 3')).toHaveAttribute('aria-checked', 'true')
 
   // The crosshair names the pick under the mouse.
-  await page.getByLabel('Pick 1 at the bottom').check()
   await page.locator('.drawdown').scrollIntoViewIfNeeded()
   const box = await page.locator('.drawdown').boundingBox()
   if (!box) throw new Error('drawdown not visible')
@@ -75,10 +66,21 @@ test('pick 1 at the bottom turns the picks upside down, but not the data', async
   await page.mouse.move(box.x + 1 + 5 * pitch + 3, box.y + 1 + 3 * pitch + 3)
   await expect(page.getByTestId('crosshair-label')).toHaveText('End 6 · Pick 29')
 
+  // Clicking a box changes the pick it's labelled with.
+  await cell(page, 'Pick 1, treadle 3').click()
+  await expect(cell(page, 'Pick 1, treadle 3')).toHaveAttribute('aria-checked', 'true')
+
+  await toggle.uncheck()
+  await expect(firstRow).toHaveAttribute('aria-label', 'Pick 1, treadle 1')
+  await expect(cell(page, 'Pick 1, treadle 3')).toHaveAttribute('aria-checked', 'true')
+  await expect(page.locator('.drawdown .cell').first()).toHaveAttribute('data-pick', '0')
+  expect(await page.locator('.drawdown [data-pick="0"][data-end="0"]').evaluate((c) => c.className)).toBe(cloth)
+  expect(await markTop('4')).toBeLessThan(await markTop('32'))
+
   // The choice is remembered.
   await page.reload()
-  await expect(page.getByLabel('Pick 1 at the bottom')).toBeChecked()
-  await expect(firstRow).toHaveAttribute('aria-label', 'Pick 32, treadle 1')
+  await expect(toggle).not.toBeChecked()
+  await expect(firstRow).toHaveAttribute('aria-label', 'Pick 1, treadle 1')
 })
 
 test('numbers in boxes show shaft and treadle numbers', async ({ page }) => {
@@ -95,7 +97,7 @@ test('the crosshair follows the mouse and names the end and pick', async ({ page
   if (!box) throw new Error('drawdown not visible')
   const pitch = Number((await page.getByLabel('Cell size').getAttribute('aria-valuenow')) ?? 20) + 1
   await page.mouse.move(box.x + 1 + 5 * pitch + 3, box.y + 1 + 3 * pitch + 3)
-  await expect(page.getByTestId('crosshair-label')).toHaveText('End 6 · Pick 4')
+  await expect(page.getByTestId('crosshair-label')).toHaveText('End 6 · Pick 29')
   await expect(page.getByTestId('crosshair-column')).toBeVisible()
   await expect(page.getByTestId('crosshair-row')).toBeVisible()
   await page.mouse.move(5, 5)

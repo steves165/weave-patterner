@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test'
 import { cell, clearGrids, openApp, setField, threading, toolbarButton, treadling } from './helpers'
 
 test.beforeEach(async ({ page }) => {
-  await openApp(page)
+  await openApp(page, { pickOne: 'top' })
   await setField(page.getByLabel('Ends', { exact: true }), '12')
   await setField(page.getByLabel('Picks', { exact: true }), '12')
   // Start from an empty threading and treadling.
