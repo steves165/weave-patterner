@@ -27,12 +27,6 @@ interface GridProps {
   fromRight?: boolean
   /** Rows count from the bottom (pick 1 at the bottom), so the heavier lines every 4 do too. */
   fromBottom?: boolean
-  /**
-   * A drag paints one box in each column (threading: one shaft per end) or each row (treadling: one per pick), on a
-   * line from box to box, so a diagonal drag makes a neat diagonal. Without it, every box the pointer crosses is
-   * painted.
-   */
-  oneEach?: 'row' | 'column'
   /** The help topic F1 opens here. */
   help?: string
   /** The cell under the mouse, or null when it leaves the grid (for keys that act on the thread under the mouse). */
@@ -68,16 +62,12 @@ export function Grid({
   traced,
   fromRight = false,
   fromBottom = false,
-  oneEach,
   help,
   onHover,
   selected,
   onSelect,
 }: GridProps) {
   const paintValue = useRef<boolean | null>(null)
-  // With oneEach: the box painted in each row or column during this drag, what each box was before, and where the
-  // pointer was last, in boxes (fractional: line, position along it).
-  const stroke = useRef<{ painted: Map<number, number>; was: Map<string, boolean>; at: [number, number] } | null>(null)
   const selecting = useRef(false)
   const lastPointer = useRef('mouse')
   const container = useRef<HTMLDivElement>(null)
@@ -88,7 +78,6 @@ export function Grid({
   useEffect(() => {
     const stop = () => {
       paintValue.current = null
-      stroke.current = null
       selecting.current = false
     }
     window.addEventListener('pointerup', stop)
@@ -110,62 +99,6 @@ export function Grid({
     ]
     setFocus(next)
     container.current?.querySelector<HTMLElement>(`[data-cell="${next[0]}-${next[1]}"]`)?.focus()
-  }
-
-  /** oneEach: where the pointer is, in boxes: [line, position along it], both fractional. */
-  const pointerAt = (x: number, y: number): [number, number] | null => {
-    const first = container.current?.querySelector('[data-cell="0-0"]')?.getBoundingClientRect()
-    if (!first) return null
-    const pitch = first.width + 1 // a 1px line between boxes
-    const [across, down] = [(x - first.left) / pitch, (y - first.top) / pitch]
-    return oneEach === 'row' ? [down, across] : [across, down]
-  }
-  /** oneEach: a box on a line, as [row, column]. */
-  const boxOf = (line: number, at: number): [number, number] => (oneEach === 'row' ? [line, at] : [at, line])
-  const lines = oneEach === 'row' ? rows : cols
-  const along = oneEach === 'row' ? cols : rows
-  /** oneEach: paints `at` as the one box on `line` this drag, moving the box painted there before. */
-  const place = (line: number, at: number, value: boolean) => {
-    const s = stroke.current
-    if (!s || line < 0 || line >= lines) return
-    at = Math.max(0, Math.min(along - 1, at))
-    const before = s.painted.get(line)
-    if (before === at) return
-    if (before !== undefined) {
-      const [br, bc] = boxOf(line, before)
-      onPaint(br, bc, s.was.get(`${br}-${bc}`) ?? !value, true)
-    }
-    const [r, c] = boxOf(line, at)
-    if (!s.was.has(`${r}-${c}`)) s.was.set(`${r}-${c}`, isOn(r, c))
-    s.painted.set(line, at)
-    onPaint(r, c, value, true)
-  }
-  /**
-   * oneEach: the pointer moved. Each line whose middle it crossed gets the box the pointer was over at that moment,
-   * so a diagonal through the corners of boxes paints the diagonal, not the boxes beside it.
-   */
-  const strokeTo = (x: number, y: number) => {
-    const s = stroke.current
-    const now = pointerAt(x, y)
-    if (!s || !now || paintValue.current === null) return
-    const value = paintValue.current
-    const [l0, a0] = s.at
-    const [l1, a1] = now
-    const lo = Math.ceil(Math.min(l0, l1) - 0.5)
-    const hi = Math.floor(Math.max(l0, l1) - 0.5)
-    const lineIndexes = []
-    for (let line = lo; line <= hi; line++) lineIndexes.push(line)
-    if (l1 < l0) lineIndexes.reverse()
-    for (const line of lineIndexes) {
-      const mid = line + 0.5
-      const t = l1 === l0 ? 1 : (mid - l0) / (l1 - l0)
-      place(line, Math.floor(a0 + (a1 - a0) * t), value)
-    }
-    // The line the pointer is on gets a box as soon as it's reached, even before its middle (crossing the middle
-    // puts the box right); near its middle, moving along the line moves its box.
-    const line = Math.floor(l1)
-    if (!s.painted.has(line) || Math.abs(l1 - (line + 0.5)) < 0.25) place(line, Math.floor(a1), value)
-    s.at = now
   }
 
   const cells = []
@@ -200,23 +133,12 @@ export function Grid({
               return // Release the implicit capture so pointerenter fires on the other cells being dragged over.
             ;(e.target as Element).releasePointerCapture(e.pointerId)
             paintValue.current = !on
-            if (oneEach) {
-              const [line, at] = oneEach === 'row' ? [r, c] : [c, r]
-              const where = pointerAt(e.clientX, e.clientY)
-              stroke.current = {
-                painted: new Map([[line, at]]),
-                was: new Map([[`${r}-${c}`, on]]),
-                at: where ?? [line + 0.5, at + 0.5],
-              }
-            }
             onPaint(r, c, !on, false)
           }}
           onPointerEnter={() => {
             onHover?.([r, c])
             if (selecting.current && onSelect) onSelect(r, c, true)
-            else if (paintValue.current !== null) {
-              if (!stroke.current) onPaint(r, c, paintValue.current, true)
-            }
+            else if (paintValue.current !== null) onPaint(r, c, paintValue.current, true)
           }}
           onClick={() => {
             if (onSelect) return
@@ -240,7 +162,6 @@ export function Grid({
       className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}${fromBottom ? ' from-bottom' : ''}`}
       style={{ gridTemplateColumns: `repeat(${cols}, var(--cell))` }}
       onPointerLeave={() => onHover?.(null)}
-      onPointerMove={oneEach ? (e) => strokeTo(e.clientX, e.clientY) : undefined}
     >
       {cells}
     </div>
