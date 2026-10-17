@@ -89,7 +89,7 @@ export const WEAVE_HELP: Topic[] = [
     keywords: ['picks', 'weft', 'lift plan', 'tromp as writ', 'dobby'],
     body: [
       {
-        p: 'Each row of the treadling is one **pick** (a pass of the weft), read from the top. Fill the box under the treadle to press for that pick. A pick can use several treadles at once.',
+        p: 'Each row of the treadling is one **pick** (a pass of the weft), read from the top (or from the bottom, with **Pick 1 at the bottom** on in the view settings). Fill the box under the treadle to press for that pick. A pick can use several treadles at once.',
       },
       {
         list: [
@@ -252,6 +252,7 @@ export const WEAVE_HELP: Topic[] = [
           ['Ruler every', 'Number every this many ends and picks (0 for none).'],
           ['Thread colours in boxes', 'Fill threading and treadling boxes with their colour.'],
           ['End 1 on the right', 'Draw the draft mirrored, as for looms threaded from the right.'],
+          ['Pick 1 at the bottom', 'Number the picks upwards from the bottom, for drafts read from the bottom up.'],
           ['Numbers in boxes', 'Show the shaft or treadle number in filled boxes.'],
           ['Threading below', 'Put the threading and tie-up under the drawdown.'],
         ],

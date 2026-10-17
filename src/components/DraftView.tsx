@@ -81,6 +81,10 @@ export function DraftView(p: Props) {
   // Drawn column -> end index, and back (the mapping is its own inverse).
   const endAt = (column: number) => (mirrored ? ends - 1 - column : column)
   const columns = Array.from({ length: ends }, (_, c) => endAt(c))
+  // Drawn row -> pick index, and back: pick 1 at the top, or at the bottom with the draft read upwards.
+  const fromBottom = view.pickOneBottom
+  const pickAt = (row: number) => (fromBottom ? picks - 1 - row : row)
+  const rows = Array.from({ length: picks }, (_, r) => pickAt(r))
   // A loom without a tie-up lifts shafts directly: the lift plan needs no tie-up beside it. (On treadles, a tie-up
   // with treadle n lifting shaft n is still a tie-up and treadles.)
   const liftplan = view.noTieup && isDirectTieup(draft)
@@ -284,7 +288,7 @@ export function DraftView(p: Props) {
       <div
         ref={drawdownRef}
         data-help="drawdown"
-        className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}${drawing ? ' drawing' : ''}`}
+        className={`grid drawdown${view.fabric ? ' fabric' : ''}${mirrored ? ' from-right' : ''}${fromBottom ? ' from-bottom' : ''}${drawing ? ' drawing' : ''}`}
         role="img"
         aria-label={
           drawing
@@ -335,10 +339,10 @@ export function DraftView(p: Props) {
           setSelected(trace && trace.end === end && trace.pick === pick ? null : { end, pick })
         }}
       >
-        {drawdown.flatMap((row, pick) =>
+        {rows.flatMap((pick) =>
           columns.map((end) => {
             const square = cloth?.[pick][end]
-            const warp = square ? square.warp : row[end]
+            const warp = square ? square.warp : drawdown[pick][end]
             return (
               <div
                 key={`${pick}-${end}`}
@@ -356,28 +360,36 @@ export function DraftView(p: Props) {
       <Grid
         rows={picks}
         cols={treadles}
-        isOn={(pick, t) => draft.treadling[pick][t]}
-        onPaint={p.onTreadling}
+        isOn={(r, t) => draft.treadling[pickAt(r)][t]}
+        onPaint={(r, t, v, cont) => p.onTreadling(pickAt(r), t, v, cont)}
         label={liftplan ? 'Lift plan' : 'Treadling'}
         help="treadling"
-        cellLabel={(pick, t) => `Pick ${pick + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
+        fromBottom={fromBottom}
+        cellLabel={(r, t) => `Pick ${pickAt(r) + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
         cellText={view.numbers ? (_, t) => String(t + 1) : undefined}
-        cellColor={view.colorBoxes ? (pick) => draft.weftColors[pick] : undefined}
-        traced={tracedTreadling}
+        cellColor={view.colorBoxes ? (r) => draft.weftColors[pickAt(r)] : undefined}
+        traced={(r, t) => tracedTreadling(pickAt(r), t)}
         touchPaint={p.touchPaint}
-        selected={range?.target === 'treadling' ? (pick) => inSelection('treadling', pick) : undefined}
-        onSelect={p.selectMode ? (pick, _, extend) => select('treadling', pick, extend) : undefined}
-        onHover={(cell) => p.onHoverThread('treadling', cell ? cell[0] : null)}
+        selected={range?.target === 'treadling' ? (r) => inSelection('treadling', pickAt(r)) : undefined}
+        onSelect={p.selectMode ? (r, _, extend) => select('treadling', pickAt(r), extend) : undefined}
+        onHover={(cell) => p.onHoverThread('treadling', cell ? pickAt(cell[0]) : null)}
       />
       <ColorStrip
         vertical
-        colors={draft.weftColors}
-        onChange={p.onWeftColor}
-        labelAt={(i) => `Weft ${i + 1}`}
-        traced={trace?.pick}
+        colors={rows.map((pick) => draft.weftColors[pick])}
+        onChange={(r, color) => p.onWeftColor(pickAt(r), color)}
+        labelAt={(r) => `Weft ${pickAt(r) + 1}`}
+        traced={trace ? pickAt(trace.pick) : undefined}
       />
       {ruler && (
-        <Ruler count={picks} every={view.ruler} cellSize={p.cellSize} orientation="vertical" label="Pick numbers" />
+        <Ruler
+          count={picks}
+          every={view.ruler}
+          cellSize={p.cellSize}
+          orientation="vertical"
+          reversed={fromBottom}
+          label="Pick numbers"
+        />
       )}
     </>
   )
@@ -589,6 +601,7 @@ export function DraftView(p: Props) {
               ends={ends}
               picks={picks}
               endAt={endAt}
+              pickAt={pickAt}
             />
           </div>
         </Paper>

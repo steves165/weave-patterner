@@ -6,6 +6,8 @@ export interface ViewOptions {
   drawTool: DrawTool
   /** Number ends right to left, with end 1 on the right (common in US drafts). */
   endOneRight: boolean
+  /** Number picks bottom to top, with pick 1 at the bottom (the draft is read upwards). */
+  pickOneBottom: boolean
   /** Fill threading boxes in their warp colour and treadling boxes in their weft colour. */
   colorBoxes: boolean
   /** Show shaft/treadle numbers in filled cells instead of plain black squares. */
@@ -44,6 +46,7 @@ export const CELL_DEFAULT = Math.round(CELL_MIN + 0.75 * (CELL_MAX - CELL_MIN))
 export const DEFAULT_VIEW: ViewOptions = {
   drawTool: 'click',
   endOneRight: false,
+  pickOneBottom: false,
   colorBoxes: true,
   numbers: false,
   ruler: 4,
@@ -68,6 +71,7 @@ const intIn = (min: number, max: number) => (v: unknown) =>
 const VALID: { [K in keyof ViewOptions]: (v: unknown) => boolean } = {
   drawTool: (v) => v === 'click' || v === 'straight' || v === 'point',
   endOneRight: isBool,
+  pickOneBottom: isBool,
   colorBoxes: isBool,
   numbers: isBool,
   ruler: intIn(0, 50),

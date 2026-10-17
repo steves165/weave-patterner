@@ -118,10 +118,11 @@ export const SWITCH_ROW = {
 } as const
 
 /** On/off display options, in the order shown. How the loom works is in the Loom section, not here. */
-type ViewSwitch = 'colorBoxes' | 'endOneRight' | 'numbers' | 'threadingBelow'
+type ViewSwitch = 'colorBoxes' | 'endOneRight' | 'pickOneBottom' | 'numbers' | 'threadingBelow'
 const VIEW_SWITCHES: [ViewSwitch, string][] = [
   ['colorBoxes', 'Thread colours in boxes'],
   ['endOneRight', 'End 1 on the right'],
+  ['pickOneBottom', 'Pick 1 at the bottom'],
   ['numbers', 'Numbers in boxes'],
   ['threadingBelow', 'Threading below'],
 ]

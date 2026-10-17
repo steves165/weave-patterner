@@ -13,6 +13,7 @@ describe('parseViewOptions', () => {
     const saved = {
       drawTool: 'point',
       endOneRight: true,
+      pickOneBottom: true,
       colorBoxes: false,
       numbers: true,
       ruler: 8,

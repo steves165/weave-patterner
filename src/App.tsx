@@ -1087,6 +1087,7 @@ export default function App() {
           name={name ?? 'Untitled pattern'}
           draft={draft}
           endOneRight={view.endOneRight}
+          pickOneBottom={view.pickOneBottom}
           instructions={printing.instructions}
           noTieup={view.noTieup}
           qr={printing.qr ? link : null}

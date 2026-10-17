@@ -7,7 +7,7 @@ interface Props {
   every: number
   cellSize: number
   orientation: 'horizontal' | 'vertical'
-  /** Horizontal only: thread 1 is at the right-hand end. */
+  /** Thread 1 is at the far end: the right-hand end (horizontal) or the bottom (vertical). */
   reversed?: boolean
   label: string
 }
@@ -31,7 +31,7 @@ export function Ruler({ count, every, cellSize, orientation, reversed = false, l
         </span>
       ) : (
         <span key={n} className="ruler-mark" style={{ top: at, width: '100%', height: 1 }}>
-          <span className="ruler-label above">{n}</span>
+          <span className={`ruler-label ${reversed ? 'below' : 'above'}`}>{n}</span>
         </span>
       ),
     )

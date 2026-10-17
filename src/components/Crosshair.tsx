@@ -10,6 +10,8 @@ interface Props {
   picks: number
   /** Maps a drawn column to its end number (0-based), for end-1-on-the-right display. */
   endAt: (column: number) => number
+  /** Drawn row -> pick index (pick 1 can be at the bottom). */
+  pickAt: (row: number) => number
 }
 
 interface Spot {
@@ -21,7 +23,7 @@ interface Spot {
  * Highlights the column and row under the mouse across the threading, drawdown and treadling, with a label
  * naming the end and pick. Mouse and pen only: on touch it would just get in the way.
  */
-export function Crosshair({ container, drawdown, cellSize, ends, picks, endAt }: Props) {
+export function Crosshair({ container, drawdown, cellSize, ends, picks, endAt, pickAt }: Props) {
   const [spot, setSpot] = useState<Spot>({ column: null, row: null })
   const pitch = cellSize + 1
 
@@ -54,7 +56,7 @@ export function Crosshair({ container, drawdown, cellSize, ends, picks, endAt }:
   const top = dd.offsetTop + 1 + (spot.row ?? 0) * pitch
   const parts = [
     spot.column !== null ? `End ${endAt(spot.column) + 1}` : null,
-    spot.row !== null ? `Pick ${spot.row + 1}` : null,
+    spot.row !== null ? `Pick ${pickAt(spot.row) + 1}` : null,
   ].filter(Boolean)
 
   return (

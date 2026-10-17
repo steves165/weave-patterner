@@ -25,6 +25,8 @@ interface GridProps {
   traced?: (r: number, c: number) => boolean
   /** Columns count from the right (end 1 on the right), so the heavier lines every 4 do too. */
   fromRight?: boolean
+  /** Rows count from the bottom (pick 1 at the bottom), so the heavier lines every 4 do too. */
+  fromBottom?: boolean
   /** The help topic F1 opens here. */
   help?: string
   /** The cell under the mouse, or null when it leaves the grid (for keys that act on the thread under the mouse). */
@@ -59,6 +61,7 @@ export function Grid({
   cellColor,
   traced,
   fromRight = false,
+  fromBottom = false,
   help,
   onHover,
   selected,
@@ -156,7 +159,7 @@ export function Grid({
       role="group"
       aria-label={label}
       data-help={help}
-      className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}`}
+      className={`grid paintable${touchPaint ? ' touch-paint' : ''}${fromRight ? ' from-right' : ''}${fromBottom ? ' from-bottom' : ''}`}
       style={{ gridTemplateColumns: `repeat(${cols}, var(--cell))` }}
       onPointerLeave={() => onHover?.(null)}
     >

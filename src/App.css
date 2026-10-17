@@ -163,23 +163,27 @@
   user-select: none;
 }
 
-/* Grids: thin lines between boxes, heavier every 4 (counted from end 1, and from the top), and a heavier edge. */
+/* Grids: thin lines between boxes, heavier every 4 (counted from end 1, and from pick 1), and a heavier edge. */
 .grid {
   --every: calc(4 * (var(--cell) + 1px));
   --cols-from: to right;
+  --rows-from: to bottom;
   display: grid;
   gap: 1px;
   padding: 1px;
   background-color: var(--grid-line);
   background-image:
     repeating-linear-gradient(var(--cols-from), var(--grid-heavy) 0 1px, transparent 1px var(--every)),
-    repeating-linear-gradient(to bottom, var(--grid-heavy) 0 1px, transparent 1px var(--every));
+    repeating-linear-gradient(var(--rows-from), var(--grid-heavy) 0 1px, transparent 1px var(--every));
   outline: 1px solid var(--grid-heavy);
   outline-offset: -1px;
   width: max-content;
 }
 .grid.from-right {
   --cols-from: to left;
+}
+.grid.from-bottom {
+  --rows-from: to top;
 }
 
 /* Editable grids: swipes scroll and taps are instant, unless drag-painting is on. */
@@ -474,6 +478,9 @@
 .ruler-label.above {
   left: 3px;
   top: -10px;
+}
+.ruler-label.below {
+  left: 3px;
 }
 
 /* Numbers in filled cells instead of plain squares. */

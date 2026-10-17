@@ -17,6 +17,8 @@ interface Props {
   draft: Draft
   /** Draw ends right to left, end 1 on the right (matches the editor's view option). */
   endOneRight?: boolean
+  /** Draw picks bottom to top, pick 1 at the bottom (matches the editor's view option). */
+  pickOneBottom?: boolean
   /** Add a page of written threading, tie-up and treadling instructions. */
   instructions?: boolean
   /** Leave the tie-up out of a lift plan, for looms without one. */
@@ -35,6 +37,7 @@ export function PrintSheet({
   name,
   draft,
   endOneRight = false,
+  pickOneBottom = false,
   instructions = false,
   noTieup = false,
   qr = null,
@@ -62,6 +65,8 @@ export function PrintSheet({
   const height = yDraw + picks * C + 2
   // x of end e's column (0-based), honouring end-1-on-the-right.
   const xOf = (e: number) => x0 + (endOneRight ? ends - 1 - e : e) * C
+  // y of pick p's row (0-based), honouring pick-1-at-the-bottom.
+  const yOf = (p: number) => yDraw + (pickOneBottom ? picks - 1 - p : p) * C
 
   const cells: ReactNode[] = []
   const rect = (key: string, x: number, y: number, fill: string, w = C, h = C) =>
@@ -108,19 +113,19 @@ export function PrintSheet({
     })
   draft.treadling.forEach((row, p) => {
     row.forEach((on, t) => {
-      if (on) rect(`r${p}-${t}`, xTie + t * C, yDraw + p * C, '#111')
+      if (on) rect(`r${p}-${t}`, xTie + t * C, yOf(p), '#111')
     })
   })
   drawdown.forEach((row, p) => {
     row.forEach((up, e) => {
-      rect(`d${p}-${e}`, xOf(e), yDraw + p * C, up ? draft.warpColors[e] : draft.weftColors[p])
+      rect(`d${p}-${e}`, xOf(e), yOf(p), up ? draft.warpColors[e] : draft.weftColors[p])
     })
   })
   draft.warpColors.forEach((c, e) => {
     rect(`w${e}`, xOf(e), yWarp, c)
   })
   draft.weftColors.forEach((c, p) => {
-    rect(`f${p}`, xWeft, yDraw + p * C, c)
+    rect(`f${p}`, xWeft, yOf(p), c)
   })
 
   // Ticks and numbers every 4 threads, like a printed draft.
@@ -145,11 +150,12 @@ export function PrintSheet({
     )
   }
   for (let p = 4; p <= picks; p += 4) {
-    const y = yDraw + p * C
+    // The tick sits on the far side of pick p (towards higher numbers), with the number beside it.
+    const y = pickOneBottom ? yOf(p - 1) : yOf(p - 1) + C
     const x = xWeft + C + 2
     ticks.push(<line key={`tp${p}`} x1={x} y1={y} x2={x + labelBand} y2={y} stroke={TICK} strokeWidth={0.8} />)
     ticks.push(
-      <text key={`np${p}`} x={x + 1} y={y - 2} fontSize={C * 0.75} fill={TICK}>
+      <text key={`np${p}`} x={x + 1} y={pickOneBottom ? y + C * 0.8 : y - 2} fontSize={C * 0.75} fill={TICK}>
         {p}
       </text>,
     )
