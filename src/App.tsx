@@ -84,7 +84,7 @@ import {
   type ThreadSelection,
   trompAsWrit,
 } from './tools'
-import { computeDrawdown, type Draft, emptyDraft, resizeDraft, starterDraft } from './weave'
+import { computeDrawdown, type Draft, emptyDraft, MAX_TREADLES, resizeDraft, starterDraft } from './weave'
 
 type DialogName =
   | 'save'
@@ -257,23 +257,55 @@ export default function App() {
 
   /** Without a tie-up, every draft is kept as a lift plan (shafts lifted on each pick). */
   const keepLiftplan = (d: Draft) => (view.noTieup && !isDirectTieup(d) ? toLiftplan(d) : d)
+  // The pattern as it was on treadles before switching to a lift plan, so switching back keeps its tie-up.
+  const onTreadles = useRef<Draft | null>(null)
+  // The loom type each draft was made on. Undo and redo bring it back with the draft: undoing past a switch to a
+  // lift plan is back on treadles, with the tie-up showing again.
+  const loomTypes = useRef(new WeakMap<Draft, boolean>())
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only when the draft changes; switching records its own
+  useEffect(() => {
+    const liftplan = loomTypes.current.get(draft)
+    if (liftplan !== undefined) {
+      if (liftplan !== view.noTieup) setView({ noTieup: liftplan })
+    } else if (view.noTieup && !isDirectTieup(draft)) {
+      // Anything that left a tie-up on a lift plan loom becomes a lift plan, in the same undo step.
+      update(toLiftplan, { merge: true })
+    } else loomTypes.current.set(draft, view.noTieup)
+  }, [draft])
   const changeView = (patch: Partial<typeof view>) => {
-    if (patch.noTieup === false && view.noTieup && isDirectTieup(draft)) {
-      // Back to a floor loom: one treadle for each different shed in the lift plan.
-      try {
-        const next = toTreadling(draft)
-        update(() => next)
-        setToast(`Tie-up and treadles: ${next.treadles} treadles, one for each different shed. The cloth is the same.`)
-      } catch (e) {
-        setToast(e instanceof Error ? e.message : String(e))
-        return
-      }
+    if (patch.noTieup === undefined || patch.noTieup === view.noTieup) {
+      setView(patch)
+      return
     }
-    setView(patch)
-    if (patch.noTieup && !isDirectTieup(draft)) {
-      update(toLiftplan)
+    if (patch.noTieup) {
+      onTreadles.current = draft
+      const next = isDirectTieup(draft) ? draft : toLiftplan(draft)
+      loomTypes.current.set(next, true)
+      setView(patch)
+      update(() => next)
       setToast('Lift plan: the right-hand grid now marks the shafts to lift on each pick. The cloth is the same.')
+      return
     }
+    // Back to a floor loom: the tie-up from before, with a treadle added for each new shed.
+    try {
+      const next = toTreadling(draft, MAX_TREADLES, onTreadles.current ?? undefined)
+      loomTypes.current.set(next, false)
+      setView(patch)
+      update(() => next)
+      const added = onTreadles.current ? next.treadles - onTreadles.current.treadles : 0
+      setToast(
+        onTreadles.current
+          ? `Tie-up and treadles: your tie-up is back${added > 0 ? `, with ${added} more ${added === 1 ? 'treadle' : 'treadles'} for new sheds` : ''}. The cloth is the same.`
+          : `Tie-up and treadles: ${next.treadles} treadles, one for each different shed. The cloth is the same.`,
+      )
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : String(e))
+    }
+  }
+  /** Starts on a different pattern: its own undo history, and no earlier tie-up to go back to. */
+  const startPattern = (d: Draft) => {
+    onTreadles.current = null
+    reset(d)
   }
 
   /**
@@ -403,7 +435,7 @@ export default function App() {
   /** Opens a different pattern as a new document. */
   const open = (d: Draft, n: string | null, message?: string) =>
     drawing(d, () => {
-      reset(keepLiftplan(d))
+      startPattern(keepLiftplan(d))
       setName(n)
       setDialog(null)
       if (message) setToast(message)
@@ -788,7 +820,7 @@ export default function App() {
             const next = liftplan ? toLiftplan(d) : d
             drawing(next, () => {
               setView({ noTieup: liftplan })
-              reset(next)
+              startPattern(next)
               setName(null)
               setDialog(null)
               setToast(

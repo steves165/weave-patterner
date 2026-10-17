@@ -94,7 +94,7 @@ export const WEAVE_HELP: Topic[] = [
       {
         list: [
           'With **Loom type › Lift plan** chosen in the Loom settings, the treadling is a **lift plan**: each row marks the shafts lifted for that pick, for table and dobby looms.',
-          'Switching **Loom type** between **Treadles** and **Lift plan** converts the draft, keeping the same cloth: back to treadles, each different shed gets a treadle.',
+          'Switching **Loom type** between **Treadles** and **Lift plan** converts the draft, keeping the same cloth and everything you drew on either. Back on treadles, your tie-up returns as it was, with a treadle added for any new shed from the lift plan. Undo goes back across a switch too.',
           '**Tools › Tromp as writ** treadles the pattern as it is threaded.',
           'The colour strip to the right of the treadling is the weft colours: click a swatch to change that pick.',
         ],
