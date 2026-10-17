@@ -6,6 +6,8 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  Menu,
+  MenuItem,
   Slider,
   Stack,
   Switch,
@@ -86,6 +88,8 @@ interface Props {
   onTrimToRepeat: () => void
   /** Fills the empty ends and picks with the threading and treadling drawn so far; null when there are none. */
   onFillWithRepeat: (() => void) | null
+  /** Adds a plain weave (tabby) pick after every pick. */
+  onAddTabby: () => void
   highlightFloats: boolean
   onHighlightFloats: (on: boolean) => void
   /** The longest float in the draft, warp or weft, in threads. */
@@ -94,7 +98,8 @@ interface Props {
   onFloatLimit: (n: number) => void
   view: ViewOptions
   onView: (patch: Partial<ViewOptions>) => void
-  onClear: () => void
+  /** Empties one grid, or all three. */
+  onClear: (grid: ClearGrid) => void
   canReset: boolean
   onReset: () => void
   onNew: () => void
@@ -126,6 +131,51 @@ const VIEW_SWITCHES: [ViewSwitch, string][] = [
   ['numbers', 'Numbers in boxes'],
   ['threadingBelow', 'Threading below'],
 ]
+
+export type ClearGrid = 'threading' | 'tieup' | 'treadling' | 'all'
+
+/** Clear: one grid at a time (threading, tie-up, treadling or lift plan), or all of them. */
+function ClearMenu({ liftplan, onClear }: { liftplan: boolean; onClear: (grid: ClearGrid) => void }) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const id = useId()
+  const items: [ClearGrid, string][] = [
+    ['threading', 'Threading'],
+    ...(liftplan ? [] : [['tieup', 'Tie-up'] as [ClearGrid, string]]),
+    ['treadling', liftplan ? 'Lift plan' : 'Treadling'],
+    ['all', liftplan ? 'Threading and lift plan' : 'All three grids'],
+  ]
+  return (
+    <>
+      <Tooltip title="Empty one of the grids, or all of them" describeChild>
+        <Button
+          size="small"
+          variant="outlined"
+          color="inherit"
+          startIcon={<ClearAllIcon />}
+          aria-haspopup="menu"
+          aria-controls={anchor ? id : undefined}
+          aria-expanded={anchor ? 'true' : undefined}
+          onClick={(e) => setAnchor(e.currentTarget)}
+        >
+          Clear…
+        </Button>
+      </Tooltip>
+      <Menu id={id} anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
+        {items.map(([grid, label]) => (
+          <MenuItem
+            key={grid}
+            onClick={() => {
+              setAnchor(null)
+              onClear(grid)
+            }}
+          >
+            {label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  )
+}
 
 /** A choice between two ways the loom works, with a line saying what the chosen one means. */
 export function LoomChoice<T extends string>(props: {
@@ -397,11 +447,15 @@ export function SettingsPanel(p: Props) {
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Empty the threading, tie-up and treadling" describeChild>
-            <Button size="small" variant="outlined" color="inherit" startIcon={<ClearAllIcon />} onClick={p.onClear}>
-              Clear grids
+          <Tooltip
+            title="Add a plain weave pick after every pick, each the opposite shed to the tabby pick before it"
+            describeChild
+          >
+            <Button size="small" variant="outlined" color="inherit" onClick={p.onAddTabby}>
+              Add tabby
             </Button>
           </Tooltip>
+          <ClearMenu liftplan={p.view.noTieup} onClear={p.onClear} />
           <Tooltip
             title={
               p.name

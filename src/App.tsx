@@ -72,6 +72,7 @@ import { patternColours } from './seasons'
 import { selvedgeMisses } from './selvedge'
 import { patternUrl } from './share'
 import { clothPainter } from './shareImage'
+import { addTabby } from './tabby'
 import {
   applyRangeOp,
   type Clip,
@@ -325,7 +326,9 @@ export default function App() {
     s.moved = true
     if (position !== s.start) s.direction = position > s.start ? 1 : -1
     const tool = view.drawTool
-    update(() => drawAlong(s.base, target, tool, s.from, index, s.start, s.direction), { merge: continuing })
+    update(() => drawAlong(s.base, target, tool, s.from, index, s.start, s.direction, view.noTieup), {
+      merge: continuing,
+    })
   }
 
   /** Applies a change made in a dialog as one undoable step, then closes it. */
@@ -485,6 +488,17 @@ export default function App() {
           )
         })
       }
+      onAddTabby={() => {
+        try {
+          const { draft: next, treadles } = addTabby(draft)
+          update(() => keepLiftplan(next))
+          setToast(
+            `Tabby added: a plain weave pick after every pick, alternating shafts 1, 3… and 2, 4…${treadles ? ` (treadles ${treadles[0]} and ${treadles[1]})` : ''}. Undo with Ctrl+Z.`,
+          )
+        } catch (e) {
+          setToast(e instanceof Error ? e.message : String(e))
+        }
+      }}
       highlightFloats={highlightFloats}
       onHighlightFloats={(on) => setView({ highlightFloats: on })}
       longestFloat={Math.max(floats.warp, floats.weft)}
@@ -492,14 +506,18 @@ export default function App() {
       onFloatLimit={(n) => setView({ floatLimit: n })}
       view={view}
       onView={changeView}
-      onClear={() =>
+      onClear={(grid) => {
+        const all = grid === 'all'
         update((d) => ({
           ...d,
-          threading: d.threading.map(() => -1),
-          tieup: d.tieup.map((r) => r.map(() => false)),
-          treadling: d.treadling.map((r) => r.map(() => false)),
+          threading: all || grid === 'threading' ? d.threading.map(() => -1) : d.threading,
+          // A lift plan keeps its straight tie-up: there is no tie-up to clear.
+          tieup: (all || grid === 'tieup') && !view.noTieup ? d.tieup.map((r) => r.map(() => false)) : d.tieup,
+          treadling: all || grid === 'treadling' ? d.treadling.map((r) => r.map(() => false)) : d.treadling,
         }))
-      }
+        const names = { threading: 'Threading', tieup: 'Tie-up', treadling: view.noTieup ? 'Lift plan' : 'Treadling' }
+        setToast(`${all ? 'Grids' : names[grid]} cleared. Undo with Ctrl+Z or the undo button.`)
+      }}
       canReset={draft !== baseline}
       onReset={() => update(() => baseline)}
       onNew={() => setDialog('new')}

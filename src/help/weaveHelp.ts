@@ -262,7 +262,8 @@ export const WEAVE_HELP: Topic[] = [
         list: [
           '**Trim to one repeat**: cut the draft down to the smallest repeat.',
           '**Fill with repeat**: draw one repeat of the threading and treadling, then fill the empty ends and picks after it with copies.',
-          '**Clear grids**: empty the threading, tie-up and treadling.',
+          '**Add tabby**: put a plain weave pick after every pick, alternately lifting shafts 1, 3, 5… and 2, 4, 6…, so each tabby pick is the opposite shed to the one before. On treadles it adds two tabby treadles (or uses ones already tied that way); the tabby weft is the main warp colour.',
+          '**Clear…**: empty the threading, the tie-up or the treadling (lift plan) on its own, or all of them.',
           '**Reset**: undo everything since the pattern was opened or saved.',
           '**New** (also in the file bar): a new pattern, choosing the loom type, shafts, treadles and size, and whether to start with empty grids or a twill.',
         ],

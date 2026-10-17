@@ -252,6 +252,7 @@ export function DraftView(p: Props) {
         label="Threading"
         help="threading"
         fromRight={mirrored}
+        oneEach={view.drawTool === 'click' ? 'column' : undefined}
         cellLabel={(r, c) => `End ${endAt(c) + 1}, shaft ${shaftAt(r) + 1}`}
         cellText={view.numbers ? (r) => String(shaftAt(r) + 1) : undefined}
         cellColor={view.colorBoxes ? (_, c) => draft.warpColors[endAt(c)] : undefined}
@@ -365,6 +366,7 @@ export function DraftView(p: Props) {
         label={liftplan ? 'Lift plan' : 'Treadling'}
         help="treadling"
         fromBottom={fromBottom}
+        oneEach={view.drawTool === 'click' ? 'row' : undefined}
         cellLabel={(r, t) => `Pick ${pickAt(r) + 1}, ${liftplan ? 'shaft' : 'treadle'} ${t + 1}`}
         cellText={view.numbers ? (_, t) => String(t + 1) : undefined}
         cellColor={view.colorBoxes ? (r) => draft.weftColors[pickAt(r)] : undefined}

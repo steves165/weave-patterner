@@ -251,4 +251,15 @@ describe('drawing tools', () => {
     const tr = drawAlong(d, 'treadling', 'straight', 0, 5, 3, -1)
     expect(tr.treadling.slice(0, 6).map((row) => row.indexOf(true) + 1)).toEqual([4, 3, 2, 1, 4, 3])
   })
+
+  it('on a lift plan, adds the drawn shaft to each pick instead of replacing what it lifts', () => {
+    const d = defaultDraft()
+    const lifted = (draft: typeof d) => draft.treadling.slice(0, 4).map((row) => row.map(Number).join(''))
+    const replaced = drawAlong(d, 'treadling', 'point', 0, 3, 0, 1)
+    expect(lifted(replaced)).toEqual(['1000', '0100', '0010', '0001'])
+    const added = drawAlong(d, 'treadling', 'point', 0, 3, 0, 1, true)
+    expect(lifted(added)).toEqual(
+      lifted(d).map((row, pick) => [...row].map((v, k) => (v === '1' || k === pick ? '1' : '0')).join('')),
+    )
+  })
 })

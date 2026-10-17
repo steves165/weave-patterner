@@ -186,3 +186,11 @@ export async function a11yProblems(page: Page, within?: string): Promise<string[
   const { violations } = await scan.analyze()
   return violations.flatMap((v) => v.nodes.map((n) => `${v.id}: ${v.help} — ${n.html.slice(0, 160)}`))
 }
+
+/** Empties every grid with Clear… › All three grids (or Threading and lift plan). */
+export async function clearGrids(page: Page, which: RegExp | string = /All three grids|Threading and lift plan/) {
+  await page.getByRole('button', { name: 'Clear…' }).click()
+  await page.getByRole('menuitem', { name: which }).click()
+  // Until the menu has finished closing, its invisible backdrop catches presses on the grids.
+  await expect(page.locator('.MuiPopover-root')).toHaveCount(0)
+}

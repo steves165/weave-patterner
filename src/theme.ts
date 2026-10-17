@@ -77,6 +77,8 @@ export const makeTheme = (b: Brand) =>
         },
       },
       MuiIconButton: { styleOverrides: { root: { borderRadius: 999 } } },
+      // Tooltips close as soon as the pointer leaves what they describe, rather than staying while it's over the tip.
+      MuiTooltip: { defaultProps: { disableInteractive: true } },
       MuiToggleButtonGroup: {
         styleOverrides: {
           root: {

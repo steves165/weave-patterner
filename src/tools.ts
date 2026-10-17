@@ -284,7 +284,8 @@ export function drawRun(tool: 'straight' | 'point', start: number, steps: number
 
 /**
  * Fills ends (threading) or picks (treadling) from `from` to `to` with a straight or point draw starting at
- * position `start` on `from`. Dragging backwards (to < from) draws backwards from the start too.
+ * position `start` on `from`. Dragging backwards (to < from) draws backwards from the start too. Each pick gets the
+ * one treadle drawn; with `add` (a lift plan, where a pick lifts several shafts) it is added to what the pick has.
  */
 export function drawAlong(
   d: Draft,
@@ -294,6 +295,7 @@ export function drawAlong(
   to: number,
   start: number,
   direction: 1 | -1,
+  add = false,
 ): Draft {
   const steps = Math.abs(to - from) + 1
   const step = to >= from ? 1 : -1
@@ -308,7 +310,8 @@ export function drawAlong(
   const run = drawRun(tool, start, steps, d.treadles, direction)
   const treadling = [...d.treadling]
   run.forEach((t, i) => {
-    treadling[from + i * step] = Array.from({ length: d.treadles }, (_, k) => k === t)
+    const pick = from + i * step
+    treadling[pick] = add ? d.treadling[pick].map((on, k) => on || k === t) : d.treadling[pick].map((_, k) => k === t)
   })
   return { ...d, treadling }
 }

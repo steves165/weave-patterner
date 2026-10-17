@@ -123,7 +123,9 @@ test('with a drawing tool, clicks that slip into the next box still add lifts to
   }
   for (let s = 1; s <= 4; s++) await expect(box(s)).toHaveAttribute('aria-checked', 'true')
 
-  // Dragging down onto other picks still draws a run, one shaft per pick.
+  // Dragging down onto other picks draws a run, adding a shaft to each pick and keeping the shafts it lifted.
+  const lifted = (p: number) => grid.getByRole('checkbox', { name: new RegExp(`^Pick ${p}, shaft`), checked: true })
+  const before = await Promise.all([5, 6, 7, 8].map((p) => lifted(p).count()))
   const start = await grid.getByRole('checkbox', { name: 'Pick 5, shaft 1', exact: true }).boundingBox()
   const end = await grid.getByRole('checkbox', { name: 'Pick 8, shaft 4', exact: true }).boundingBox()
   if (!start || !end) throw new Error('no boxes')
@@ -131,8 +133,39 @@ test('with a drawing tool, clicks that slip into the next box still add lifts to
   await page.mouse.down()
   await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 })
   await page.mouse.up()
-  for (let p = 5; p <= 8; p++)
-    await expect(grid.getByRole('checkbox', { name: new RegExp(`^Pick ${p}, shaft`), checked: true })).toHaveCount(1)
+  for (let p = 5; p <= 8; p++) {
+    await expect(grid.getByRole('checkbox', { name: `Pick ${p}, shaft ${p - 4}`, exact: true })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    expect(await lifted(p).count()).toBeGreaterThanOrEqual(before[p - 5])
+  }
+})
+
+test('point draw on a lift plan adds to the shafts each pick lifts', async ({ page }) => {
+  await loomChoice(page, 'Loom type', 'Lift plan').click()
+  const grid = page.getByRole('group', { name: 'Lift plan' })
+  const lifts = (p: number) =>
+    grid
+      .getByRole('checkbox', { name: new RegExp(`^Pick ${p}, shaft`) })
+      .evaluateAll((boxes) => boxes.map((b) => (b.getAttribute('aria-checked') === 'true' ? '1' : '0')).join(''))
+  const before = await Promise.all([1, 2, 3, 4, 5, 6].map(lifts))
+  await page.getByRole('button', { name: 'Point draw', exact: true }).click()
+  // Pick 1 doesn't lift shaft 3 (2/2 twill: shafts 1 and 2), so the press adds it and the run goes on from there.
+  const start = await grid.getByRole('checkbox', { name: 'Pick 1, shaft 3', exact: true }).boundingBox()
+  const end = await grid.getByRole('checkbox', { name: 'Pick 6, shaft 3', exact: true }).boundingBox()
+  if (!start || !end) throw new Error('no boxes')
+  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 })
+  await page.mouse.up()
+  // 3 4 3 2 1 2: each pick keeps its lifts, with the drawn shaft added.
+  const drawn = [3, 4, 3, 2, 1, 2]
+  const after = await Promise.all([1, 2, 3, 4, 5, 6].map(lifts))
+  after.forEach((row, i) => {
+    const expected = [...before[i]].map((v, s) => (v === '1' || s === drawn[i] - 1 ? '1' : '0')).join('')
+    expect(row, `pick ${i + 1}`).toBe(expected)
+  })
 })
 
 test('switching to a lift plan and back keeps your tie-up and everything drawn on either', async ({ page }) => {

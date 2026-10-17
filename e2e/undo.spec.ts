@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { cell, importFile, openApp, setField, threading, toolbarButton } from './helpers'
+import { cell, clearGrids, importFile, openApp, setField, threading, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -56,14 +56,14 @@ test('keyboard shortcuts undo and redo, but not while typing in a field', async 
   expect(await threading(page)).toBe(changed)
 })
 
-test('resizing, Reset and Clear grids are undoable', async ({ page }) => {
+test('resizing, Reset and Clear are undoable', async ({ page }) => {
   const start = await threading(page)
   await setField(page.getByLabel('Ends', { exact: true }), '8')
   expect(await threading(page)).toHaveLength(8)
   await toolbarButton(page, 'Undo').click() // focus is still in the field, where Ctrl+Z edits the text
   expect(await threading(page)).toBe(start)
 
-  await page.getByRole('button', { name: 'Clear grids' }).click()
+  await clearGrids(page)
   expect(await threading(page)).toMatch(/^0+$/)
   await page.getByRole('button', { name: /Reset/ }).click()
   expect(await threading(page)).toBe(start)

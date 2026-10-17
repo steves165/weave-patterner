@@ -200,3 +200,14 @@ test.describe('on a landscape tablet', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   })
 })
+
+test('a tooltip closes when the pointer leaves what it describes, even onto the tooltip', async ({ page }) => {
+  const button = page.getByRole('button', { name: 'Clear…' })
+  await button.hover()
+  const tip = page.getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  const t = await tip.boundingBox()
+  if (!t) throw new Error('no tooltip')
+  await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2, { steps: 5 })
+  await expect(tip).toBeHidden()
+})

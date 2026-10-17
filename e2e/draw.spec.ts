@@ -1,12 +1,12 @@
 import { expect, type Page, test } from '@playwright/test'
-import { cell, openApp, setField, threading, toolbarButton, treadling } from './helpers'
+import { cell, clearGrids, openApp, setField, threading, toolbarButton, treadling } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await openApp(page)
   await setField(page.getByLabel('Ends', { exact: true }), '12')
   await setField(page.getByLabel('Picks', { exact: true }), '12')
   // Start from an empty threading and treadling.
-  await page.getByRole('button', { name: 'Clear grids' }).click()
+  await clearGrids(page)
 })
 
 /** Presses on one box and drags across to another, passing over the boxes between. */
@@ -57,7 +57,7 @@ test('draws on the treadling too, and Click goes back to one box at a time', asy
 test('a pick can use several treadles, in every draw mode', async ({ page }) => {
   const checked = (name: string) => expect(cell(page, name)).toHaveAttribute('aria-checked', 'true')
   for (const tool of ['Click', 'Straight draw', 'Point draw']) {
-    await page.getByRole('button', { name: 'Clear grids' }).click()
+    await clearGrids(page)
     await page.getByRole('button', { name: tool }).click()
     await cell(page, 'Pick 2, treadle 1').click()
     await cell(page, 'Pick 2, treadle 3').click()
@@ -71,4 +71,64 @@ test('a pick can use several treadles, in every draw mode', async ({ page }) => 
   // Dragging with a draw tool still draws one treadle per pick.
   await drag(page, 'Pick 4, treadle 1', 'Pick 7, treadle 1')
   expect((await treadling(page)).slice(3, 7)).toBe('1234')
+})
+
+test('dragging with Click paints one box on each end or pick, so a diagonal comes out neat', async ({ page }) => {
+  // Diagonally from corner to corner of the boxes: the pointer crosses into the boxes beside the diagonal too.
+  async function diagonal(from: string, to: string) {
+    const a = await cell(page, from).boundingBox()
+    const b = await cell(page, to).boundingBox()
+    if (!a || !b) throw new Error('box not found')
+    await page.mouse.move(a.x + 2, a.y + a.height - 2)
+    await page.mouse.down()
+    await page.mouse.move(b.x + b.width - 2, b.y + 2, { steps: 40 })
+    await page.mouse.up()
+  }
+  await diagonal('End 1, shaft 1', 'End 4, shaft 4')
+  expect(await threading(page)).toBe('123400000000')
+
+  await diagonal('Pick 4, treadle 1', 'Pick 1, treadle 4')
+  const rows = (await treadling(page)).slice(0, 4)
+  expect(rows).toBe('4321')
+  // One box on each pick: nothing else was painted on the way.
+  for (let p = 1; p <= 4; p++)
+    await expect(
+      page
+        .getByRole('group', { name: 'Treadling' })
+        .getByRole('checkbox', { name: new RegExp(`^Pick ${p}, treadle`), checked: true }),
+    ).toHaveCount(1)
+
+  // A quick drag that skips boxes still fills every end between.
+  await clearGrids(page)
+  const a = await cell(page, 'End 1, shaft 1').boundingBox()
+  const b = await cell(page, 'End 8, shaft 4').boundingBox()
+  if (!a || !b) throw new Error('box not found')
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 2 })
+  await page.mouse.up()
+  expect((await threading(page)).slice(0, 8)).not.toContain('0')
+})
+
+test('Clear… empties one grid at a time, or all of them', async ({ page }) => {
+  await cell(page, 'End 1, shaft 1').click()
+  await cell(page, 'Treadle 1, shaft 1').click()
+  await cell(page, 'Pick 1, treadle 1').click()
+  const on = (name: string) => cell(page, name)
+
+  await clearGrids(page, 'Threading')
+  await expect(on('End 1, shaft 1')).toHaveAttribute('aria-checked', 'false')
+  await expect(on('Treadle 1, shaft 1')).toHaveAttribute('aria-checked', 'true')
+  await expect(on('Pick 1, treadle 1')).toHaveAttribute('aria-checked', 'true')
+
+  await clearGrids(page, 'Treadling')
+  await expect(on('Pick 1, treadle 1')).toHaveAttribute('aria-checked', 'false')
+  await expect(on('Treadle 1, shaft 1')).toHaveAttribute('aria-checked', 'true')
+
+  await clearGrids(page, 'Tie-up')
+  await expect(on('Treadle 1, shaft 1')).toHaveAttribute('aria-checked', 'false')
+  // Each is one undo step.
+  await toolbarButton(page, 'Undo').click()
+  await expect(on('Treadle 1, shaft 1')).toHaveAttribute('aria-checked', 'true')
+  await expect(on('Pick 1, treadle 1')).toHaveAttribute('aria-checked', 'false')
 })

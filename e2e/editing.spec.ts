@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { cell, ends, openApp, openTool, threading, toast } from './helpers'
+import { cell, ends, openApp, openTool, threading, toast, toolbarButton } from './helpers'
 
 test.beforeEach(async ({ page }) => openApp(page))
 
@@ -76,7 +76,8 @@ test('More… opens Sequence tools on the selection', async ({ page }) => {
 
 test('Fill with repeat: draw one repeat, then fill the empty ends with it', async ({ page }) => {
   const settings = page.getByRole('complementary', { name: 'Pattern settings' })
-  await settings.getByRole('button', { name: 'Clear grids' }).click()
+  await settings.getByRole('button', { name: 'Clear…' }).click()
+  await page.getByRole('menuitem', { name: 'All three grids' }).click()
   await expect(settings.getByRole('button', { name: 'Fill with repeat' })).toBeDisabled()
   for (const [end, shaft] of [
     [1, 1],
@@ -119,4 +120,22 @@ test('Variations offers plain weave and satin tie-ups', async ({ page }) => {
   const tieups = page.getByRole('region', { name: 'Other tie-ups' })
   await expect(tieups).toContainText('Plain weave tie-up')
   await expect(tieups).toContainText('5-end satin tie-up (move 2)')
+})
+
+test('Add tabby puts a plain weave pick after every pick, alternating sheds', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add tabby' }).click()
+  await expect(toast(page)).toContainText('Tabby added')
+  await expect(page.getByLabel('Picks', { exact: true })).toHaveValue('64')
+  // Tabby treadles 5 (shafts 1, 3) and 6 (shafts 2, 4), on picks 2, 4, 6…
+  await expect(cell(page, 'Pick 2, treadle 5')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Pick 4, treadle 6')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Pick 6, treadle 5')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Treadle 5, shaft 1')).toHaveAttribute('aria-checked', 'true')
+  await expect(cell(page, 'Treadle 5, shaft 2')).toHaveAttribute('aria-checked', 'false')
+  await expect(cell(page, 'Treadle 6, shaft 2')).toHaveAttribute('aria-checked', 'true')
+  // The pattern picks moved apart but are as they were: pick 3 is the old pick 2.
+  await expect(cell(page, 'Pick 3, treadle 2')).toHaveAttribute('aria-checked', 'true')
+  // One undo takes it all back.
+  await toolbarButton(page, 'Undo').click()
+  await expect(page.getByLabel('Picks', { exact: true })).toHaveValue('32')
 })
