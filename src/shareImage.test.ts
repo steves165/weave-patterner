@@ -6,7 +6,7 @@ import { blankChart } from './knit/chart'
 import { fabricPainter } from './knit/sharePicture'
 import { shareLinks } from './share'
 import { clothPainter, drawShareCard, SHARE_SIZES } from './shareImage'
-import { importFile } from './weave'
+import { computeDrawdown, importFile } from './weave'
 
 const { draft } = importFile(readFileSync(new URL('../samples/Green blocks.weave.json', import.meta.url), 'utf8'))
 const card = (design = clothPainter(draft)) => ({
@@ -47,6 +47,27 @@ describe('share pictures', () => {
     )
     const [r, , b] = ctx.getImageData(300, 300, 1, 1).data
     expect(r).toBeGreaterThan(b)
+  })
+})
+
+describe('the cloth picture', () => {
+  // 600 × 600 makes 10px threads; 2px in from a thread's corner is clear of its shading.
+  const paint = (look: Parameters<typeof clothPainter>[1]) => {
+    const ctx = createCanvas(600, 600).getContext('2d') as unknown as CanvasRenderingContext2D
+    clothPainter(draft, look)(ctx, 0, 0, 600, 600)
+    return (column: number, row: number) => pixel(ctx, column * 10 + 2, row * 10 + 2)
+  }
+  const drawdown = computeDrawdown(draft)
+  const colour = (e: number, p: number) => (drawdown[p][e] ? draft.warpColors[e] : draft.weftColors[p]).toLowerCase()
+
+  it('is the drawdown, square for square, even where a layered view would guess hidden squares', () => {
+    const at = paint({})
+    for (let p = 0; p < 30; p++) for (let e = 0; e < 30; e++) expect(at(e, p)).toBe(colour(e, p))
+  })
+
+  it('puts pick 1 at the bottom and end 1 on the right when the draft view does', () => {
+    const at = paint({ pickOneBottom: true, endOneRight: true })
+    for (let p = 0; p < 30; p++) for (let e = 0; e < 30; e++) expect(at(59 - e, 59 - p)).toBe(colour(e, p))
   })
 })
 

@@ -15,6 +15,8 @@ import { qrPath } from '../qr'
 
 /** What goes on the printed sheet besides the draft. */
 export interface PrintOptions {
+  /** A picture of the woven cloth at the top of the page. */
+  cloth: boolean
   /** A second page of written threading, tie-up and treadling. */
   instructions: boolean
   /** A QR code that opens the pattern in the app. */
@@ -22,13 +24,14 @@ export interface PrintOptions {
 }
 
 const KEY = 'wp-print'
-const DEFAULTS: PrintOptions = { instructions: false, qr: true }
+const DEFAULTS: PrintOptions = { cloth: true, instructions: false, qr: true }
 
 /** The options last printed with (also used by the browser's own Print, Ctrl+P). */
 export function printOptions(): PrintOptions {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<PrintOptions>
     return {
+      cloth: typeof saved.cloth === 'boolean' ? saved.cloth : DEFAULTS.cloth,
       instructions: typeof saved.instructions === 'boolean' ? saved.instructions : DEFAULTS.instructions,
       qr: typeof saved.qr === 'boolean' ? saved.qr : DEFAULTS.qr,
     }
@@ -69,9 +72,22 @@ export function PrintDialog({ open, link, onClose, onPrint }: Props) {
       </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          The pattern’s name, a picture of the cloth, its colours and the full draft, on one page.
+          The pattern’s name, its colours and the full draft, on one page.
         </Typography>
         <Stack sx={{ gap: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox checked={options.cloth} onChange={(e) => setOptions({ ...options, cloth: e.target.checked })} />
+            }
+            label={
+              <span>
+                Picture of the cloth
+                <Typography variant="body2" color="text.secondary" component="span" sx={{ display: 'block' }}>
+                  The woven cloth, repeated, at the top of the page
+                </Typography>
+              </span>
+            }
+          />
           <FormControlLabel
             control={
               <Checkbox

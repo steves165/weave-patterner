@@ -43,6 +43,34 @@ test('prints written instructions only when asked', async ({ page }) => {
   expect(await page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(2)
 })
 
+test('the cloth picture can be left off, and the choice is remembered', async ({ page }) => {
+  await page.evaluate(() => {
+    window.print = () => {}
+  })
+  const picture = page.getByRole('img', { name: 'The woven cloth of Green blocks' })
+  const qr = page.getByRole('img', { name: /QR code that opens/ })
+  await toolbarButton(page, 'Print').click()
+  const dialog = page.getByRole('dialog', { name: 'Print' })
+  await expect(dialog.getByRole('checkbox', { name: /Picture of the cloth/ })).toBeChecked()
+  await dialog.getByRole('checkbox', { name: /Picture of the cloth/ }).uncheck()
+  await dialog.getByRole('button', { name: 'Print' }).click()
+  await page.emulateMedia({ media: 'print' })
+  await expect(page.locator('.print-draft')).toBeVisible()
+  await expect(picture).toHaveCount(0)
+  await expect(qr).toBeVisible()
+
+  // Ctrl+P prints the same way.
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
+  await expect(page.locator('.print-draft')).toBeVisible()
+  await expect(picture).toHaveCount(0)
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')))
+
+  await page.emulateMedia({ media: 'screen' })
+  await toolbarButton(page, 'Print').click()
+  await expect(dialog.getByRole('checkbox', { name: /Picture of the cloth/ })).not.toBeChecked()
+})
+
 test('the cloth picture is already drawn when the browser prints', async ({ page }) => {
   // The browser takes its picture of the page as print() is called: look at the cloth right then.
   await page.evaluate(() => {

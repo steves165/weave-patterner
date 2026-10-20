@@ -231,7 +231,7 @@ export default function App() {
   }, [])
   /** Draws the print sheet while `f` runs (image export copies its picture of the draft), then takes it away. */
   const withSheet = <T,>(f: () => T): T => {
-    flushSync(() => setPrinting((p) => p ?? { instructions: false, qr: false }))
+    flushSync(() => setPrinting((p) => p ?? { cloth: false, instructions: false, qr: false }))
     try {
       return f()
     } finally {
@@ -918,7 +918,11 @@ export default function App() {
               app="weave"
               title={name ?? 'My weaving draft'}
               link={() => patternUrl(name ?? 'Shared pattern', draft)}
-              design={clothPainter(draft)}
+              design={clothPainter(draft, {
+                side: view.clothSide,
+                endOneRight: view.endOneRight,
+                pickOneBottom: view.pickOneBottom,
+              })}
               onClose={() => setDialog(null)}
               onToast={setToast}
             />
@@ -1106,6 +1110,8 @@ export default function App() {
           draft={draft}
           endOneRight={view.endOneRight}
           pickOneBottom={view.pickOneBottom}
+          clothSide={view.clothSide}
+          cloth={printing.cloth}
           instructions={printing.instructions}
           noTieup={view.noTieup}
           qr={printing.qr ? link : null}

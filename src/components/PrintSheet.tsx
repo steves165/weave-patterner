@@ -19,6 +19,10 @@ interface Props {
   endOneRight?: boolean
   /** Draw picks bottom to top, pick 1 at the bottom (matches the editor's view option). */
   pickOneBottom?: boolean
+  /** How the editor shows the drawdown: plain, or the face or back of layered cloth. The cloth picture matches it. */
+  clothSide?: 'drawdown' | 'face' | 'back'
+  /** Show a picture of the woven cloth at the top of the page. */
+  cloth?: boolean
   /** Add a page of written threading, tie-up and treadling instructions. */
   instructions?: boolean
   /** Leave the tie-up out of a lift plan, for looms without one. */
@@ -29,7 +33,7 @@ interface Props {
 
 /**
  * The printed page, in the style of the pictures made for Instagram: the app's mark and the pattern's name, the woven
- * cloth in a big rounded picture, a QR code that opens the pattern (if wanted), its colours, and the full draft in the
+ * cloth in a big rounded picture (if wanted), a QR code that opens the pattern (if wanted), its colours, and the full draft in the
  * classic layout: warp colours and threading above the drawdown, tie-up top right, treadling and weft colours to the
  * right, with a tick and number every 4 threads.
  */
@@ -38,17 +42,27 @@ export function PrintSheet({
   draft,
   endOneRight = false,
   pickOneBottom = false,
+  clothSide = 'drawdown',
+  cloth: showCloth = true,
   instructions = false,
   noTieup = false,
   qr = null,
 }: Props) {
-  // The woven cloth, as the Instagram picture shows it (clothPainter), drawn straight onto a canvas as the sheet
-  // appears: the browser's print takes its picture of the page at once, before an image made then would have loaded.
+  // The woven cloth, as the Instagram picture shows it (clothPainter) and the same way up as the draft below it, drawn
+  // straight onto a canvas as the sheet appears: the browser's print takes its picture of the page at once, before an
+  // image made then would have loaded.
   const cloth = useRef<HTMLCanvasElement>(null)
   useLayoutEffect(() => {
     const ctx = cloth.current?.getContext('2d')
-    if (ctx) clothPainter(draft)(ctx, 0, 0, ctx.canvas.width, ctx.canvas.height)
-  }, [draft])
+    if (ctx)
+      clothPainter(draft, { side: clothSide, endOneRight, pickOneBottom })(
+        ctx,
+        0,
+        0,
+        ctx.canvas.width,
+        ctx.canvas.height,
+      )
+  }, [draft, clothSide, endOneRight, pickOneBottom])
   const code = useMemo(() => (qr ? qrPath(qr) : null), [qr])
   const { shafts, treadles, ends, picks } = draft
   const hideTieup = noTieup && isDirectTieup(draft)
@@ -212,29 +226,33 @@ export function PrintSheet({
           </p>
         </div>
       </header>
-      <div className="print-hero">
-        <canvas
-          ref={cloth}
-          className="print-cloth"
-          width={1600}
-          height={760}
-          role="img"
-          aria-label={`The woven cloth of ${name}`}
-        />
-        {code && (
-          <figure className="print-qr">
-            <svg
-              viewBox={`-2 -2 ${code.size + 4} ${code.size + 4}`}
+      {(showCloth || code) && (
+        <div className="print-hero">
+          {showCloth && (
+            <canvas
+              ref={cloth}
+              className="print-cloth"
+              width={1600}
+              height={760}
               role="img"
-              aria-label={`QR code that opens ${name} in Weave Patterner`}
-            >
-              <rect x={-2} y={-2} width={code.size + 4} height={code.size + 4} fill="#fff" />
-              <path d={code.d} fill="#000" />
-            </svg>
-            <figcaption>Scan with your phone’s camera to open this pattern in Weave Patterner</figcaption>
-          </figure>
-        )}
-      </div>
+              aria-label={`The woven cloth of ${name}`}
+            />
+          )}
+          {code && (
+            <figure className="print-qr">
+              <svg
+                viewBox={`-2 -2 ${code.size + 4} ${code.size + 4}`}
+                role="img"
+                aria-label={`QR code that opens ${name} in Weave Patterner`}
+              >
+                <rect x={-2} y={-2} width={code.size + 4} height={code.size + 4} fill="#fff" />
+                <path d={code.d} fill="#000" />
+              </svg>
+              <figcaption>Scan with your phone’s camera to open this pattern in Weave Patterner</figcaption>
+            </figure>
+          )}
+        </div>
+      )}
       <div className="print-palette">
         {palette.map((c) => (
           <span key={c}>

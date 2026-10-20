@@ -451,7 +451,7 @@ export const WEAVE_HELP: Topic[] = [
           '**Share** makes a link that opens the pattern for anyone, to copy or send to Pinterest, Facebook, X, WhatsApp or email (on a phone, through its share menu). It also makes a picture of the cloth: square for Instagram, tall for Pinterest.',
           'Instagram only takes posts from its app: download the picture (or share it, on a phone) and post it there.',
           '**Import** opens a .weave.json or .wif file.',
-          '**Print** prints a page in the app’s style: the name, a picture of the cloth, its colours and the full draft. Add a **QR code** that opens the pattern in Weave Patterner when scanned with a phone’s camera, and written threading and treadling lists if you like.',
+          '**Print** prints a page in the app’s style: the name, a picture of the cloth (drawn the way the drawdown is shown, and the same way up; leave it off with **Picture of the cloth**), its colours and the full draft. Add a **QR code** that opens the pattern in Weave Patterner when scanned with a phone’s camera, and written threading and treadling lists if you like.',
         ],
       },
       {

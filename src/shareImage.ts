@@ -4,9 +4,9 @@
  * when the static pages are built (with @napi-rs/canvas).
  */
 import type { AppId, Brand } from './brands'
-import { clothView } from './layers'
+import { clothView, type Side } from './layers'
 import { KNIT_VS, SEW_NEEDLE, SEW_STITCHES, TWILL_STEPS } from './marks'
-import type { Draft } from './weave'
+import { computeDrawdown, type Draft } from './weave'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -21,10 +21,29 @@ export type ShareSize = keyof typeof SHARE_SIZES
 /** Something that draws the design into a box. */
 export type DesignPainter = (ctx: Ctx, x: number, y: number, w: number, h: number) => void
 
-/** The woven face of a draft, repeated to fill the box, each crossing shaded along its thread so it looks woven. */
-export function clothPainter(d: Draft): DesignPainter {
+/** How to show the cloth: as the draft view shows it (its cloth side, and which corner end 1 and pick 1 are in). */
+export interface ClothLook {
+  /** The plain drawdown (the default), or the face or back of the cloth allowing for layers (double cloth). */
+  side?: 'drawdown' | Side
+  endOneRight?: boolean
+  pickOneBottom?: boolean
+}
+
+/**
+ * The cloth of a draft as the draft view shows it, repeated to fill the box, each crossing shaded along its thread so
+ * it looks woven.
+ */
+export function clothPainter(d: Draft, look: ClothLook = {}): DesignPainter {
+  const { side = 'drawdown', endOneRight = false, pickOneBottom = false } = look
   return (ctx, x, y, w, h) => {
-    const face = clothView(d, 'face')
+    const face =
+      side === 'drawdown'
+        ? computeDrawdown(d).map((row, p) =>
+            row.map((up, e) => ({ warp: up, color: up ? d.warpColors[e] : d.weftColors[p] })),
+          )
+        : clothView(d, side)
+    // Turning the cloth over to see the back swaps left and right, as the draft view does.
+    const mirrored = endOneRight !== (side === 'back')
     // About 60 threads across the shorter side: enough to see the pattern repeat, big enough to see the threads.
     const cell = Math.max(4, Math.round(Math.min(w, h) / 60))
     const edge = Math.max(1, cell * 0.14)
@@ -32,8 +51,9 @@ export function clothPainter(d: Draft): DesignPainter {
       const row = face[p % d.picks]
       for (let e = 0; e * cell < w; e++) {
         const s = row[e % d.ends]
-        const cx = x + e * cell
-        const cy = y + p * cell
+        // End 1 and pick 1 start from the corner the draft view starts them from.
+        const cx = mirrored ? x + w - (e + 1) * cell : x + e * cell
+        const cy = pickOneBottom ? y + h - (p + 1) * cell : y + p * cell
         ctx.fillStyle = s.color
         ctx.fillRect(cx, cy, cell, cell)
         // Shadow along the sides of the thread on top, and a little light down its middle.
