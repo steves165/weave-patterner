@@ -86,6 +86,151 @@ export const SAMPLES: Sample[] = [
       mode: 'round',
     }),
   },
+  {
+    name: 'Houndstooth',
+    about: 'The classic broken check in two colours, on a 4-stitch, 4-round repeat.',
+    chart: () => ({
+      ...chartFrom(
+        Array(8).fill('................'),
+        [
+          '1000100010001000',
+          '1100110011001100',
+          '1110111011101110',
+          '0111011101110111',
+          '1000100010001000',
+          '1100110011001100',
+          '1110111011101110',
+          '0111011101110111',
+        ],
+        ['#f2ead8', '#2b2b2b'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'Heart',
+    about: 'A row of hearts in two colours: for yokes, hats, mittens and Valentine knits.',
+    chart: () => ({
+      ...chartFrom(
+        Array(8).fill('..................'),
+        [
+          '000000000000000000',
+          '001101100001101100',
+          '011111110011111110',
+          '011111110011111110',
+          '001111100001111100',
+          '000111000000111000',
+          '000010000000010000',
+          '000000000000000000',
+        ],
+        ['#f2ead8', '#c2185b'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'Nordic star',
+    about: 'The eight-pointed Selbu star, a 17-stitch motif for mittens, hats and jumpers.',
+    chart: () => ({
+      ...chartFrom(
+        Array(17).fill('.................'),
+        [
+          '00000000000000000',
+          '00000000100000000',
+          '00000001110000000',
+          '00011111111111000',
+          '00010111111101000',
+          '00011011111011000',
+          '00011101110111000',
+          '00111110101111100',
+          '01111111111111110',
+          '00111110101111100',
+          '00011101110111000',
+          '00011011111011000',
+          '00010111111101000',
+          '00011111111111000',
+          '00000001110000000',
+          '00000000100000000',
+          '00000000000000000',
+        ],
+        ['#f2ead8', '#1f2a44'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'Snowflake peerie',
+    about: 'A small snowflake for a band of stranded colourwork, light on dark.',
+    chart: () => ({
+      ...chartFrom(
+        Array(9).fill('............'),
+        [
+          '000010000000',
+          '010010010000',
+          '001010100000',
+          '000111000000',
+          '111111111000',
+          '000111000000',
+          '001010100000',
+          '010010010000',
+          '000010000000',
+        ],
+        ['#1f2a44', '#f2ead8'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'OXO peerie',
+    about: 'The traditional Fair Isle O and X, side by side on a 16-stitch repeat.',
+    chart: () => ({
+      ...chartFrom(
+        Array(7).fill('................'),
+        [
+          '0011110011000011',
+          '0010010001100110',
+          '0100001000111100',
+          '0100001000011000',
+          '0100001000111100',
+          '0010010001100110',
+          '0011110011000011',
+        ],
+        ['#f2ead8', '#2e5e4e'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'Chevron',
+    about: 'Two-colour zigzag stripes on an 8-stitch repeat: easy stranded colourwork.',
+    chart: () => ({
+      ...chartFrom(
+        Array(8).fill('................'),
+        [
+          '0111111101111111',
+          '0011111000111110',
+          '0001110000011100',
+          '0000100000001000',
+          '1000000010000000',
+          '1100000111000001',
+          '1110001111100011',
+          '1111011111110111',
+        ],
+        ['#f2ead8', '#b23a48'],
+      ),
+      mode: 'round',
+    }),
+  },
+  {
+    name: 'Basketweave',
+    about: 'Blocks of 4 knit and 4 purl stitches, swapping every 4 rows: a woven look in one colour.',
+    chart: () => chartFrom([...Array(4).fill('----....----....'), ...Array(4).fill('....----....----')]),
+  },
+  {
+    name: 'Double moss',
+    about: 'Knit 2, purl 2, swapping every 2 rows: a checked texture that lies flat. Double seed stitch in the US.',
+    chart: () => chartFrom(['--..--..--..', '--..--..--..', '..--..--..--', '..--..--..--']),
+  },
 ]
 
 /** A sample's name for links (#sample=cable-panel) and its page: lower case, words joined by hyphens. */
