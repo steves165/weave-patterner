@@ -1,4 +1,4 @@
-import { PRESETS, toRuns } from '../colors'
+import { PRESETS, type PresetFamily, toRuns } from '../colors'
 import { KNIT_HELP } from '../help/knitHelp'
 import { SEW_HELP } from '../help/sewHelp'
 import type { Topic } from '../help/types'
@@ -6,7 +6,7 @@ import { WEAVE_HELP } from '../help/weaveHelp'
 import { threadingLines, tieupLines, treadlingLines } from '../instructions'
 import { colorLetter, type KnitChart, usedColors } from '../knit/chart'
 import { castOnText, writtenRows } from '../knit/instructions'
-import { SAMPLES, sampleSlug } from '../knit/samples'
+import { SAMPLES, type SampleFamily, sampleSlug } from '../knit/samples'
 import { SAMPLE_KEY } from '../knit/share'
 import { STITCHES, type StitchId } from '../knit/stitches'
 import { findRepeat } from '../repeat'
@@ -109,6 +109,54 @@ ${blocks(t.body, link)}
   return [index, ...pages].map((p) => ({ path: p.path, html: render(app, p) }))
 }
 
+/**
+ * Up to `n` items to link from item `i`: others of its own family first, then the rest, each in list order from the
+ * one after it, so links spread across the list rather than all pointing at the first few.
+ */
+export function related<T extends { family: string }>(items: T[], i: number, n = 4): T[] {
+  const after = [...items.slice(i + 1), ...items.slice(0, i)]
+  return [
+    ...after.filter((x) => x.family === items[i].family),
+    ...after.filter((x) => x.family !== items[i].family),
+  ].slice(0, n)
+}
+
+/** The guides that explain each kind of weaving draft, and each kind of knitting chart. */
+const WEAVE_GUIDES: Record<PresetFamily, [string, string][]> = {
+  check: [
+    ['colours', 'colours guide'],
+    ['drawdown', 'how to read a drawdown'],
+  ],
+  twill: [
+    ['threading', 'threading guide'],
+    ['treadling', 'treadling guide'],
+  ],
+  block: [
+    ['tools', 'profile drafts and block weaves'],
+    ['drawdown', 'how to read a drawdown'],
+  ],
+  tartan: [
+    ['colours', 'colours guide'],
+    ['drawdown', 'how to read a drawdown'],
+  ],
+}
+const KNIT_GUIDES: Record<SampleFamily, [string, string][]> = {
+  texture: [
+    ['reading', 'how to read a knitting chart'],
+    ['stitches', 'stitch reference'],
+  ],
+  lace: [
+    ['reading', 'how to read a knitting chart'],
+    ['stitches', 'stitch reference'],
+  ],
+  colourwork: [
+    ['reading', 'how to read a knitting chart'],
+    ['colourwork', 'colourwork guide'],
+  ],
+}
+const guideLinks = (base: string, links: [string, string][]) =>
+  links.map(([id, words]) => `<a href="{root}${base}guide/${id}/">${esc(words)}</a>`).join(' and ')
+
 /** The shortest repeat of a sequence: the first n items, repeated a whole number of times, give the whole. */
 export function period<T>(xs: T[], same: (a: T, b: T) => boolean = (a, b) => a === b): number {
   for (let n = 1; n < xs.length; n++) if (xs.length % n === 0 && xs.every((x, i) => same(x, xs[i % n]))) return n
@@ -186,7 +234,11 @@ async function weavePatterns(): Promise<Built[]> {
     built.map(async ({ p, d }, i): Promise<Page> => {
       const repeat = findRepeat(d)
       const share = await encodePattern(p.name, d)
-      const others = [built[(i + 1) % built.length], built[(i + 2) % built.length], built[(i + 3) % built.length]]
+      const others = related(
+        built.map((b) => ({ ...b, family: b.p.family })),
+        i,
+      )
+      const knit = SAMPLES.find((s) => sampleSlug(s.name) === p.id)
       return {
         path: `${base}${p.id}/`,
         title: `${p.name} weaving draft – free ${d.shafts}-shaft pattern | Weave Patterner`,
@@ -223,9 +275,9 @@ async function weavePatterns(): Promise<Built[]> {
 <h2>Colour order</h2>
 <p><strong>Warp:</strong> ${colourOrder(d.warpColors, { ...COLOUR_NAMES, ...p.colours })}; repeat across the warp.</p>
 <p><strong>Weft:</strong> ${colourOrder(d.weftColors, { ...COLOUR_NAMES, ...p.colours })}; repeat up the cloth.</p>
-<p>${p.colours ? 'The same colour order in warp and weft makes the tartan’s squares; weave it in the clan’s colours, or your own for a new tartan from the same sett.' : 'Use any two colours with good contrast in place of navy and cream: the effect comes from the order of the colours and the weave together.'} See the <a href="{root}guide/colours/">colours guide</a> and <a href="{root}guide/drawdown/">how to read a drawdown</a>.</p>
-<h2>More drafts</h2>
-<ul>${others.map((o) => `<li><a href="{root}${base}${o.p.id}/">${esc(o.p.name)}</a>: ${esc(o.p.description)}</li>`).join('')}</ul>
+<p>${p.colours ? 'The same colour order in warp and weft makes the tartan’s squares; weave it in the clan’s colours, or your own for a new tartan from the same sett.' : 'Use any two colours with good contrast in place of navy and cream: the effect comes from the order of the colours and the weave together.'} See the ${guideLinks(app.path, WEAVE_GUIDES[p.family])}.</p>
+<h2>Related drafts</h2>
+<ul>${others.map((o) => `<li><a href="{root}${base}${o.p.id}/">${esc(o.p.name)}</a>: ${esc(o.p.description)}</li>`).join('')}</ul>${knit ? `\n<p>Knitting it instead? See the <a href="{root}${KNIT_APP.path}patterns/${p.id}/">${esc(knit.name.toLowerCase())} knitting chart</a>.</p>` : ''}
 <p><a href="{root}${base}">All weaving drafts</a></p>`,
       }
     }),
@@ -273,7 +325,11 @@ function knitPatterns(): Built[] {
   }
   const pages = built.map(({ s, k, slug }, i): Page => {
     const colours = usedColors(k)
-    const others = [built[(i + 1) % built.length], built[(i + 2) % built.length]]
+    const others = related(
+      built.map((b) => ({ ...b, family: b.s.family })),
+      i,
+    )
+    const woven = PRESETS.find((p) => p.id === slug)
     return {
       path: `${base}${slug}/`,
       title: `${s.name} knitting chart – free pattern with written instructions | Knit Patterner`,
@@ -295,9 +351,9 @@ function knitPatterns(): Built[] {
 <p>Repeat these ${k.mode === 'round' ? 'rounds' : 'rows'} for the length you want.</p>
 <h2>Abbreviations</h2>
 ${abbreviations(k)}
-<p>New to charts? See <a href="{root}${app.path}guide/reading/">how to read a knitting chart</a>.</p>
-<h2>More charts</h2>
-<ul>${others.map((o) => `<li><a href="{root}${base}${o.slug}/">${esc(o.s.name)}</a>: ${esc(o.s.about)}</li>`).join('')}</ul>
+<p>New to charts? See the ${guideLinks(app.path, KNIT_GUIDES[s.family])}.</p>
+<h2>Related charts</h2>
+<ul>${others.map((o) => `<li><a href="{root}${base}${o.slug}/">${esc(o.s.name)}</a>: ${esc(o.s.about)}</li>`).join('')}</ul>${woven ? `\n<p>Weaving it instead? See the <a href="{root}${WEAVE_APP.path}patterns/${woven.id}/">${esc(woven.name.toLowerCase())} weaving draft</a>.</p>` : ''}
 <p><a href="{root}${base}">All knitting charts</a></p>`,
     }
   })

@@ -5,7 +5,7 @@ import { WEAVE_HELP } from '../help/weaveHelp'
 import { SAMPLES, sampleSlug } from '../knit/samples'
 import { decodePattern } from '../share'
 import { CONSENT_KEY, SITE_URL, withAnalytics } from './html'
-import { buildSite, colourOrder, period, sitemap } from './pages'
+import { buildSite, colourOrder, period, related, sitemap } from './pages'
 import { clothSvg, draftSvg } from './pictures'
 
 const pages = await buildSite()
@@ -154,5 +154,27 @@ describe('analytics on the pages', () => {
     expect(html.indexOf('id="consent"')).toBeLessThan(html.indexOf('</body>'))
     expect(html).toContain('data-track="open_pattern"')
     expect(() => withAnalytics(page.html, "G-1';alert(1)//")).toThrow()
+  })
+})
+
+describe('related pages', () => {
+  it('links its own kind first, then the rest, from the one after it', () => {
+    const items = ['a1', 'b1', 'a2', 'b2', 'a3'].map((id) => ({ id, family: id[0] }))
+    expect(related(items, 2).map((x) => x.id)).toEqual(['a3', 'a1', 'b2', 'b1'])
+    expect(related(items, 1, 2).map((x) => x.id)).toEqual(['b2', 'a2'])
+  })
+
+  it('links block weaves to block weaves and their guide, and houndstooth across the crafts', () => {
+    const overshot = pages.find((p) => p.path === 'patterns/overshot/')?.html ?? ''
+    const listed = overshot.split('<h2>Related drafts</h2>')[1]
+    expect(listed).toContain('href="../../patterns/monks-belt/"')
+    expect(listed).toContain('href="../../patterns/shadow-weave/"')
+    expect(overshot).toContain('href="../../guide/tools/">profile drafts and block weaves</a>')
+    expect(pages.find((p) => p.path === 'patterns/houndstooth/')?.html).toContain(
+      'href="../../knit/patterns/houndstooth/">houndstooth knitting chart</a>',
+    )
+    const knit = pages.find((p) => p.path === 'knit/patterns/houndstooth/')?.html ?? ''
+    expect(knit).toContain('href="../../../patterns/houndstooth/">houndstooth weaving draft</a>')
+    expect(knit).toContain('href="../../../knit/guide/colourwork/">colourwork guide</a>')
   })
 })

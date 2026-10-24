@@ -31,8 +31,12 @@ export function toRuns(colors: string[]): ColorRun[] {
   return runs
 }
 
+/** Kinds of preset, for linking each pattern page to its neighbours: checks and stripes, twills, block weaves, tartans. */
+export type PresetFamily = 'check' | 'twill' | 'block' | 'tartan'
+
 export interface Preset {
   id: string
+  family: PresetFamily
   name: string
   description: string
   /** Uses the accent colour as well as dark and light. */
@@ -133,12 +137,14 @@ const ANCIENT = { red: '#d9542c', green: '#5f8a3e', blue: '#5b86b8', black: '#3f
 export const PRESETS: Preset[] = [
   {
     id: 'plain-weave',
+    family: 'twill',
     name: 'Plain weave',
     description: 'Tabby on 2 shafts, over one and under one: dark warp and light weft',
     build: (dark, light) => draftFrom([1, 2], [[1], [2]], [1, 2], [dark], [light]),
   },
   {
     id: 'houndstooth',
+    family: 'check',
     name: 'Houndstooth',
     description: '2/2 twill, 4 dark and 4 light in warp and weft',
     build: (dark, light) => {
@@ -148,6 +154,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'puppytooth',
+    family: 'check',
     name: 'Puppytooth',
     description: 'A small houndstooth: 2/2 twill, 2 dark and 2 light',
     build: (dark, light) => {
@@ -157,6 +164,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'glen-check',
+    family: 'check',
     name: 'Glen check',
     description: 'Prince of Wales check: 2/2 twill, blocks of 4-and-4 houndstooth beside 2-and-2 puppytooth',
     build: (dark, light) => {
@@ -166,6 +174,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'gun-club',
+    family: 'check',
     name: 'Gun club check',
     accent: true,
     description: '2/2 twill: a light ground checked with dark and accent in turn, 4 threads each',
@@ -176,6 +185,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'log-cabin',
+    family: 'check',
     name: 'Log cabin',
     description: 'Plain weave, dark/light alternating, swapping phase every 8 threads',
     build: (dark, light) => {
@@ -185,12 +195,14 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'hairline',
+    family: 'check',
     name: 'Hairline stripes',
     description: 'Plain weave, 1 dark and 1 light in warp and weft: fine lines across the cloth',
     build: (dark, light) => draftFrom([1, 2, 3, 4], plain, [1, 2], [dark, light], [dark, light]),
   },
   {
     id: 'gingham',
+    family: 'check',
     name: 'Gingham',
     description: 'Plain weave, 4 dark and 4 light in warp and weft',
     build: (dark, light) => {
@@ -200,6 +212,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'buffalo',
+    family: 'check',
     name: 'Buffalo check',
     description: 'A bold check: 2/2 twill, 8 dark and 8 light in warp and weft',
     build: (dark, light) => {
@@ -209,6 +222,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'windowpane',
+    family: 'check',
     name: 'Windowpane',
     description: '2/2 twill on a light ground, with 2 dark threads every 16 in warp and weft',
     build: (dark, light) => {
@@ -218,6 +232,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'tattersall',
+    family: 'check',
     name: 'Tattersall',
     accent: true,
     description: 'Plain weave on a light ground, with lines of dark and accent in turn, 8 threads apart',
@@ -228,6 +243,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'basket-check',
+    family: 'check',
     name: 'Basket check',
     description: '2/2 basket weave, 4 dark and 4 light in warp and weft: a stepped check',
     build: (dark, light) => {
@@ -237,30 +253,35 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'pinstripe',
+    family: 'check',
     name: 'Pinstripe',
     description: '2/2 twill in dark, with a light end every 8 in the warp: suiting stripes',
     build: (dark, light) => draftFrom(straight(4), twill22, straight(4), [...run(dark, 7), light], [dark]),
   },
   {
     id: 'herringbone',
+    family: 'twill',
     name: 'Herringbone',
     description: '2/2 twill turning every 8 ends, dark warp and light weft',
     build: (dark, light) => draftFrom(herringbone, twill22, straight(4), [dark], [light]),
   },
   {
     id: 'birds-eye',
+    family: 'twill',
     name: 'Bird’s eye',
     description: 'Point twill threaded and treadled 1 2 3 4 3 2: small diamonds, dark warp and light weft',
     build: (dark, light) => draftFrom(point(4), twill22, point(4), [dark], [light], 36),
   },
   {
     id: 'denim',
+    family: 'twill',
     name: 'Denim',
     description: '3/1 twill: dark warp on the face, light weft on the back',
     build: (dark, light) => draftFrom(straight(4), twill31, straight(4), [dark], [light]),
   },
   {
     id: 'broken-twill-check',
+    family: 'check',
     name: 'Broken-twill check',
     description: '8-shaft advancing twill with a 4/4 dark and light check',
     build: (dark, light) => {
@@ -272,12 +293,14 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'twill',
+    family: 'twill',
     name: '2/2 twill',
     description: 'Straight twill on 4 shafts, threaded and treadled 1 2 3 4: the diagonal of most twill cloth',
     build: (dark, light) => draftFrom(straight(4), twill22, straight(4), [dark], [light]),
   },
   {
     id: 'rosepath',
+    family: 'twill',
     name: 'Rosepath',
     description:
       'Point twill threaded and treadled 1 2 3 4 1 4 3 2 on a 2/2 tie-up: small roses, dark warp and light weft',
@@ -285,12 +308,14 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'goose-eye',
+    family: 'twill',
     name: 'Goose-eye twill',
     description: 'Point twill threaded and treadled 1 2 3 4 1 2 3 4 3 2 1 4 3 2: diamonds within diamonds',
     build: (dark, light) => draftFrom(gooseEye, twill22, gooseEye, [dark], [light], 56),
   },
   {
     id: 'overshot',
+    family: 'block',
     name: 'Overshot diamond',
     description:
       'Overshot on 4 blocks, A B C D C B, woven as drawn in: dark pattern weft floating over a light tabby ground',
@@ -304,6 +329,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'monks-belt',
+    family: 'block',
     name: 'Monk’s belt',
     description: 'Overshot on two blocks, shafts 1-2 and 3-4: bold blocks of dark pattern weft on a light tabby ground',
     build: (dark, light) =>
@@ -316,6 +342,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'ms-and-os',
+    family: 'block',
     name: 'M’s and O’s',
     description:
       'Two blocks on 4 shafts, each ribbed where the other is plain: a textured check, for towels and table linen',
@@ -329,6 +356,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'summer-and-winter',
+    family: 'block',
     name: 'Summer and winter',
     description:
       'A unit weave on 4 shafts, 2 blocks woven with tabby: short floats of pattern weft make a dark and light check',
@@ -342,6 +370,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'shadow-weave',
+    family: 'block',
     name: 'Shadow weave',
     description: 'Powell’s shadow weave on 4 shafts: dark and light ends and picks alternating, for lines that step',
     build: (dark, light) =>
@@ -354,6 +383,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'clan-cameron',
+    family: 'tartan',
     name: 'Clan Cameron tartan',
     description: 'The Cameron clan sett, R/8 G24 R8 G24 R64 Y/4, in 2/2 twill: red, with green bands and a yellow line',
     colours: { [CAMERON.red]: 'red', [CAMERON.green]: 'green', [CAMERON.yellow]: 'yellow' },
@@ -372,6 +402,7 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'cameron-of-erracht-ancient',
+    family: 'tartan',
     name: 'Cameron of Erracht Ancient tartan',
     description:
       'The Cameron of Erracht sett (1793, for the 79th Cameron Highlanders), G/16 R2 G2 R6 G32 K32 R2 B32 R6 B16 Y/4, in 2/2 twill and ancient colours',

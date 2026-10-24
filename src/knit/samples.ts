@@ -28,8 +28,12 @@ export function chartFrom(stitches: string[], colors?: string[], palette?: strin
   }
 }
 
+/** Kinds of sample, for linking each chart page to its neighbours. */
+export type SampleFamily = 'texture' | 'lace' | 'colourwork'
+
 export interface Sample {
   name: string
+  family: SampleFamily
   about: string
   chart: () => KnitChart
 }
@@ -37,21 +41,25 @@ export interface Sample {
 export const SAMPLES: Sample[] = [
   {
     name: '2×2 rib',
+    family: 'texture',
     about: 'Knit 2, purl 2: stretchy, for cuffs and hems.',
     chart: () => chartFrom(['--..--..--..', '--..--..--..']),
   },
   {
     name: 'Seed stitch',
+    family: 'texture',
     about: 'Knits and purls alternating every stitch and row: flat, textured and reversible.',
     chart: () => chartFrom(['-.-.-.-.-.-', '.-.-.-.-.-.']),
   },
   {
     name: 'Cable panel',
+    family: 'texture',
     about: 'A 2/2 right cross every sixth row, between purl stitches.',
     chart: () => chartFrom([...Array(5).fill('--....--....--'), '--RRRR--RRRR--']),
   },
   {
     name: 'Feather and fan',
+    family: 'lace',
     about: 'Old Shale lace: decreases and yarn overs that scallop the fabric.',
     chart: () =>
       chartFrom([
@@ -63,11 +71,13 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Eyelet lace',
+    family: 'lace',
     about: 'Staggered yarn overs, each paired with a decrease to keep the count.',
     chart: () => chartFrom(['............', '..o/...o/...', '............', 'o/...o/...o/']),
   },
   {
     name: 'Fair Isle peerie',
+    family: 'colourwork',
     about: 'A small two-colour diamond for stranded colourwork, knitted in the round.',
     chart: () => ({
       ...chartFrom(
@@ -88,6 +98,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Houndstooth',
+    family: 'colourwork',
     about: 'The classic broken check in two colours, on a 4-stitch, 4-round repeat.',
     chart: () => ({
       ...chartFrom(
@@ -109,6 +120,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Heart',
+    family: 'colourwork',
     about: 'A row of hearts in two colours: for yokes, hats, mittens and Valentine knits.',
     chart: () => ({
       ...chartFrom(
@@ -130,6 +142,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Nordic star',
+    family: 'colourwork',
     about: 'The eight-pointed Selbu star, a 17-stitch motif for mittens, hats and jumpers.',
     chart: () => ({
       ...chartFrom(
@@ -160,6 +173,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Snowflake peerie',
+    family: 'colourwork',
     about: 'A small snowflake for a band of stranded colourwork, light on dark.',
     chart: () => ({
       ...chartFrom(
@@ -182,6 +196,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'OXO peerie',
+    family: 'colourwork',
     about: 'The traditional Fair Isle O and X, side by side on a 16-stitch repeat.',
     chart: () => ({
       ...chartFrom(
@@ -202,6 +217,7 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Chevron',
+    family: 'colourwork',
     about: 'Two-colour zigzag stripes on an 8-stitch repeat: easy stranded colourwork.',
     chart: () => ({
       ...chartFrom(
@@ -223,11 +239,13 @@ export const SAMPLES: Sample[] = [
   },
   {
     name: 'Basketweave',
+    family: 'texture',
     about: 'Blocks of 4 knit and 4 purl stitches, swapping every 4 rows: a woven look in one colour.',
     chart: () => chartFrom([...Array(4).fill('----....----....'), ...Array(4).fill('....----....----')]),
   },
   {
     name: 'Double moss',
+    family: 'texture',
     about: 'Knit 2, purl 2, swapping every 2 rows: a checked texture that lies flat. Double seed stitch in the US.',
     chart: () => chartFrom(['--..--..--..', '--..--..--..', '..--..--..--', '..--..--..--']),
   },

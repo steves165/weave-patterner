@@ -81,7 +81,7 @@ test('repeats are written with asterisks, and in the round every round reads fro
 
 test('colourwork names the colours and flags long floats', async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
-  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle peerie/ }).click()
   await expect(page.getByTestId('knit-problems')).toHaveCount(0)
   expect(await writtenRow(page, 4)).toMatch(/^\*k1 A, k1 B, k5 A, k1 B; rep from \* to end\.$/)
   const limit = page.getByLabel('Longest float')
@@ -261,7 +261,7 @@ test('select squares to copy, paste, flip and make the pattern repeat', async ({
 
 test('estimates the yarn needed in each colour', async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
-  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle peerie/ }).click()
   const yarn = page.getByTestId('knit-yarn')
   await expect(yarn.locator('tr')).toHaveCount(2)
   const metres = async () => Number((await yarn.locator('tr[data-color="A"] td').nth(1).innerText()).replace(' m', ''))
@@ -303,7 +303,7 @@ test('make a panel, name it, and save it to put into another chart', async ({ pa
 
 test('turns a two-colour design into mosaic knitting', async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
-  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle peerie/ }).click()
   const rows = Number(await page.getByLabel('Rows', { exact: true }).inputValue())
   await page.getByRole('button', { name: 'Make a mosaic…' }).click()
   const dialog = page.getByRole('dialog', { name: 'Make a mosaic' })
@@ -319,7 +319,7 @@ test('turns a two-colour design into mosaic knitting', async ({ page }) => {
 
 test('intarsia counts bobbins and twists instead of checking floats', async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
-  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle peerie/ }).click()
   await page.getByLabel('Longest float').fill('2')
   await expect(page.getByTestId('knit-problems')).toContainText('floats behind')
   await page.getByRole('button', { name: 'Intarsia', exact: true }).click()
@@ -349,7 +349,7 @@ test('sizes: cast-on, rows and yarn for each, and increases or decreases spread 
 
 test('shows the knitting made up in 3D as a sweater, hat, coat or skirt', { tag: '@3d' }, async ({ page }) => {
   await page.getByRole('button', { name: 'Samples' }).click()
-  await page.getByRole('menuitem', { name: /Fair Isle/ }).click()
+  await page.getByRole('menuitem', { name: /Fair Isle peerie/ }).click()
   await page.getByRole('button', { name: '3D', exact: true }).click()
   const view = page.getByTestId('knit-3d')
   await expect(page.getByRole('img', { name: '3D preview of the knitting' })).toBeVisible({ timeout: 20_000 })
