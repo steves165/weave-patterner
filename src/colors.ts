@@ -1,3 +1,4 @@
+import { blockWeave } from './blockWeaves'
 import { advancing, point, straight } from './tools'
 import { type ColourStripe, type Draft, defaultDraft, parseDraft, resizeDraft } from './weave'
 
@@ -91,6 +92,16 @@ const run = (color: string, n: number): string[] => Array(n).fill(color)
 const times = (order: string[], n: number): string[] => Array.from({ length: n }, () => order).flat()
 /** 2/2 basket weave: pairs of ends and picks work together. */
 const basket = { threading: [1, 1, 2, 2], tieup: [[1], [2]], treadling: [1, 1, 2, 2] }
+/** Rosepath: a point twill with an extra end on shaft 1 at the turn. */
+const rosepath = [1, 2, 3, 4, 1, 4, 3, 2]
+/** Goose-eye: a larger point twill, two straight runs up and back, for concentric diamonds. */
+const gooseEye = [1, 2, 3, 4, 1, 2, 3, 4, 3, 2, 1, 4, 3, 2]
+/** A block profile: the blocks across (threading) and up (treadling), each block woven on its own block treadle. */
+const profile = (threading: number[], treadling: number[], blocks: number) => ({
+  threading,
+  treadling,
+  tieup: Array.from({ length: blocks }, (_, b) => Array.from({ length: blocks }, (_, k) => b === k)),
+})
 /** Herringbone: a 2/2 twill threading that turns every 8 ends, with a break so the zigzag is clean. */
 const herringbone = [1, 2, 3, 4, 1, 2, 3, 4, 2, 1, 4, 3, 2, 1, 4, 3]
 
@@ -258,6 +269,88 @@ export const PRESETS: Preset[] = [
       const seq = advancing(8, 4, 2)
       return draftFrom(seq, tie, seq, order, order)
     },
+  },
+  {
+    id: 'twill',
+    name: '2/2 twill',
+    description: 'Straight twill on 4 shafts, threaded and treadled 1 2 3 4: the diagonal of most twill cloth',
+    build: (dark, light) => draftFrom(straight(4), twill22, straight(4), [dark], [light]),
+  },
+  {
+    id: 'rosepath',
+    name: 'Rosepath',
+    description:
+      'Point twill threaded and treadled 1 2 3 4 1 4 3 2 on a 2/2 tie-up: small roses, dark warp and light weft',
+    build: (dark, light) => draftFrom(rosepath, twill22, rosepath, [dark], [light]),
+  },
+  {
+    id: 'goose-eye',
+    name: 'Goose-eye twill',
+    description: 'Point twill threaded and treadled 1 2 3 4 1 2 3 4 3 2 1 4 3 2: diamonds within diamonds',
+    build: (dark, light) => draftFrom(gooseEye, twill22, gooseEye, [dark], [light], 56),
+  },
+  {
+    id: 'overshot',
+    name: 'Overshot diamond',
+    description:
+      'Overshot on 4 blocks, A B C D C B, woven as drawn in: dark pattern weft floating over a light tabby ground',
+    build: (dark, light) =>
+      blockWeave('overshot', profile([1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 2, 2], [1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 2, 2], 4), {
+        warp: light,
+        warp2: light,
+        pattern: dark,
+        tabby: light,
+      }),
+  },
+  {
+    id: 'monks-belt',
+    name: 'Monk’s belt',
+    description: 'Overshot on two blocks, shafts 1-2 and 3-4: bold blocks of dark pattern weft on a light tabby ground',
+    build: (dark, light) =>
+      blockWeave('overshot', profile([1, 1, 3, 3, 3, 3, 1, 1], [1, 1, 1, 1, 3, 3, 3, 3], 4), {
+        warp: light,
+        warp2: light,
+        pattern: dark,
+        tabby: light,
+      }),
+  },
+  {
+    id: 'ms-and-os',
+    name: 'M’s and O’s',
+    description:
+      'Two blocks on 4 shafts, each ribbed where the other is plain: a textured check, for towels and table linen',
+    build: (dark, light) =>
+      blockWeave('ms-os', profile([1, 1, 2, 2], [1, 1, 1, 1, 2, 2, 2, 2], 2), {
+        warp: dark,
+        warp2: dark,
+        pattern: light,
+        tabby: light,
+      }),
+  },
+  {
+    id: 'summer-and-winter',
+    name: 'Summer and winter',
+    description:
+      'A unit weave on 4 shafts, 2 blocks woven with tabby: short floats of pattern weft make a dark and light check',
+    build: (dark, light) =>
+      blockWeave('summer-winter', profile([1, 1, 1, 1, 2, 2, 2, 2], [1, 1, 1, 1, 2, 2, 2, 2], 2), {
+        warp: light,
+        warp2: light,
+        pattern: dark,
+        tabby: light,
+      }),
+  },
+  {
+    id: 'shadow-weave',
+    name: 'Shadow weave',
+    description: 'Powell’s shadow weave on 4 shafts: dark and light ends and picks alternating, for lines that step',
+    build: (dark, light) =>
+      blockWeave('shadow', profile([1, 1, 2, 2, 3, 3, 4, 4], [1, 1, 2, 2, 3, 3, 4, 4], 4), {
+        warp: dark,
+        warp2: light,
+        pattern: dark,
+        tabby: light,
+      }),
   },
   {
     id: 'clan-cameron',
