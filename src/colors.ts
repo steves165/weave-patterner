@@ -382,6 +382,29 @@ export const PRESETS: Preset[] = [
       }),
   },
   {
+    id: 'honeycomb',
+    family: 'block',
+    name: 'Honeycomb',
+    accent: true,
+    description:
+      'On a Monk’s belt threading: 6 plain-weave picks in one block while the other floats, between 2 accent tabby picks that outline the cells',
+    build: (dark, light, accent = dark) =>
+      draftFrom(
+        [1, 2, 1, 2, 1, 2, 1, 2, 3, 4, 3, 4, 3, 4, 3, 4],
+        [
+          [1, 3],
+          [2, 4],
+          [1, 3, 4],
+          [2, 3, 4],
+          [1, 2, 3],
+          [1, 2, 4],
+        ],
+        [1, 2, 3, 4, 3, 4, 3, 4, 1, 2, 5, 6, 5, 6, 5, 6],
+        [dark],
+        [accent, accent, ...run(light, 6), accent, accent, ...run(light, 6)],
+      ),
+  },
+  {
     id: 'clan-cameron',
     family: 'tartan',
     name: 'Clan Cameron tartan',
