@@ -196,7 +196,7 @@ ${page.pictures ? `<meta property="og:image:width" content="1200" />\n<meta prop
 <nav aria-label="Site">
 <a href="${root}${app.path}guide/">Guides</a>
 <a href="${root}${app.path}patterns/">Patterns</a>
-<a class="open" href="${root}${app.path}">Open ${app.name}</a>
+<a class="open" data-track="open_app" href="${root}${app.path}">Open ${app.name}</a>
 </nav>
 </header>
 <main id="main" tabindex="-1">
@@ -292,4 +292,33 @@ pre{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);bo
 .button{display:inline-block;background:var(--accent);color:var(--on-accent);padding:10px 20px;border-radius:999px;font-weight:700;text-decoration:none;margin:8px 8px 8px 0;border:2px solid var(--accent)}
 .button.plain{background:transparent;color:var(--accent)}
 footer{max-width:46rem;margin:0 auto;padding:16px 20px 40px;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
+.consent{position:fixed;z-index:10;left:8px;right:8px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:440px;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px #0004;padding:12px 16px;font-size:15px}
+.consent p{margin:0 0 8px}
+.consent div{display:flex;gap:8px;justify-content:flex-end}
+.consent button{font:inherit;font-weight:700;border-radius:999px;padding:6px 16px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.consent button.yes{background:var(--accent);color:var(--on-accent)}
 `
+
+/**
+ * Google Analytics for a static page, the same way the apps do it (src/analytics.ts): nothing loads until the visitor
+ * agrees, and the choice is the apps' own (one localStorage key on the site), so agreeing or not in either place
+ * holds in both. A visitor who hasn't chosen is asked. Pages only, no query or hash, and no ad features. Clicks on
+ * links marked data-track (Open this draft, Save to Pinterest) are counted, to see who goes on to use the tools.
+ * Only on the website: in the desktop app (app://) the pages never ask or load anything.
+ */
+export function analyticsHtml(id: string): string {
+  if (!/^G-[A-Z0-9]+$/.test(id)) throw new Error(`Not a GA4 measurement ID: ${id}`)
+  const script = `(function(){if(!/^https?:$/.test(location.protocol))return;var K='${CONSENT_KEY}',ID='${id}',c=null,b=document.getElementById('consent');try{c=localStorage.getItem(K)}catch(e){}function save(v){try{localStorage.setItem(K,v)}catch(e){}}function start(){window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config',ID,{allow_google_signals:false,allow_ad_personalization_signals:false,page_location:location.origin+location.pathname});var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.appendChild(s);document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-track]');if(a)gtag('event',a.getAttribute('data-track'),{page:location.pathname,transport_type:'beacon'})})}if(c==='granted')start();else if(c!=='denied'){b.hidden=false;b.querySelector('.yes').onclick=function(){save('granted');b.hidden=true;start()};b.querySelector('.no').onclick=function(){save('denied');b.hidden=true}}})()`
+  return `<div class="consent" id="consent" role="region" aria-label="Analytics" data-testid="analytics-consent" hidden>
+<p><strong>Help improve these pages?</strong> With your OK, Google Analytics counts visits, using cookies. It never sees your patterns, and there are no ads.</p>
+<div><button type="button" class="no">No thanks</button><button type="button" class="yes">Allow</button></div>
+</div>
+<script>${script}</script>
+`
+}
+
+/** The apps' consent key (src/analytics.ts, which can't be loaded outside Vite): one choice for the whole site. */
+export const CONSENT_KEY = 'weave-analytics-consent'
+
+/** A page with analytics added (see analyticsHtml) just before its end. */
+export const withAnalytics = (html: string, id: string) => html.replace('</body>', `${analyticsHtml(id)}</body>`)

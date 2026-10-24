@@ -6,12 +6,13 @@ import { execSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
+import { loadEnv } from 'vite'
 import { KNIT, SEW, WEAVE } from '../src/brands'
 import { fabricPainter } from '../src/knit/sharePicture'
 import { sketchPainter } from '../src/sew/sharePicture'
 import { APP_NAMES, APP_PATHS } from '../src/share'
 import { clothPainter, drawShareCard, type ShareSize } from '../src/shareImage'
-import { PICTURES, SITE_URL } from '../src/site/html'
+import { PICTURES, SITE_URL, withAnalytics } from '../src/site/html'
 import { type Built, buildSite, sitemap } from '../src/site/pages'
 
 const out = join(import.meta.dirname, '..', 'dist')
@@ -58,11 +59,13 @@ async function pictures(picture: NonNullable<Built['picture']>, dir: string) {
   }
 }
 
+// The apps' analytics ID (.env.production, as Vite builds them with), for the pages too; none, and they have none.
+const ga = loadEnv('production', join(import.meta.dirname, '..'), 'VITE_').VITE_GA_ID
 const pages = await buildSite()
 for (const page of pages) {
   const dir = join(out, page.path)
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, 'index.html'), page.html)
+  writeFileSync(join(dir, 'index.html'), ga ? withAnalytics(page.html, ga) : page.html)
   if (page.picture) await pictures(page.picture, dir)
 }
 writeFileSync(join(out, 'sitemap.xml'), sitemap(pages, date))
@@ -73,5 +76,5 @@ mkdirSync(join(out, 'fonts'), { recursive: true })
 for (const font of Object.values(fonts))
   copyFileSync(join(modules, font), join(out, 'fonts', font.split('/').pop() ?? ''))
 console.log(
-  `Wrote ${pages.length} pages, ${pages.filter((p) => p.picture).length * 2} pictures and the sitemap (last changed ${date}) to dist/`,
+  `Wrote ${pages.length} pages${ga ? ' (with analytics)' : ''}, ${pages.filter((p) => p.picture).length * 2} pictures and the sitemap (last changed ${date}) to dist/`,
 )

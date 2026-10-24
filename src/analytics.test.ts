@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { analyticsStarted, loadConsent, resetAnalyticsForTests, saveConsent, startAnalytics, track } from './analytics'
+import { CONSENT_KEY } from './site/html'
 
 const store = new Map<string, string>()
 const head: unknown[] = []
@@ -28,6 +29,11 @@ beforeEach(() => {
 })
 
 describe('analytics consent', () => {
+  it('is kept under the key the static pages read too', () => {
+    saveConsent('granted')
+    expect(store.get(CONSENT_KEY)).toBe('granted')
+  })
+
   it('remembers the choice, and can forget it', () => {
     expect(loadConsent()).toBeNull()
     saveConsent('granted')

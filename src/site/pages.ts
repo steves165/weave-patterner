@@ -75,7 +75,7 @@ function guides(app: App, topics: Topic[]): Built[] {
     type: 'CollectionPage',
     content: `<p>How to use ${app.name}, part by part. The same guides are in the app: press <kbd>F1</kbd> for help with whatever you are working on.</p>
 <ul class="cards">${topics.map((t) => `<li><a href="{root}${base}${t.id}/">${esc(t.title)}</a><p>${esc(t.summary)}</p></li>`).join('')}</ul>
-<p><a class="button" href="{root}${app.path}">Open ${app.name}</a></p>`,
+<p><a class="button" data-track="open_app" href="{root}${app.path}">Open ${app.name}</a></p>`,
   }
   const pages = topics.map((t, i): Page => {
     const first = t.body.find((b) => 'p' in b || 'list' in b || 'steps' in b)
@@ -102,7 +102,7 @@ function guides(app: App, topics: Topic[]): Built[] {
       type: 'TechArticle',
       content: `<p><em>${esc(t.summary)}.</em></p>
 ${blocks(t.body, link)}
-<p><a class="button" href="{root}${app.path}">Try it in ${app.name}</a></p>
+<p><a class="button" data-track="open_app" href="{root}${app.path}">Try it in ${app.name}</a></p>
 <nav aria-label="More guides"><p>${prev ? `← <a href="{root}${base}${prev.id}/">${esc(prev.title)}</a>` : ''}${prev && next ? ' · ' : ''}${next ? `<a href="{root}${base}${next.id}/">${esc(next.title)}</a> →` : ''}</p><p><a href="{root}${base}">All ${app.name} guides</a></p></nav>`,
     }
   })
@@ -199,7 +199,7 @@ async function weavePatterns(): Promise<Built[]> {
         pictures: true,
         content: `<p>${esc(p.description)}. ${d.shafts} shafts and ${d.treadles} treadles; the pattern repeats every ${repeat.ends} ends and ${repeat.picks} picks.</p>
 <figure>${draftSvg(d, `${p.name} draft: threading, tie-up, treadling and drawdown`)}<figcaption>The draft: threading at the top, tie-up at the top right, treadling at the right (pick 1 at the top) and the drawdown, the cloth they make.</figcaption></figure>
-<p><a class="button" href="{root}?${SHARE_KEY}=${share}">Open this draft in Weave Patterner</a><a class="button plain" href="${esc(pinLink(`${base}${p.id}/`, `${p.name} weaving draft, free, with threading, tie-up and treadling`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
+<p><a class="button" data-track="open_pattern" href="{root}?${SHARE_KEY}=${share}">Open this draft in Weave Patterner</a><a class="button plain" data-track="save_pin" href="${esc(pinLink(`${base}${p.id}/`, `${p.name} weaving draft, free, with threading, tie-up and treadling`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Threading</h2>
 <p>The shaft each end goes on, from end 1; repeat it across the warp:</p>
 <pre>${threadingLines({ ...d, threading: d.threading.slice(0, period(d.threading)) })
@@ -286,7 +286,7 @@ function knitPatterns(): Built[] {
       pictures: true,
       content: `<p>${esc(s.about)}</p>
 <figure>${chartSvg(k, `${s.name} chart`)}<figcaption>Read the chart from the bottom: row 1 is at the bottom, and each row starts at the side its number is on.${colours.length > 1 ? ` Colours: ${colours.map((c) => `${colorLetter(c)} ${esc(k.colors[c])}`).join(', ')}.` : ''}</figcaption></figure>
-<p><a class="button" href="{root}${app.path}?${SAMPLE_KEY}=${slug}">Open this chart in Knit Patterner</a><a class="button plain" href="${esc(pinLink(`${base}${slug}/`, `${s.name} knitting chart, free, with written instructions`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
+<p><a class="button" data-track="open_pattern" href="{root}${app.path}?${SAMPLE_KEY}=${slug}">Open this chart in Knit Patterner</a><a class="button plain" data-track="save_pin" href="${esc(pinLink(`${base}${slug}/`, `${s.name} knitting chart, free, with written instructions`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Written pattern</h2>
 <p>${esc(castOnText(k))}</p>
 <ul>${writtenRows(k)
@@ -416,7 +416,7 @@ function sewPatterns(): Built[] {
       pictures: true,
       content: `<p>${esc(d.about)} ${esc(d.level)}.</p>
 <figure>${sketchSvg(sketch, `Sketch of the ${d.name.toLowerCase()}`)}<figcaption>The ${d.name.toLowerCase()} as it comes; change its style in the app.</figcaption></figure>
-<p><a class="button" href="{root}${app.path}?design=${d.id}">Make this pattern in your size</a><a class="button plain" href="${esc(pinLink(`${base}${d.id}/`, `${d.name} sewing pattern, free and made to measure`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
+<p><a class="button" data-track="open_pattern" href="{root}${app.path}?design=${d.id}">Make this pattern in your size</a><a class="button plain" data-track="save_pin" href="${esc(pinLink(`${base}${d.id}/`, `${d.name} sewing pattern, free and made to measure`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Style options</h2>
 <ul>${options}</ul>
 <h2>Pattern pieces</h2>

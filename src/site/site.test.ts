@@ -4,7 +4,7 @@ import { KNIT_HELP } from '../help/knitHelp'
 import { WEAVE_HELP } from '../help/weaveHelp'
 import { SAMPLES, sampleSlug } from '../knit/samples'
 import { decodePattern } from '../share'
-import { SITE_URL } from './html'
+import { CONSENT_KEY, SITE_URL, withAnalytics } from './html'
 import { buildSite, colourOrder, period, sitemap } from './pages'
 import { clothSvg, draftSvg } from './pictures'
 
@@ -116,7 +116,7 @@ describe('sewing pattern pages', () => {
     const pages = await buildSite()
     const page = pages.find((p) => p.path === 'sew/patterns/shift-dress/')
     expect(page?.html).toContain(
-      '<a class="button" href="../../../sew/?design=shift-dress">Make this pattern in your size</a>',
+      '<a class="button" data-track="open_pattern" href="../../../sew/?design=shift-dress">Make this pattern in your size</a>',
     )
     expect(page?.html).toContain('aria-label="Sketch of the shift dress"')
     expect(page?.html).toContain('aria-label="Shift dress pattern pieces in UK 12"')
@@ -139,5 +139,20 @@ describe('pictures of big drafts', () => {
     const houndstooth = PRESETS.find((p) => p.id === 'houndstooth')?.build('#000000', '#ffffff')
     if (!houndstooth) throw new Error('missing')
     expect(clothSvg(houndstooth, '')).not.toContain('<pattern')
+  })
+})
+
+describe('analytics on the pages', () => {
+  it('adds the consent question and the measurement ID, asked with the apps’ own key, and only a real ID', async () => {
+    const page = pages.find((p) => p.path === 'patterns/houndstooth/')
+    if (!page) throw new Error('missing')
+    expect(page.html).not.toContain('gtag')
+    const html = withAnalytics(page.html, 'G-F54WVZV6CF')
+    expect(html).toMatch(/<div class="consent" id="consent"[^>]* hidden>/)
+    expect(html).toContain(`'${CONSENT_KEY}'`)
+    expect(html).toContain("ID='G-F54WVZV6CF'")
+    expect(html.indexOf('id="consent"')).toBeLessThan(html.indexOf('</body>'))
+    expect(html).toContain('data-track="open_pattern"')
+    expect(() => withAnalytics(page.html, "G-1';alert(1)//")).toThrow()
   })
 })
