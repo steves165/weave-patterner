@@ -5,7 +5,7 @@ import { WEAVE_HELP } from '../help/weaveHelp'
 import { SAMPLES, sampleSlug } from '../knit/samples'
 import { decodePattern } from '../share'
 import { CONSENT_KEY, SITE_URL, withAnalytics } from './html'
-import { buildSite, colourOrder, period, related, sitemap } from './pages'
+import { buildSite, colourOrder, period, related, shaftRanges, sitemap } from './pages'
 import { clothSvg, draftSvg } from './pictures'
 
 const pages = await buildSite()
@@ -176,5 +176,23 @@ describe('related pages', () => {
     const knit = pages.find((p) => p.path === 'knit/patterns/houndstooth/')?.html ?? ''
     expect(knit).toContain('href="../../../patterns/houndstooth/">houndstooth weaving draft</a>')
     expect(knit).toContain('href="../../../knit/guide/colourwork/">colourwork guide</a>')
+  })
+})
+
+describe('lift plans', () => {
+  it('write shafts short, with runs of three or more as ranges', () => {
+    expect(shaftRanges([1, 3, 4, 5, 6, 23])).toBe('1, 3–6, 23')
+    expect(shaftRanges([11, 13])).toBe('11, 13')
+    expect(shaftRanges([2, 3, 5])).toBe('2, 3, 5')
+  })
+
+  it('write the honeycomb out pick by pick, in place of a tie-up and treadling', () => {
+    const html = pages.find((p) => p.path === 'patterns/honeycomb/')?.html ?? ''
+    expect(html).toContain('24 shafts and a lift plan')
+    expect(html).toContain('<h2>Lift plan</h2>')
+    expect(html).not.toContain('<h2>Tie-up</h2>')
+    expect(html).toContain('Pick 1: 11, 13\nPick 2: 10, 12, 14\n')
+    expect(html).toContain('Pick 11: 1, 3–21, 23\nPick 12: 2–22, 24\n')
+    expect(html).toContain('Pick 24: 12</pre>')
   })
 })

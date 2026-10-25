@@ -383,26 +383,33 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'honeycomb',
-    family: 'block',
+    family: 'twill',
     name: 'Honeycomb',
-    accent: true,
     description:
-      'On a Monk’s belt threading: 6 plain-weave picks in one block while the other floats, between 2 accent tabby picks that outline the cells',
-    build: (dark, light, accent = dark) =>
-      draftFrom(
-        [1, 2, 1, 2, 1, 2, 1, 2, 3, 4, 3, 4, 3, 4, 3, 4],
-        [
-          [1, 3],
-          [2, 4],
-          [1, 3, 4],
-          [2, 3, 4],
-          [1, 2, 3],
-          [1, 2, 4],
-        ],
-        [1, 2, 3, 4, 3, 4, 3, 4, 1, 2, 5, 6, 5, 6, 5, 6],
-        [dark],
-        [accent, accent, ...run(light, 6), accent, accent, ...run(light, 6)],
-      ),
+      'A 24-shaft lift plan on a straight draw: diamond cells, each edged by a single lifted end with a gap inside it',
+    build: (dark, light) => {
+      const shafts = 24
+      const size = 48
+      // Pick k (1–24) lifts a solid band about the middle and one outline shaft each side, d shafts from the
+      // cell's point; d runs 11 … 0 … 12 up the repeat, so the cells are diamonds.
+      const lifts = (k: number, s: number) => {
+        const d = k === shafts ? shafts / 2 : Math.abs(k - shafts / 2)
+        return s === (d || shafts) || s === shafts - d || (s >= d + 2 && s <= shafts - 2 - d)
+      }
+      const base = resizeDraft(defaultDraft(), { shafts, treadles: shafts })
+      return parseDraft({
+        ...base,
+        ends: size,
+        picks: size,
+        threading: Array.from({ length: size }, (_, i) => i % shafts),
+        tieup: Array.from({ length: shafts }, (_, s) => Array.from({ length: shafts }, (_, t) => s === t)),
+        treadling: Array.from({ length: size }, (_, p) =>
+          Array.from({ length: shafts }, (_, t) => lifts((p % shafts) + 1, t + 1)),
+        ),
+        warpColors: run(dark, size),
+        weftColors: run(light, size),
+      })
+    },
   },
   {
     id: 'clan-cameron',

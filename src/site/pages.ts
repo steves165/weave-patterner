@@ -9,6 +9,7 @@ import { castOnText, writtenRows } from '../knit/instructions'
 import { SAMPLES, type SampleFamily, sampleSlug } from '../knit/samples'
 import { SAMPLE_KEY } from '../knit/share'
 import { STITCHES, type StitchId } from '../knit/stitches'
+import { isDirectTieup, liftsPerPick } from '../liftplan'
 import { findRepeat } from '../repeat'
 import { DESIGNS } from '../sew/designs'
 import { svgItems } from '../sew/drawing'
@@ -209,6 +210,31 @@ export function colourOrder(colours: string[], names: Record<string, string> = C
   return parts.join(', ')
 }
 
+/** Shaft numbers written short, with runs as ranges: "1, 3–21, 23". */
+export function shaftRanges(shafts: number[]): string {
+  const out: string[] = []
+  for (let i = 0; i < shafts.length; ) {
+    let j = i
+    while (j + 1 < shafts.length && shafts[j + 1] === shafts[j] + 1) j++
+    out.push(j - i >= 2 ? `${shafts[i]}–${shafts[j]}` : shafts.slice(i, j + 1).join(', '))
+    i = j + 1
+  }
+  return out.join(', ')
+}
+
+/** A lift plan written out: the shafts each pick lifts, one repeat, in place of a tie-up and treadling. */
+function liftplanSection(d: Draft): string {
+  const lifts = liftsPerPick(d)
+  const one = lifts.slice(
+    0,
+    period(lifts, (a, b) => a.join() === b.join()),
+  )
+  return `<h2>Lift plan</h2>
+<p>The shafts to lift for each pick, from pick 1; repeat it for the length of the cloth. Weave it with a tabby pick after each one if you like (<a href="{root}guide/settings/">Add tabby</a> in the app).</p>
+<pre>${one.map((ss, i) => esc(`Pick ${i + 1}: ${shaftRanges(ss.map((x) => x + 1)) || 'none'}`)).join('\n')}</pre>
+`
+}
+
 /** The weaving patterns: the colour-and-weave presets, each with its draft, written out, and a link to open it. */
 async function weavePatterns(): Promise<Built[]> {
   const app = WEAVE_APP
@@ -249,7 +275,7 @@ async function weavePatterns(): Promise<Built[]> {
         crumbs: [...crumbs, { name: 'Patterns', path: base }],
         type: 'CreativeWork',
         pictures: true,
-        content: `<p>${esc(p.description)}. ${d.shafts} shafts and ${d.treadles} treadles; the pattern repeats every ${repeat.ends} ends and ${repeat.picks} picks.</p>
+        content: `<p>${esc(p.description)}. ${d.shafts} shafts and ${isDirectTieup(d) ? 'a lift plan, for a dobby or table loom' : `${d.treadles} treadles`}; the pattern repeats every ${repeat.ends} ends and ${repeat.picks} picks.</p>
 <figure>${draftSvg(d, `${p.name} draft: threading, tie-up, treadling and drawdown`)}<figcaption>The draft: threading at the top, tie-up at the top right, treadling at the right (pick 1 at the top) and the drawdown, the cloth they make.</figcaption></figure>
 <p><a class="button" data-track="open_pattern" href="{root}?${SHARE_KEY}=${share}">Open this draft in Weave Patterner</a><a class="button plain" data-track="save_pin" href="${esc(pinLink(`${base}${p.id}/`, `${p.name} weaving draft, free, with threading, tie-up and treadling`))}" target="_blank" rel="noopener">Save to Pinterest</a></p>
 <h2>Threading</h2>
@@ -257,21 +283,25 @@ async function weavePatterns(): Promise<Built[]> {
 <pre>${threadingLines({ ...d, threading: d.threading.slice(0, period(d.threading)) })
           .map(esc)
           .join('\n')}</pre>
-<h2>Tie-up</h2>
+${
+  isDirectTieup(d)
+    ? liftplanSection(d)
+    : `<h2>Tie-up</h2>
 <ul>${tieupLines(d)
-          .map((l) => `<li>${esc(l)}</li>`)
-          .join('')}</ul>
+        .map((l) => `<li>${esc(l)}</li>`)
+        .join('')}</ul>
 <h2>Treadling</h2>
 <p>The treadle for each pick, from pick 1; repeat it for the length of the cloth:</p>
 <pre>${treadlingLines({
-          ...d,
-          treadling: d.treadling.slice(
-            0,
-            period(d.treadling, (a, b) => a.join() === b.join()),
-          ),
-        })
-          .map(esc)
-          .join('\n')}</pre>
+        ...d,
+        treadling: d.treadling.slice(
+          0,
+          period(d.treadling, (a, b) => a.join() === b.join()),
+        ),
+      })
+        .map(esc)
+        .join('\n')}</pre>`
+}
 <h2>Colour order</h2>
 <p><strong>Warp:</strong> ${colourOrder(d.warpColors, { ...COLOUR_NAMES, ...p.colours })}; repeat across the warp.</p>
 <p><strong>Weft:</strong> ${colourOrder(d.weftColors, { ...COLOUR_NAMES, ...p.colours })}; repeat up the cloth.</p>
