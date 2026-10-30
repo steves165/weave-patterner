@@ -48,7 +48,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
 import {
   Action,
@@ -61,9 +61,9 @@ import {
   TitledMenu,
 } from '../components/AppBarParts'
 import { ConsentBanner } from '../components/ConsentBanner'
+import { LazySlot } from '../components/ErrorBoundary'
 import { FooterLinks } from '../components/FooterLinks'
 import { WeaveMark } from '../components/Logo'
-import { LoomLoader } from '../components/LoomLoader'
 import { MoveNotice } from '../components/MoveNotice'
 import { SettingsSheet, SettingsSidebar } from '../components/SettingsFrame'
 import { FIELD_GRID, SWITCH_ROW } from '../components/SettingsPanel'
@@ -81,6 +81,7 @@ import { useHelpKeys } from '../help/useHelpKeys'
 import { createHistory, type History, record, redo, undo } from '../history'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
+import { lazyPart } from '../lazyLoad'
 import { patternColours } from '../seasons'
 import { SewMark } from '../sew/SewLogo'
 import { linkParam, withoutParam } from '../share'
@@ -133,7 +134,7 @@ import './knit.css'
 import { ColourInput } from '../components/ColourInput'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
-const Knit3DDialog = lazy(() => import('./Knit3DDialog'))
+const Knit3DDialog = lazyPart(() => import('./Knit3DDialog'))
 
 /** Charts saved by name in this browser, like Weave Patterner's patterns but kept apart from them. */
 const knitStore = patternStore<KnitChart>('knit-patterner')
@@ -1023,9 +1024,9 @@ export default function KnitApp() {
         onToast={setToast}
       />
       {dialog === '3d' && (
-        <Suspense fallback={<LoomLoader label="Setting up the 3D view…" />}>
+        <LazySlot label="Setting up the 3D view…">
           <Knit3DDialog open name={name.trim() || 'Knitting'} chart={chart} onClose={() => setDialog(null)} />
-        </Suspense>
+        </LazySlot>
       )}
       <TitledMenu
         title="Import"

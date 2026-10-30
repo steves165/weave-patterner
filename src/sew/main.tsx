@@ -1,6 +1,7 @@
 import { CssBaseline } from '@mui/material'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { SeasonalTheme } from '../SeasonalTheme'
 import { swipeMenusToClose } from '../swipeClose'
 import { SEW } from '../theme'
@@ -19,7 +20,9 @@ createRoot(root).render(
   <StrictMode>
     <SeasonalTheme app="Sew Patterner" base={SEW}>
       <CssBaseline />
-      <SewApp />
+      <ErrorBoundary whole>
+        <SewApp />
+      </ErrorBoundary>
     </SeasonalTheme>
   </StrictMode>,
 )

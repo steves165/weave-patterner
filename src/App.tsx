@@ -1,5 +1,5 @@
 import { Box, Snackbar } from '@mui/material'
-import { type ComponentType, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from './analytics'
 import { forgetStripe, withStripe } from './colors'
@@ -7,8 +7,9 @@ import { PHONE_NAV_HEIGHT, SkipLink } from './components/AppBarParts'
 import { AppToolbar } from './components/AppToolbar'
 import { ConsentBanner } from './components/ConsentBanner'
 import { SteadyDraftView } from './components/DraftView'
+import { LazySlot } from './components/ErrorBoundary'
 import { FooterLinks } from './components/FooterLinks'
-import { BIG_DRAFT, LoomLoader, useBusy } from './components/LoomLoader'
+import { BIG_DRAFT, useBusy } from './components/LoomLoader'
 import { MoveNotice } from './components/MoveNotice'
 import { PrintSheet } from './components/PrintSheet'
 import { SettingsSheet, SettingsSidebar } from './components/SettingsFrame'
@@ -26,36 +27,32 @@ import { markTourSeen, Tour, TourOffer, tourSeen } from './help/Tour'
 import { WEAVE_TOUR } from './help/tours'
 import { useHelpKeys } from './help/useHelpKeys'
 import { WEAVE_HELP } from './help/weaveHelp'
+import { lazyNamed, lazyPart } from './lazyLoad'
 import { fillWithRepeat, findRepeat } from './repeat'
 
 // three.js is large, so the 3D preview loads only when it's first opened.
-const Fabric3DDialog = lazy(() => import('./dialogs/Fabric3DDialog'))
-const TabletDialog = lazy(() => import('./dialogs/TabletDialog'))
-const PaperDialog = lazyDialog(() => import('./dialogs/PaperDialog'), 'PaperDialog')
-const DrawloomDialog = lazy(() => import('./dialogs/DrawloomDialog'))
+const Fabric3DDialog = lazyPart(() => import('./dialogs/Fabric3DDialog'))
+const TabletDialog = lazyPart(() => import('./dialogs/TabletDialog'))
+const PaperDialog = lazyNamed(() => import('./dialogs/PaperDialog'), 'PaperDialog')
+const DrawloomDialog = lazyPart(() => import('./dialogs/DrawloomDialog'))
 
-/** A dialog loaded the first time it's needed, keeping the main download small. */
-// biome-ignore lint/suspicious/noExplicitAny: React.lazy takes any component; each dialog keeps its own prop types
-function lazyDialog<K extends string, C extends ComponentType<any>>(load: () => Promise<{ [k in K]: C }>, name: K) {
-  return lazy(async () => ({ default: (await load())[name] }))
-}
-const BlocksDialog = lazyDialog(() => import('./dialogs/BlocksDialog'), 'BlocksDialog')
-const ShareDialog = lazyDialog(() => import('./components/ShareDialog'), 'ShareDialog')
-const CalculatorDialog = lazyDialog(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
-const ClothReportDialog = lazyDialog(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
-const ColorsDialog = lazyDialog(() => import('./dialogs/ColorsDialog'), 'ColorsDialog')
-const ColorwaysDialog = lazyDialog(() => import('./dialogs/ColorwaysDialog'), 'ColorwaysDialog')
-const DoubleClothDialog = lazyDialog(() => import('./dialogs/DoubleClothDialog'), 'DoubleClothDialog')
-const EchoDialog = lazyDialog(() => import('./dialogs/EchoDialog'), 'EchoDialog')
-const PictureDialog = lazyDialog(() => import('./dialogs/PictureDialog'), 'PictureDialog')
-const ProfileDialog = lazyDialog(() => import('./dialogs/ProfileDialog'), 'ProfileDialog')
-const RigidHeddleDialog = lazyDialog(() => import('./dialogs/RigidHeddleDialog'), 'RigidHeddleDialog')
-const ToolsDialog = lazyDialog(() => import('./dialogs/ToolsDialog'), 'ToolsDialog')
-const TransformDialog = lazyDialog(() => import('./dialogs/TransformDialog'), 'TransformDialog')
-const VariationsDialog = lazyDialog(() => import('./dialogs/VariationsDialog'), 'VariationsDialog')
-const WarpPlanDialog = lazyDialog(() => import('./dialogs/WarpPlanDialog'), 'WarpPlanDialog')
-const WeavingMode = lazyDialog(() => import('./dialogs/WeavingMode'), 'WeavingMode')
-const YarnsDialog = lazyDialog(() => import('./dialogs/YarnsDialog'), 'YarnsDialog')
+const BlocksDialog = lazyNamed(() => import('./dialogs/BlocksDialog'), 'BlocksDialog')
+const ShareDialog = lazyNamed(() => import('./components/ShareDialog'), 'ShareDialog')
+const CalculatorDialog = lazyNamed(() => import('./dialogs/CalculatorDialog'), 'CalculatorDialog')
+const ClothReportDialog = lazyNamed(() => import('./dialogs/ClothReportDialog'), 'ClothReportDialog')
+const ColorsDialog = lazyNamed(() => import('./dialogs/ColorsDialog'), 'ColorsDialog')
+const ColorwaysDialog = lazyNamed(() => import('./dialogs/ColorwaysDialog'), 'ColorwaysDialog')
+const DoubleClothDialog = lazyNamed(() => import('./dialogs/DoubleClothDialog'), 'DoubleClothDialog')
+const EchoDialog = lazyNamed(() => import('./dialogs/EchoDialog'), 'EchoDialog')
+const PictureDialog = lazyNamed(() => import('./dialogs/PictureDialog'), 'PictureDialog')
+const ProfileDialog = lazyNamed(() => import('./dialogs/ProfileDialog'), 'ProfileDialog')
+const RigidHeddleDialog = lazyNamed(() => import('./dialogs/RigidHeddleDialog'), 'RigidHeddleDialog')
+const ToolsDialog = lazyNamed(() => import('./dialogs/ToolsDialog'), 'ToolsDialog')
+const TransformDialog = lazyNamed(() => import('./dialogs/TransformDialog'), 'TransformDialog')
+const VariationsDialog = lazyNamed(() => import('./dialogs/VariationsDialog'), 'VariationsDialog')
+const WarpPlanDialog = lazyNamed(() => import('./dialogs/WarpPlanDialog'), 'WarpPlanDialog')
+const WeavingMode = lazyNamed(() => import('./dialogs/WeavingMode'), 'WeavingMode')
+const YarnsDialog = lazyNamed(() => import('./dialogs/YarnsDialog'), 'YarnsDialog')
 
 import { addBlock, loadSavedBlocks, type SavedBlock, storeSavedBlocks } from './endBlocks'
 import { download, draftBitmap, exportDraft, fileBase } from './exportDraft'
@@ -860,7 +857,7 @@ export default function App() {
           onImport={(n, d, warnings) => open(d, n, [`Imported "${n}" — use Save to keep it`, ...warnings].join('. '))}
         />
         {seen.has('tools') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ToolsDialog
               open={dialog === 'tools'}
               draft={draft}
@@ -870,10 +867,10 @@ export default function App() {
               onCopy={setClip}
               selected={toolsRange}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('blocks') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <BlocksDialog
               open={dialog === 'blocks'}
               draft={draft}
@@ -884,17 +881,17 @@ export default function App() {
               onMessage={setToast}
               onClose={() => setDialog(null)}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('colors') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ColorsDialog
               open={dialog === 'colors'}
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
             />
-          </Suspense>
+          </LazySlot>
         )}
         <PrintDialog
           open={dialog === 'print'}
@@ -912,7 +909,7 @@ export default function App() {
           }}
         />
         {seen.has('share') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ShareDialog
               open={dialog === 'share'}
               app="weave"
@@ -926,20 +923,20 @@ export default function App() {
               onClose={() => setDialog(null)}
               onToast={setToast}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('calculator') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <CalculatorDialog
               open={dialog === 'calculator'}
               draft={draft}
               yarns={yarns}
               onClose={() => setDialog(null)}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('yarns') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <YarnsDialog
               open={dialog === 'yarns'}
               draft={draft}
@@ -947,25 +944,25 @@ export default function App() {
               onChange={setYarns}
               onClose={() => setDialog(null)}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('report') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ClothReportDialog open={dialog === 'report'} draft={draft} onClose={() => setDialog(null)} />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('rigid') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <RigidHeddleDialog open={dialog === 'rigid'} draft={draft} onClose={() => setDialog(null)} />
-          </Suspense>
+          </LazySlot>
         )}
         {dialog === 'drawloom' && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <DrawloomDialog open onClose={() => setDialog(null)} onApply={applyFromDialog} />
-          </Suspense>
+          </LazySlot>
         )}
         {dialog === 'paper' && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <PaperDialog
               open
               draft={draft}
@@ -973,60 +970,60 @@ export default function App() {
               onClose={() => setDialog(null)}
               onOpen={(d, n, message) => open(d, n, `${message}. Use Save to keep it.`)}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {dialog === 'tablet' && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <TabletDialog open onClose={() => setDialog(null)} />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('echo') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('picture') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <PictureDialog open={dialog === 'picture'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('warpplan') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <WarpPlanDialog open={dialog === 'warpplan'} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('colorways') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ColorwaysDialog
               open={dialog === 'colorways'}
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('variations') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <VariationsDialog
               open={dialog === 'variations'}
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('transform') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <TransformDialog
               open={dialog === 'transform'}
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('doublecloth') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <DoubleClothDialog
               open={dialog === 'doublecloth'}
               onClose={() => setDialog(null)}
@@ -1035,32 +1032,32 @@ export default function App() {
                 setView({ clothSide: 'face' })
               }}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('profile') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <ProfileDialog
               open={dialog === 'profile'}
               draft={draft}
               onClose={() => setDialog(null)}
               onApply={applyFromDialog}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {seen.has('weave') && (
-          <Suspense fallback={<LoomLoader />}>
+          <LazySlot>
             <WeavingMode
               open={dialog === 'weave'}
               name={name ?? 'Unsaved pattern'}
               draft={draft}
               onClose={() => setDialog(null)}
             />
-          </Suspense>
+          </LazySlot>
         )}
         {dialog === '3d' && (
-          <Suspense fallback={<LoomLoader label="Setting up the 3D view…" />}>
+          <LazySlot label="Setting up the 3D view…">
             <Fabric3DDialog open name={name} draft={draft} yarns={yarns} onClose={() => setDialog(null)} />
-          </Suspense>
+          </LazySlot>
         )}
         <Snackbar
           open={toast !== null}
