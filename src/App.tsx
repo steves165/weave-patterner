@@ -44,6 +44,7 @@ const ColorsDialog = lazyNamed(() => import('./dialogs/ColorsDialog'), 'ColorsDi
 const ColorwaysDialog = lazyNamed(() => import('./dialogs/ColorwaysDialog'), 'ColorwaysDialog')
 const DoubleClothDialog = lazyNamed(() => import('./dialogs/DoubleClothDialog'), 'DoubleClothDialog')
 const EchoDialog = lazyNamed(() => import('./dialogs/EchoDialog'), 'EchoDialog')
+const TwillDialog = lazyNamed(() => import('./dialogs/TwillDialog'), 'TwillDialog')
 const PictureDialog = lazyNamed(() => import('./dialogs/PictureDialog'), 'PictureDialog')
 const ProfileDialog = lazyNamed(() => import('./dialogs/ProfileDialog'), 'ProfileDialog')
 const RigidHeddleDialog = lazyNamed(() => import('./dialogs/RigidHeddleDialog'), 'RigidHeddleDialog')
@@ -100,6 +101,7 @@ type DialogName =
   | 'colorways'
   | 'variations'
   | 'echo'
+  | 'twill'
   | 'picture'
   | 'report'
   | 'rigid'
@@ -629,6 +631,7 @@ export default function App() {
           onColorways={() => setDialog('colorways')}
           onVariations={() => setDialog('variations')}
           onEcho={() => setDialog('echo')}
+          onTwill={() => setDialog('twill')}
           onPicture={() => setDialog('picture')}
           onReport={() => setDialog('report')}
           onRigidHeddle={() => setDialog('rigid')}
@@ -980,6 +983,18 @@ export default function App() {
         {seen.has('echo') && (
           <LazySlot>
             <EchoDialog open={dialog === 'echo'} onClose={() => setDialog(null)} onApply={applyFromDialog} />
+          </LazySlot>
+        )}
+        {seen.has('twill') && (
+          <LazySlot>
+            <TwillDialog
+              open={dialog === 'twill'}
+              draft={draft}
+              liftplan={view.noTieup}
+              orient={view}
+              onClose={() => setDialog(null)}
+              onApply={applyFromDialog}
+            />
           </LazySlot>
         )}
         {seen.has('picture') && (

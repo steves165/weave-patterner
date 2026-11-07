@@ -58,6 +58,27 @@ test('echo weave threads a design line with its echo in two colours', async ({ p
   await expect(page.getByLabel('Warp 2', { exact: true })).toHaveValue('#1a237e')
 })
 
+test('the twill generator builds a twill from up/down counts', async ({ page }) => {
+  await openTool(page, /Twill generator/)
+  const twill = page.getByRole('dialog', { name: 'Twill generator' })
+  await expect(twill.getByTestId('twill-result')).toHaveText('2/2 Z twill: 4 shafts, 32 ends × 32 picks')
+  await twill.getByLabel('Twill (up/down)').fill('2/1/1')
+  await expect(twill.getByRole('alert')).toContainText('as many down counts')
+  await twill.getByLabel('Twill (up/down)').fill('3/2/1/2')
+  await twill.getByLabel('Step (shafts)').fill('2')
+  await expect(twill.getByRole('alert')).toContainText('shares a factor with 8')
+  await twill.getByLabel('Step (shafts)').fill('3')
+  await twill.getByRole('combobox', { name: 'Direction' }).click()
+  await page.getByRole('option', { name: 'S twill' }).click()
+  await expect(twill.getByTestId('twill-result')).toHaveText(
+    '3/2/1/2 S twill (advancing 3): 8 shafts, 32 ends × 32 picks',
+  )
+  await twill.getByRole('button', { name: 'Use this twill' }).click()
+  await expect(toast(page)).toContainText('Made a 3/2/1/2 S twill')
+  await expect(twill).toBeHidden()
+  await expect(page.getByLabel('Shafts', { exact: true })).toHaveValue('8')
+})
+
 test('picture to draft turns a picture into blocks', async ({ page }) => {
   await openTool(page, /Picture to draft/)
   const dialog = page.getByRole('dialog', { name: 'Picture to draft' })

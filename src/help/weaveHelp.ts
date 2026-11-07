@@ -340,7 +340,18 @@ export const WEAVE_HELP: Topic[] = [
     id: 'tools',
     title: 'Tools',
     summary: 'Every tool in the Tools menu, and what it does',
-    keywords: ['tools', 'menu', 'profile', 'double cloth', 'picture', 'echo', 'variations', 'transform', 'calculator'],
+    keywords: [
+      'tools',
+      'menu',
+      'profile',
+      'double cloth',
+      'picture',
+      'twill',
+      'echo',
+      'variations',
+      'transform',
+      'calculator',
+    ],
     body: [
       {
         p: 'Open **Tools** in the toolbar. Type in the box at the top of the menu to find a tool by name. Everyday edits are on the draft itself: the drawing tools and **Select** above it (see [[drawing|Drawing tools]]), and the loom type in the Loom settings.',
@@ -358,6 +369,10 @@ export const WEAVE_HELP: Topic[] = [
           ['Profile draft', 'Design in blocks: overshot, summer and winter, lace, crackle, turned twill and more.'],
           ['Double cloth', 'Two layers: separate, a tube, double width, or blocks that swap faces.'],
           ['Picture to draft', 'Turn a picture into blocks and a draft.'],
+          [
+            'Twill generator',
+            'A twill from up/down counts (2/2, 3/1, 2/1/1/2…): plain or advanced, Z or S, with a straight, point or broken threading and treadling, or the ones you have.',
+          ],
           ['Echo weave', 'A design line threaded with its echo, in two colours.'],
           ['Variations', 'The same threading with other tie-ups (plain weave, twills, satins) and treadlings.'],
           ['Colourways', 'The same cloth in other colours.'],

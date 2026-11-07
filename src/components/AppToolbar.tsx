@@ -33,6 +33,7 @@ import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw'
 import SaveIcon from '@mui/icons-material/Save'
 import StyleIcon from '@mui/icons-material/Style'
 import TableRowsIcon from '@mui/icons-material/TableRows'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import UndoIcon from '@mui/icons-material/Undo'
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'
 import ViewInArIcon from '@mui/icons-material/ViewInAr'
@@ -106,6 +107,7 @@ interface Props {
   onColorways: () => void
   onVariations: () => void
   onEcho: () => void
+  onTwill: () => void
   onPicture: () => void
   onReport: () => void
   onRigidHeddle: () => void
@@ -265,6 +267,13 @@ export function AppToolbar(p: Props) {
       secondary: 'Turn a picture into blocks and a draft',
       onClick: p.onPicture,
       icon: <AddPhotoAlternateIcon fontSize="small" />,
+    },
+    {
+      group: 'Design',
+      primary: 'Twill generator…',
+      secondary: 'A twill from up/down counts like 2/2 or 3/1/1/3, plain or advanced, Z or S',
+      onClick: p.onTwill,
+      icon: <TrendingUpIcon fontSize="small" />,
     },
     {
       group: 'Design',
