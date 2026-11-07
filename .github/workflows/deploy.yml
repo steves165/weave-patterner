@@ -56,7 +56,8 @@ jobs:
   # Browser tests against the live site once it's deployed.
   e2e:
     needs: [build, deploy]
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04 now, which Playwright can't install Chromium on yet.
+    runs-on: ubuntu-24.04
     env:
       SITE: https://weave-patterner.com/
     steps:
