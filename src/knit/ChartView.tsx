@@ -1,6 +1,7 @@
 import { type KeyboardEvent, memo, type PointerEvent, useEffect, useRef, useState } from 'react'
 import { textOn } from '../colors'
 import { cablesIn, colorLetter, isRightSide, type KnitChart, rowsOf, widthOf } from './chart'
+import { colorSymbol } from './draw'
 import { type Rect, rectBetween } from './edit'
 import { panelLetter, panelTitle } from './panels'
 import { cablePaths, NO_STITCH, shade } from './render'
@@ -21,6 +22,14 @@ interface Props {
   onSelect?: (s: Rect | null) => void
   /** Opens panel i (to name it, save it or take it away). */
   onPanel?: (i: number) => void
+  /** The colourwork view: each square shows its colour's symbol rather than its stitch's. */
+  colorView?: boolean
+  /** A shape tool: on touch screens a drag draws rather than scrolls. */
+  drags?: boolean
+  /** The tool's name, for the cursor: draw, line, rect, oval, fill or pick. */
+  tool?: string
+  /** Symmetry's mirror lines, as twice the column and row they fall on (see mirrorLines); null where not used. */
+  axes?: { across: number | null; up: number | null }
 }
 
 interface RowProps {
@@ -41,6 +50,10 @@ interface RowProps {
   sel: readonly [number, number] | null
   /** The repeat box's columns, and whether this row is its top or bottom edge. */
   box: { from: number; to: number; top: boolean; bottom: boolean } | null
+  colorView: boolean
+  /** Where symmetry's mirror lines cross this row: px from the left, and px from the bottom (if it runs along it). */
+  axisX: number | null
+  axisY: number | null
 }
 
 const NONE: readonly number[] = []
@@ -60,6 +73,7 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
         {p.stitches.map((s, c) => {
           const stitch = STITCHES[s]
           const bg = s === 'none' ? NO_STITCH : p.palette[p.colors[c]]
+          const symbol = p.colorView ? (s === 'none' ? '' : colorSymbol(p.colors[c])) : stitch.symbol
           return (
             // biome-ignore lint/a11y/useSemanticElements: see the row
             // biome-ignore lint/a11y/useFocusableInteractive: the grid holds focus (aria-activedescendant)
@@ -79,34 +93,37 @@ const ChartRow = memo(function ChartRow(p: RowProps) {
                 height: p.cellH,
                 background: bg,
                 color: textOn(bg),
-                fontSize: stitch.symbol.length > 1 ? p.cell * 0.42 : Math.min(p.cell, p.cellH) * 0.72,
+                fontSize: symbol.length > 1 ? p.cell * 0.42 : Math.min(p.cell, p.cellH) * (p.colorView ? 0.6 : 0.72),
               }}
             >
-              {stitch.symbol}
+              {symbol}
             </div>
           )
         })}
-        {cablesIn(p.stitches).map((cable) => {
-          const w = cable.width * p.cell
-          const { back, front, dots } = cablePaths(cable.id, w, p.cellH)
-          const bg = p.palette[p.colors[cable.start]]
-          return (
-            <svg
-              key={cable.start}
-              className="knit-cable"
-              width={w}
-              height={p.cellH}
-              style={{ left: cable.start * p.cell }}
-              aria-hidden="true"
-            >
-              <path d={back} fill={shade(bg, -0.25)} stroke={textOn(bg)} strokeWidth={1} />
-              <path d={front} fill={shade(bg, 0.25)} stroke={textOn(bg)} strokeWidth={1} />
-              {dots.map(([x, y]) => (
-                <circle key={`${x}-${y}`} cx={x} cy={y} r={Math.max(1.2, p.cell * 0.08)} fill={textOn(bg)} />
-              ))}
-            </svg>
-          )
-        })}
+        {!p.colorView &&
+          cablesIn(p.stitches).map((cable) => {
+            const w = cable.width * p.cell
+            const { back, front, dots } = cablePaths(cable.id, w, p.cellH)
+            const bg = p.palette[p.colors[cable.start]]
+            return (
+              <svg
+                key={cable.start}
+                className="knit-cable"
+                width={w}
+                height={p.cellH}
+                style={{ left: cable.start * p.cell }}
+                aria-hidden="true"
+              >
+                <path d={back} fill={shade(bg, -0.25)} stroke={textOn(bg)} strokeWidth={1} />
+                <path d={front} fill={shade(bg, 0.25)} stroke={textOn(bg)} strokeWidth={1} />
+                {dots.map(([x, y]) => (
+                  <circle key={`${x}-${y}`} cx={x} cy={y} r={Math.max(1.2, p.cell * 0.08)} fill={textOn(bg)} />
+                ))}
+              </svg>
+            )
+          })}
+        {p.axisX !== null && <div className="knit-axis across" style={{ left: p.axisX }} aria-hidden="true" />}
+        {p.axisY !== null && <div className="knit-axis up" style={{ bottom: p.axisY }} aria-hidden="true" />}
         {p.box && (
           <div
             className={`knit-repeat${p.box.top ? ' top' : ''}${p.box.bottom ? ' bottom' : ''}`}
@@ -135,6 +152,10 @@ export function ChartView({
   selection = null,
   onSelect,
   onPanel,
+  colorView = false,
+  drags = false,
+  tool = 'draw',
+  axes,
 }: Props) {
   const rows = rowsOf(chart)
   const w = widthOf(chart)
@@ -189,7 +210,7 @@ export function ChartView({
       onSelect?.(rectBetween(hit, hit))
       return
     }
-    if (e.pointerType === 'touch') {
+    if (e.pointerType === 'touch' && !drags) {
       tapped.current = hit
       return
     }
@@ -259,7 +280,8 @@ export function ChartView({
       aria-colcount={w}
       tabIndex={0}
       aria-activedescendant={cursor ? `knit-${cursor.r}-${cursor.c}` : undefined}
-      className={`knit-chart${selecting ? ' selecting' : ''}`}
+      className={`knit-chart${selecting ? ' selecting' : ''}${drags ? ' drags' : ''}`}
+      data-tool={selecting ? 'select' : tool}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -308,6 +330,9 @@ export function ChartView({
           painted={painted.get(r) ?? NONE}
           sel={selection && r >= selection.r0 && r <= selection.r1 ? [selection.c0, selection.c1] : null}
           box={chart.repeat ? { ...chart.repeat, top: r === rows - 1, bottom: r === 0 } : null}
+          colorView={colorView}
+          axisX={axes?.across != null ? ((axes.across + 1) / 2) * cell : null}
+          axisY={axes?.up != null && Math.floor((axes.up + 1) / 2) === r ? ((axes.up - 2 * r + 1) / 2) * cellH : null}
         />
       ))}
       <div className="knit-row" aria-hidden="true">

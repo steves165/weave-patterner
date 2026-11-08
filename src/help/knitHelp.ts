@@ -70,7 +70,57 @@ export const KNIT_HELP: Topic[] = [
         ],
       },
       {
-        p: 'See [[stitches|the stitch reference]] for every stitch, and [[selecting|Selecting squares]] for copying, flipping and repeating.',
+        p: 'See [[drawing|Drawing tools and symmetry]] for lines, boxes, ovals and fills, [[stitches|the stitch reference]] for every stitch, and [[selecting|Selecting squares]] for copying, flipping and repeating.',
+      },
+    ],
+  },
+  {
+    id: 'drawing',
+    title: 'Drawing tools and symmetry',
+    summary: 'Lines, boxes, ovals, fill, pick, mirroring, and the colourwork view',
+    keywords: [
+      'draw',
+      'line',
+      'box',
+      'rectangle',
+      'oval',
+      'circle',
+      'fill',
+      'bucket',
+      'pick',
+      'eyedropper',
+      'symmetry',
+      'mirror',
+      'motif',
+      'colourwork view',
+      'symbols',
+    ],
+    body: [
+      { p: 'The **Tools** row sets how a drag paints, with the stitch or colour picked above:' },
+      {
+        terms: [
+          ['Draw', 'Click or drag to paint squares freehand. A fast drag leaves no gaps.'],
+          ['Line', 'Drag from one end of a straight line to the other.'],
+          ['Box', 'Drag from corner to corner. Turn on **Filled** to fill it in rather than draw its edge.'],
+          ['Oval', 'Drag across the box the oval fits in, as an outline or **Filled**.'],
+          ['Fill', 'Click a square to paint the whole area of its colour (or its stitch) joined to it.'],
+          ['Pick', 'Click a square to paint with its colour (or stitch), then carry on drawing.'],
+        ],
+      },
+      {
+        p: 'On a touch screen, dragging with Line, Box or Oval draws the shape; with the other tools a swipe scrolls and a tap paints.',
+      },
+      { h: 'Mirror' },
+      {
+        list: [
+          '**↔** mirrors left to right as you draw, **↕** top to bottom, and **✣** four ways, as for stars, snowflakes and peeries.',
+          'The mirror lines are dashed on the chart: the middle of the chart, or of the red repeat box if there is one.',
+          'Mirrored decreases and cables lean the other way.',
+        ],
+      },
+      { h: 'Colourwork view' },
+      {
+        p: '**Colourwork view** shows a symbol for each colour (A plain, B ●, C ✕…) instead of the stitches, as printed colourwork charts do, and puts the stitch palette away. Prints and saved pictures of the chart use the symbols too, so they read in black and white. Turn it off to see the stitches again.',
       },
     ],
   },
@@ -169,7 +219,7 @@ export const KNIT_HELP: Topic[] = [
   {
     id: 'colourwork',
     title: 'Colourwork',
-    summary: 'Stranded, intarsia, mosaic, and colours from a picture',
+    summary: 'Stranded, intarsia, mosaic, and colourwork from a picture',
     keywords: ['fair isle', 'stranded', 'intarsia', 'mosaic', 'slip stitch', 'bobbins', 'picture'],
     body: [
       {
@@ -185,7 +235,7 @@ export const KNIT_HELP: Topic[] = [
           ],
           [
             'From a picture',
-            '**Colours from a picture** colours the chart from a photo or drawing, in the chart’s number of colours.',
+            '**Colourwork from a picture** makes a chart from a photo or drawing: choose how many stitches across (the rows follow the picture at your gauge) and how many colours, with lone stitches tidied away, and see a preview first.',
           ],
         ],
       },

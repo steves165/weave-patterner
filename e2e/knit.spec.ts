@@ -394,3 +394,104 @@ test('exports a PDF pattern booklet', async ({ page }) => {
   const path = await file.path()
   expect(readFileSync(path).subarray(0, 5).toString()).toBe('%PDF-')
 })
+
+/** Drags across the chart from one square to another (rows and stitches numbered as on the chart). */
+const dragSquares = async (page: import('@playwright/test').Page, from: [number, number], to: [number, number]) => {
+  // In the middle of the screen, clear of the status bar along the bottom.
+  await knitSquare(page, ...from).evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  const a = await knitSquare(page, ...from).boundingBox()
+  const b = await knitSquare(page, ...to).boundingBox()
+  if (!a || !b) throw new Error('chart not visible')
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 })
+  await page.mouse.up()
+}
+
+test('draws colourwork with lines, boxes, fills and the colour picker, mirrored as it goes', async ({ page }) => {
+  await newChart(page)
+  const plain = await writtenRow(page, 1)
+  await page.getByRole('button', { name: 'Paint colour B' }).click()
+  const tool = (name: string) =>
+    page.getByRole('group', { name: 'Drawing tool' }).getByRole('button', { name, exact: true })
+
+  // A line along row 1, stitches 1 to 5: one step to undo.
+  await tool('Line').click()
+  await dragSquares(page, [1, 1], [1, 5])
+  expect(await writtenRow(page, 1)).toMatch(/^k5 B, k19 A\.?$/)
+  await page.getByRole('button', { name: 'Undo' }).click()
+  expect(await writtenRow(page, 1)).toBe(plain)
+  await page.getByRole('button', { name: 'Redo' }).click()
+
+  // A filled box over rows 3 and 4, stitches 1 to 3.
+  await tool('Box').click()
+  await page.getByRole('button', { name: 'Filled', exact: true }).click()
+  await dragSquares(page, [3, 1], [4, 3])
+  expect(await writtenRow(page, 3)).toMatch(/^k3 B, k21 A\.?$/)
+  expect(await writtenRow(page, 4)).toMatch(/^p21 A, p3 B\.?$/)
+
+  // Pick up colour B from a square, having switched to A.
+  await page.getByRole('button', { name: 'Paint colour A' }).click()
+  await tool('Pick').click()
+  await knitSquare(page, 1, 1).click()
+  await expect(page.getByTestId('brush-label')).toContainText('colour B')
+  await expect(tool('Draw')).toHaveAttribute('aria-pressed', 'true')
+
+  // Mirrored left to right, a square at stitch 1 is painted at stitch 24 too, with the mirror line shown.
+  await page.getByRole('button', { name: 'Symmetry left to right' }).click()
+  await expect(page.locator('.knit-axis.across').first()).toBeVisible()
+  await knitSquare(page, 6, 1).click()
+  expect(await writtenRow(page, 6)).toMatch(/^p1 B, p22 A, p1 B\.?$/)
+  await page.getByRole('button', { name: 'No symmetry' }).click()
+  await expect(page.locator('.knit-axis')).toHaveCount(0)
+
+  // Fill paints the area of colour A joined to the square clicked: everything but the B squares.
+  await tool('Fill').click()
+  await knitSquare(page, 10, 10).click()
+  await expect(knitSquare(page, 10, 10)).toHaveAttribute('aria-label', /colour B/)
+  await expect(knitSquare(page, 24, 24)).toHaveAttribute('aria-label', /colour B/)
+})
+
+test('the colourwork view shows a symbol for each colour and puts the stitches away', async ({ page }) => {
+  await newChart(page)
+  await page.getByRole('button', { name: 'Colourwork view' }).click()
+  await expect(page.getByRole('group', { name: 'Stitch to paint' })).toBeHidden()
+  // The brush moves to colour B.
+  await expect(page.getByTestId('brush-label')).toContainText('colour B')
+  await knitSquare(page, 1, 1).click()
+  await expect(knitSquare(page, 1, 1)).toHaveText('●')
+  await expect(knitSquare(page, 1, 2)).toHaveText('')
+  await page.getByRole('button', { name: 'Colourwork view' }).click()
+  await expect(page.getByRole('group', { name: 'Stitch to paint' })).toBeVisible()
+  await expect(knitSquare(page, 1, 1)).toHaveText('')
+})
+
+test('makes colourwork from a picture, keeping its shape at the gauge', async ({ page }) => {
+  await newChart(page)
+  // A 20 × 10 picture, red on the left and blue on the right.
+  const png = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 20
+    canvas.height = 10
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+    ctx.fillStyle = '#cc0000'
+    ctx.fillRect(0, 0, 10, 10)
+    ctx.fillStyle = '#0000cc'
+    ctx.fillRect(10, 0, 10, 10)
+    return canvas.toDataURL('image/png').split(',')[1]
+  })
+  await page.getByLabel('Picture for the colours').setInputFiles({
+    name: 'flag.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(png, 'base64'),
+  })
+  const dialog = page.getByRole('dialog', { name: 'Colourwork from a picture' })
+  // 24 stitches across at 22 stitches and 30 rows to 10 cm: 24 × 10/20 × 30/22 ≈ 16 rows.
+  await expect(dialog).toContainText('Stitches across: 24 (16 rows)')
+  await expect(dialog.getByTestId('picture-preview')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Make the chart' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByLabel('Rows', { exact: true })).toHaveValue('16')
+  // Read from the right, row 1 starts in the blue half.
+  expect(await writtenRow(page, 1)).toMatch(/^k12 [AB], k12 [AB]\.?$/)
+})

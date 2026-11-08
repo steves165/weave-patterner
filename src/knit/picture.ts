@@ -42,3 +42,32 @@ export function pictureColors(
   ).reverse()
   return { colors, grid }
 }
+
+/**
+ * Rows for a picture `stitches` wide, so it keeps its shape when knitted at the gauge (stitches are wider than rows
+ * are tall), kept between 1 and `max`.
+ */
+export function pictureRows(
+  px: { width: number; height: number },
+  stitches: number,
+  gauge: { stitches: number; rows: number },
+  max: number,
+): number {
+  const rows = Math.round((stitches * (px.height / px.width) * gauge.rows) / gauge.stitches)
+  return Math.max(1, Math.min(max, rows))
+}
+
+/**
+ * Tidies stray stitches: a square whose neighbours above, below and either side (those on the chart, at least
+ * two) are all one other colour takes that colour, as a lone stitch of colour is fiddly to knit and hardly shows.
+ */
+export function tidyColors(grid: number[][]): number[][] {
+  return grid.map((row, r) =>
+    row.map((v, c) => {
+      const around = [grid[r - 1]?.[c], grid[r + 1]?.[c], row[c - 1], row[c + 1]].filter(
+        (x): x is number => x !== undefined,
+      )
+      return around.length >= 2 && around.every((x) => x === around[0]) && around[0] !== v ? around[0] : v
+    }),
+  )
+}

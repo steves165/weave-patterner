@@ -130,6 +130,39 @@
 .knit-chart.selecting {
   touch-action: none;
 }
+/* Shape tools: a drag draws the line, box or oval rather than scrolling. */
+.knit-chart.drags {
+  touch-action: none;
+}
+.knit-chart[data-tool="line"] .knit-cell,
+.knit-chart[data-tool="rect"] .knit-cell,
+.knit-chart[data-tool="oval"] .knit-cell {
+  cursor: crosshair;
+}
+.knit-chart[data-tool="fill"] .knit-cell,
+.knit-chart[data-tool="pick"] .knit-cell {
+  cursor: copy;
+}
+/* Symmetry's mirror lines. */
+.knit-axis {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.knit-axis.across {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed var(--wp-accent);
+  margin-left: -1px;
+}
+.knit-axis.up {
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px dashed var(--wp-accent);
+  margin-bottom: -1px;
+}
 .knit-chart.selecting .knit-cell {
   cursor: cell;
 }

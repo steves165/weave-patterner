@@ -90,6 +90,11 @@ export const KNIT_TOUR: TourStep[] = [
     text: 'Pick a colour to paint colours instead of stitches. Click a round swatch to change it, and **+** to add one.',
   },
   {
+    target: '[data-tour="tools"]',
+    title: 'Drawing tools',
+    text: 'Draw freehand, or drag out a line, box or oval; fill an area or pick up a colour. **Mirror** copies what you draw left to right, top to bottom or four ways, and **Colourwork view** shows a symbol for each colour.',
+  },
+  {
     target: '[role="grid"][aria-label="Knitting chart"]',
     title: 'The chart',
     text: 'Each square is one stitch as seen from the right side. Row 1 is at the bottom; right-side rows are read from the right, wrong-side rows from the left. Row numbers show where each row starts.',

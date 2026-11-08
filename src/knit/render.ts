@@ -1,5 +1,6 @@
 import { textOn } from '../colors'
 import { cablesIn, colorLetter, isRightSide, type KnitChart, rowsOf, usedColors, widthOf } from './chart'
+import { colorSymbol } from './draw'
 import { STITCH_IDS, STITCHES, type StitchId } from './stitches'
 
 export const NO_STITCH = '#9e9e9e'
@@ -55,14 +56,20 @@ interface ChartDrawing {
   cellH: number
   /** Draw the key to the symbols and colours below the chart (default true). */
   legend?: boolean
+  /** A colourwork chart: each square shows its colour's symbol, and the key lists the colours only. */
+  colorSymbols?: boolean
 }
 
 /** The chart as a picture, with row and stitch numbers, for saving as an image or printing. */
-export function drawChart(ctx: CanvasRenderingContext2D, k: KnitChart, { cell, cellH, legend = true }: ChartDrawing) {
+export function drawChart(
+  ctx: CanvasRenderingContext2D,
+  k: KnitChart,
+  { cell, cellH, legend = true, colorSymbols = false }: ChartDrawing,
+) {
   const rows = rowsOf(k)
   const w = widthOf(k)
   const margin = cell * 2
-  const key = legend ? keyLayout(ctx, k, cell, cellH) : null
+  const key = legend ? keyLayout(ctx, k, cell, cellH, colorSymbols) : null
   ctx.canvas.width = Math.max(w * cell + margin * 2, key?.width ?? 0)
   ctx.canvas.height = rows * cellH + margin * 2 + (key?.height ?? 0)
   ctx.fillStyle = '#ffffff'
@@ -76,14 +83,14 @@ export function drawChart(ctx: CanvasRenderingContext2D, k: KnitChart, { cell, c
       const bg = s === 'none' ? NO_STITCH : k.colors[k.color[r][c]]
       ctx.fillStyle = bg
       ctx.fillRect(margin + c * cell, top(r), cell, cellH)
-      const symbol = STITCHES[s].symbol
+      const symbol = colorSymbols ? (s === 'none' ? '' : colorSymbol(k.color[r][c])) : STITCHES[s].symbol
       if (symbol) {
         ctx.fillStyle = textOn(bg)
-        ctx.font = `${symbol.length > 1 ? cell * 0.42 : cell * 0.7}px system-ui, sans-serif`
+        ctx.font = `${symbol.length > 1 ? cell * 0.42 : cell * (colorSymbols ? 0.6 : 0.7)}px system-ui, sans-serif`
         ctx.fillText(symbol, margin + c * cell + cell / 2, top(r) + cellH / 2 + 1)
       }
     }
-    for (const cable of cablesIn(k.stitch[r])) {
+    for (const cable of colorSymbols ? [] : cablesIn(k.stitch[r])) {
       const { back, front, dots } = cablePaths(cable.id, cable.width * cell, cellH)
       ctx.save()
       ctx.translate(margin + cable.start * cell, top(r))
@@ -181,7 +188,7 @@ function drawSample(ctx: CanvasRenderingContext2D, id: StitchId, x: number, y: n
  * The key below an exported or printed chart: each stitch used, with its symbol and what to do on right- and
  * wrong-side rows; the colours, by letter; and the red repeat box. Laid out in as many columns as fit.
  */
-function keyLayout(ctx: CanvasRenderingContext2D, k: KnitChart, cell: number, cellH: number) {
+function keyLayout(ctx: CanvasRenderingContext2D, k: KnitChart, cell: number, cellH: number, colorSymbols: boolean) {
   const font = Math.max(11, Math.round(cell * 0.62))
   ctx.font = `${font}px system-ui, sans-serif`
   const used = new Set(k.stitch.flat())
@@ -189,7 +196,7 @@ function keyLayout(ctx: CanvasRenderingContext2D, k: KnitChart, cell: number, ce
   type Entry = { draw: (x: number, y: number) => void; swatch: number; text: string }
   const entries: Entry[] = []
   for (const id of STITCH_IDS) {
-    if (!used.has(id)) continue
+    if (!used.has(id) || colorSymbols) continue
     const s = STITCHES[id]
     const words = s.rs ? `${s.rs}${flat && s.ws !== s.rs ? ` (WS: ${s.ws})` : ''}` : ''
     entries.push({
@@ -199,7 +206,7 @@ function keyLayout(ctx: CanvasRenderingContext2D, k: KnitChart, cell: number, ce
     })
   }
   const colors = usedColors(k)
-  if (colors.length > 1)
+  if (colors.length > 1 || colorSymbols)
     for (const c of colors)
       entries.push({
         draw: (x, y) => {
@@ -207,6 +214,12 @@ function keyLayout(ctx: CanvasRenderingContext2D, k: KnitChart, cell: number, ce
           ctx.fillRect(x, y, cell, cellH)
           ctx.strokeStyle = '#888'
           ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cellH - 1)
+          if (colorSymbols && colorSymbol(c)) {
+            ctx.fillStyle = textOn(k.colors[c])
+            ctx.font = `${cell * 0.6}px system-ui, sans-serif`
+            ctx.textAlign = 'center'
+            ctx.fillText(colorSymbol(c), x + cell / 2, y + cellH / 2 + 1)
+          }
         },
         swatch: cell,
         text: `Colour ${colorLetter(c)} (${k.colors[c]})`,

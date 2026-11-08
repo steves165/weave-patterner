@@ -1,12 +1,18 @@
 import AddIcon from '@mui/icons-material/Add'
+import BrushIcon from '@mui/icons-material/Brush'
 import CheckIcon from '@mui/icons-material/Check'
+import CircleIcon from '@mui/icons-material/Circle'
+import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined'
 import ClearAllIcon from '@mui/icons-material/ClearAll'
+import ColorizeIcon from '@mui/icons-material/Colorize'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import CropSquareIcon from '@mui/icons-material/CropSquare'
 import DataObjectIcon from '@mui/icons-material/DataObject'
 import DownloadIcon from '@mui/icons-material/Download'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import FlipIcon from '@mui/icons-material/Flip'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
+import FormatColorFillIcon from '@mui/icons-material/FormatColorFill'
 import Grid4x4Icon from '@mui/icons-material/Grid4x4'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import GridViewIcon from '@mui/icons-material/GridView'
@@ -23,6 +29,7 @@ import PrintIcon from '@mui/icons-material/Print'
 import RedoIcon from '@mui/icons-material/Redo'
 import RemoveIcon from '@mui/icons-material/Remove'
 import SaveIcon from '@mui/icons-material/Save'
+import SquareIcon from '@mui/icons-material/Square'
 import UndoIcon from '@mui/icons-material/Undo'
 import ViewInArIcon from '@mui/icons-material/ViewInAr'
 import ViewWeekIcon from '@mui/icons-material/ViewWeek'
@@ -40,6 +47,7 @@ import {
   Slider,
   Snackbar,
   Stack,
+  SvgIcon,
   Switch,
   TextField,
   ToggleButton,
@@ -50,6 +58,7 @@ import {
 } from '@mui/material'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { type Consent, GA_ID, loadConsent, saveConsent, startAnalytics, stopAnalytics, track } from '../analytics'
+import { textOn } from '../colors'
 import {
   Action,
   MenuHeading,
@@ -79,6 +88,7 @@ import { markTourSeen, Tour, TourOffer, tourSeen } from '../help/Tour'
 import { KNIT_TOUR } from '../help/tours'
 import { useHelpKeys } from '../help/useHelpKeys'
 import { createHistory, type History, record, redo, undo } from '../history'
+import type { Pixels } from '../image'
 import { readImagePixels } from '../imageFile'
 import { useCompact, useMidWidth, useNarrow, usePhone, useRoomForSidebar, useTouch } from '../layout'
 import { lazyPart } from '../lazyLoad'
@@ -101,7 +111,6 @@ import {
   MAX_ROWS,
   MAX_STITCHES,
   mirror,
-  paint,
   parseChart,
   problems,
   repeatStitches,
@@ -111,6 +120,19 @@ import {
   usedColors,
   widthOf,
 } from './chart'
+import {
+  applyMarks,
+  type Brush,
+  type Cell,
+  colorSymbol,
+  dragsShape,
+  mirrored,
+  mirrorLines,
+  pickBrush,
+  type Symmetry,
+  type Tool,
+  toolCells,
+} from './draw'
 import { type Clip, clear, copy, paste, type Rect } from './edit'
 import { ImportWrittenDialog } from './ImportWrittenDialog'
 import { castOnText, writtenPanels, writtenPattern, writtenRows } from './instructions'
@@ -120,8 +142,8 @@ import { KnitThumb } from './KnitThumb'
 import { KnittingMode } from './KnittingMode'
 import { MosaicDialog } from './MosaicDialog'
 import { PanelsDialog } from './PanelsDialog'
+import { PictureDialog } from './PictureDialog'
 import { loadSavedPanels, type SavedPanel, storeSavedPanels } from './panels'
-import { pictureColors } from './picture'
 import { drawChart, drawFabric } from './render'
 import { SelectionBar } from './SelectionBar'
 import { SizesPanel } from './SizesPanel'
@@ -145,8 +167,6 @@ const knitLine = (chart: KnitChart) =>
 const KEY = 'knit-current'
 const VIEW_KEY = 'knit-view'
 
-type Brush = { kind: 'stitch'; id: StitchId } | { kind: 'color'; index: number }
-
 interface Saved {
   name: string
   chart: KnitChart
@@ -169,6 +189,8 @@ interface View {
   repeats: boolean
   /** Whether the settings sidebar is open, once chosen (until then, open on wide screens). */
   sidebar: boolean | null
+  /** The colourwork view: squares show a symbol for their colour, and the stitch palette is put away. */
+  colours: boolean
 }
 
 function loadView(): View {
@@ -180,11 +202,12 @@ function loadView(): View {
         toGauge: Boolean(v.toGauge),
         repeats: v.repeats !== false,
         sidebar: typeof v.sidebar === 'boolean' ? v.sidebar : null,
+        colours: v.colours === true,
       }
   } catch {
     // defaults
   }
-  return { cell: 20, toGauge: false, repeats: true, sidebar: null }
+  return { cell: 20, toGauge: false, repeats: true, sidebar: null, colours: false }
 }
 
 const store = (key: string, value: unknown) => {
@@ -263,6 +286,46 @@ const number = (text: string, min: number, max: number, fallback: number) => {
   return Number.isFinite(n) && text !== '' ? Math.max(min, Math.min(max, n)) : fallback
 }
 
+/** A straight line, for the line tool. */
+const LineIcon = () => (
+  <SvgIcon fontSize="small">
+    <path d="M5 19 19 5" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" fill="none" />
+  </SvgIcon>
+)
+
+/** The drawing tools, with their icons and what they do. */
+const TOOL_INFO: { id: Tool; label: string; tip: string; icon: ReactNode }[] = [
+  { id: 'draw', label: 'Draw', tip: 'Draw: click or drag to paint squares', icon: <BrushIcon fontSize="small" /> },
+  { id: 'line', label: 'Line', tip: 'Line: drag from one end to the other', icon: <LineIcon /> },
+  { id: 'rect', label: 'Box', tip: 'Box: drag from corner to corner', icon: <CropSquareIcon fontSize="small" /> },
+  {
+    id: 'oval',
+    label: 'Oval',
+    tip: 'Oval: drag across the box it fits in',
+    icon: <CircleOutlinedIcon fontSize="small" />,
+  },
+  {
+    id: 'fill',
+    label: 'Fill',
+    tip: 'Fill: paint the area of one colour (or stitch) joined to the square clicked',
+    icon: <FormatColorFillIcon fontSize="small" />,
+  },
+  {
+    id: 'pick',
+    label: 'Pick',
+    tip: 'Pick: take the colour (or stitch) of a square to paint with',
+    icon: <ColorizeIcon fontSize="small" />,
+  },
+]
+
+/** Symmetry choices, with what they mirror. */
+const SYMMETRY_INFO: { id: Symmetry; label: string; name: string; tip: string }[] = [
+  { id: 'none', label: 'Off', name: 'No symmetry', tip: 'No mirroring' },
+  { id: 'across', label: '↔', name: 'Symmetry left to right', tip: 'Mirror left to right as you draw' },
+  { id: 'up', label: '↕', name: 'Symmetry top to bottom', tip: 'Mirror top to bottom as you draw' },
+  { id: 'both', label: '✣', name: 'Symmetry four ways', tip: 'Mirror four ways as you draw' },
+]
+
 /**
  * Knit Patterner: design a knitting chart square by square (stitch symbols and colours), see it as knitted fabric,
  * and read it as written row-by-row instructions, with the stitch counts and floats checked.
@@ -272,8 +335,14 @@ export default function KnitApp() {
   const [name, setName] = useState(savedName)
   const [history, setHistory] = useState<History<KnitChart>>(() => createHistory(savedChart))
   const chart = history.present
-  const [brush, setBrush] = useState<Brush>({ kind: 'stitch', id: 'p' })
   const [view, setViewState] = useState(loadView)
+  const [brush, setBrush] = useState<Brush>(() =>
+    view.colours ? { kind: 'color', index: 1 } : { kind: 'stitch', id: 'p' },
+  )
+  // How a drag draws (freehand, a line, a box, an oval, a fill, or picking up a square), and mirroring as it does.
+  const [tool, setTool] = useState<Tool>('draw')
+  const [filled, setFilled] = useState(false)
+  const [symmetry, setSymmetry] = useState<Symmetry>('none')
   const setView = (patch: Partial<View>) =>
     setViewState((v) => {
       const next = { ...v, ...patch }
@@ -304,6 +373,7 @@ export default function KnitApp() {
   const [target, setTarget] = useState({ width: '50', edges: '0', length: '60', ball: '200' })
   const fileInput = useRef<HTMLInputElement>(null)
   const pictureInput = useRef<HTMLInputElement>(null)
+  const [picture, setPicture] = useState<{ pixels: Pixels; name: string } | null>(null)
   // Whether the current paint stroke has made a step in the history yet (later squares of the stroke join it).
   const stroke = useRef(false)
   const compact = useCompact()
@@ -407,10 +477,42 @@ export default function KnitApp() {
   // The latest history, for painting: a fast drag paints several squares before React renders again.
   const latest = useRef(history)
   latest.current = history
+  // The chart as the stroke found it (shapes are drawn on it afresh as the drag goes), where it started, and the
+  // square it was last at (freehand draws a line from there, so a fast drag leaves no gaps).
+  const strokeBase = useRef<KnitChart | null>(null)
+  const strokeFrom = useRef<Cell>({ r: 0, c: 0 })
+  const strokeLast = useRef<Cell>({ r: 0, c: 0 })
   const onPaint = (r: number, c: number, start: boolean) => {
-    if (start) stroke.current = false
     const h = latest.current
-    const next = paint(h.present, r, c, brush.kind === 'stitch' ? { stitch: brush.id } : { color: brush.index })
+    const at = { r, c }
+    if (tool === 'pick') {
+      if (!start) return
+      const picked = pickBrush(h.present, at, view.colours ? 'color' : brush.kind)
+      setBrush(picked)
+      setTool('draw')
+      setToast(
+        `Picked up ${picked.kind === 'color' ? `colour ${colorLetter(picked.index)}` : STITCHES[picked.id].name}`,
+      )
+      return
+    }
+    if (start) {
+      stroke.current = false
+      strokeBase.current = h.present
+      strokeFrom.current = at
+      strokeLast.current = at
+    } else if (tool === 'fill') return
+    const shape = tool !== 'draw'
+    const base = shape ? (strokeBase.current ?? h.present) : h.present
+    const cells = toolCells(
+      base,
+      tool,
+      tool === 'draw' ? strokeLast.current : strokeFrom.current,
+      at,
+      filled,
+      brush.kind,
+    )
+    strokeLast.current = at
+    const next = applyMarks(base, mirrored(base, cells, symmetry), brush)
     if (next === h.present) return
     latest.current = record(h, next, stroke.current)
     stroke.current = true
@@ -458,7 +560,11 @@ export default function KnitApp() {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('This browser cannot draw images')
-    drawChart(ctx, chart, { cell, cellH: view.toGauge ? (cell * chart.gauge.stitches) / chart.gauge.rows : cell })
+    drawChart(ctx, chart, {
+      cell,
+      cellH: view.toGauge ? (cell * chart.gauge.stitches) / chart.gauge.rows : cell,
+      colorSymbols: view.colours,
+    })
     return canvas
   }
   const fileBase = name.trim() || 'Knitting chart'
@@ -510,10 +616,7 @@ export default function KnitApp() {
   const fromPicture = async (file: File | undefined) => {
     if (!file) return
     try {
-      const count = Math.max(2, chart.colors.length)
-      const { colors, grid } = pictureColors(await readImagePixels(file), w, h, count)
-      update({ ...chart, colors, color: grid })
-      setToast(`Coloured from ${file.name}, in ${colors.length} colours`)
+      setPicture({ pixels: await readImagePixels(file, 480), name: file.name })
     } catch (e) {
       setToast(e instanceof Error ? e.message : String(e))
     }
@@ -707,7 +810,7 @@ export default function KnitApp() {
             startIcon={<ImageIcon />}
             onClick={() => pictureInput.current?.click()}
           >
-            Colours from a picture
+            Colourwork from a picture
           </Button>
           <Button
             size="small"
@@ -1066,6 +1169,17 @@ export default function KnitApp() {
           setToast(`Made a chart from ${n} written ${next.mode === 'round' ? 'rounds' : 'rows'}`)
         }}
       />
+      <PictureDialog
+        picture={picture}
+        chart={chart}
+        onClose={() => setPicture(null)}
+        onApply={(next, message) => {
+          update(next)
+          setPicture(null)
+          setSelection(null)
+          setToast(message)
+        }}
+      />
       <MosaicDialog
         open={dialog === 'mosaic'}
         chart={chart}
@@ -1208,35 +1322,39 @@ export default function KnitApp() {
             {/* The palette: the stitch or colour to paint with. */}
             <Stack sx={{ gap: 1.25, px: { xs: 1.75, sm: 3 }, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
               <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60, fontWeight: 600 }}>
-                  Stitches
-                </Typography>
-                <ToggleButtonGroup
-                  size="small"
-                  exclusive
-                  aria-label="Stitch to paint"
-                  data-help="painting"
-                  value={brush.kind === 'stitch' && !selecting ? brush.id : null}
-                  onChange={(_, id) => {
-                    if (!id) return
-                    setBrush({ kind: 'stitch', id })
-                    setSelecting(false)
-                    setSelection(null)
-                  }}
-                  // Softer corners than a pill, since it wraps onto more lines on small screens.
-                  sx={{ borderRadius: '22px' }}
-                >
-                  {STITCH_IDS.map((id) => {
-                    const s = STITCHES[id]
-                    return (
-                      <Tooltip key={id} title={`${s.name}${s.rs ? ` (${s.rs})` : ''}`}>
-                        <ToggleButton value={id} aria-label={s.name} sx={{ px: 0.75, minWidth: 36 }}>
-                          <StitchSwatch id={id} />
-                        </ToggleButton>
-                      </Tooltip>
-                    )
-                  })}
-                </ToggleButtonGroup>
+                {!view.colours && (
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60, fontWeight: 600 }}>
+                    Stitches
+                  </Typography>
+                )}
+                {!view.colours && (
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    aria-label="Stitch to paint"
+                    data-help="painting"
+                    value={brush.kind === 'stitch' && !selecting ? brush.id : null}
+                    onChange={(_, id) => {
+                      if (!id) return
+                      setBrush({ kind: 'stitch', id })
+                      setSelecting(false)
+                      setSelection(null)
+                    }}
+                    // Softer corners than a pill, since it wraps onto more lines on small screens.
+                    sx={{ borderRadius: '22px' }}
+                  >
+                    {STITCH_IDS.map((id) => {
+                      const s = STITCHES[id]
+                      return (
+                        <Tooltip key={id} title={`${s.name}${s.rs ? ` (${s.rs})` : ''}`}>
+                          <ToggleButton value={id} aria-label={s.name} sx={{ px: 0.75, minWidth: 36 }}>
+                            <StitchSwatch id={id} />
+                          </ToggleButton>
+                        </Tooltip>
+                      )
+                    })}
+                  </ToggleButtonGroup>
+                )}
                 <Tooltip
                   title="Select squares to copy, paste, flip, repeat or make the pattern repeat (or Shift and the arrow keys)"
                   describeChild
@@ -1268,6 +1386,8 @@ export default function KnitApp() {
                           ? `${STITCHES[brush.id].name}${STITCHES[brush.id].rs ? ` (${STITCHES[brush.id].rs})` : ''}`
                           : `colour ${colorLetter(brush.index)}`}
                       </Box>
+                      {tool !== 'draw' && ` (${TOOL_INFO.find((t) => t.id === tool)?.label.toLowerCase()})`}
+                      {symmetry !== 'none' && ', mirrored'}
                     </>
                   )}
                 </Typography>
@@ -1308,8 +1428,20 @@ export default function KnitApp() {
                       sx={{ px: 1.25, gap: 0.75, border: 0, borderRadius: 999 }}
                     >
                       <Box
-                        sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: color, border: '1px solid #888' }}
-                      />
+                        sx={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          bgcolor: color,
+                          border: '1px solid #888',
+                          color: textOn(color),
+                          fontSize: 10,
+                          lineHeight: '14px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {view.colours && colorSymbol(i)}
+                      </Box>
                       {colorLetter(i)}
                     </ToggleButton>
                     <ColourInput
@@ -1339,6 +1471,102 @@ export default function KnitApp() {
                     </IconButton>
                   </Tooltip>
                 )}
+              </Stack>
+              <Stack
+                direction="row"
+                sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}
+                data-tour="tools"
+                data-help="drawing"
+              >
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60, fontWeight: 600 }}>
+                  Tools
+                </Typography>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  aria-label="Drawing tool"
+                  value={selecting ? null : tool}
+                  onChange={(_, t: Tool | null) => {
+                    if (!t) return
+                    setTool(t)
+                    setSelecting(false)
+                    setSelection(null)
+                  }}
+                  sx={{ borderRadius: 999 }}
+                >
+                  {TOOL_INFO.map((t) => (
+                    <Tooltip key={t.id} title={t.tip}>
+                      <ToggleButton value={t.id} aria-label={t.label} sx={{ gap: 0.5, px: 1 }}>
+                        {t.icon}
+                        {!phone && t.label}
+                      </ToggleButton>
+                    </Tooltip>
+                  ))}
+                </ToggleButtonGroup>
+                {(tool === 'rect' || tool === 'oval') && !selecting && (
+                  <Tooltip title="Fill the box or oval in, rather than drawing its edge">
+                    <ToggleButton
+                      size="small"
+                      value="filled"
+                      selected={filled}
+                      onChange={() => setFilled(!filled)}
+                      aria-label="Filled"
+                      sx={{ gap: 0.5, px: 1.25, borderRadius: 999, border: 0, bgcolor: 'var(--wp-seg)' }}
+                    >
+                      {tool === 'rect' ? (
+                        filled ? (
+                          <SquareIcon fontSize="small" />
+                        ) : (
+                          <CropSquareIcon fontSize="small" />
+                        )
+                      ) : filled ? (
+                        <CircleIcon fontSize="small" />
+                      ) : (
+                        <CircleOutlinedIcon fontSize="small" />
+                      )}
+                      Filled
+                    </ToggleButton>
+                  </Tooltip>
+                )}
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, ml: { sm: 1 } }}>
+                  Mirror
+                </Typography>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  aria-label="Symmetry"
+                  value={symmetry}
+                  onChange={(_, v: Symmetry | null) => v && setSymmetry(v)}
+                  sx={{ borderRadius: 999 }}
+                >
+                  {SYMMETRY_INFO.map((m) => (
+                    <Tooltip key={m.id} title={m.tip}>
+                      <ToggleButton value={m.id} aria-label={m.name} sx={{ px: 1.25, minWidth: 40 }}>
+                        {m.label}
+                      </ToggleButton>
+                    </Tooltip>
+                  ))}
+                </ToggleButtonGroup>
+                <Tooltip
+                  title="Colourwork view: a symbol for each colour instead of the stitches, as printed colourwork charts show"
+                  describeChild
+                >
+                  <ToggleButton
+                    size="small"
+                    value="colours"
+                    selected={view.colours}
+                    onChange={() => {
+                      const on = !view.colours
+                      setView({ colours: on })
+                      if (on && brush.kind === 'stitch')
+                        setBrush({ kind: 'color', index: Math.min(1, chart.colors.length - 1) })
+                    }}
+                    sx={{ gap: 0.75, px: 1.5, borderRadius: 999, border: 0, bgcolor: 'var(--wp-seg)', ml: { sm: 1 } }}
+                  >
+                    <GridOnIcon fontSize="small" />
+                    Colourwork view
+                  </ToggleButton>
+                </Tooltip>
               </Stack>
             </Stack>
 
@@ -1387,6 +1615,17 @@ export default function KnitApp() {
                   cellH={cellH}
                   flagged={flagged}
                   onPaint={onPaint}
+                  colorView={view.colours}
+                  drags={dragsShape(tool)}
+                  tool={tool}
+                  axes={
+                    symmetry === 'none'
+                      ? undefined
+                      : {
+                          across: symmetry === 'up' ? null : mirrorLines(chart).across,
+                          up: symmetry === 'across' ? null : mirrorLines(chart).up,
+                        }
+                  }
                   selecting={selecting}
                   selection={selection}
                   onSelect={setSelection}
